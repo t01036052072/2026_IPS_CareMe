@@ -4,3 +4,7 @@ medical_app.db
 # 파이썬 자동 생성 파일 제외
 __pycache__/
 *.pyc
+
+# --- 이미지 업로드 파일 제외 (개인정보 보호) ---
+static/uploads/*
+!static/uploads/.gitkeep
