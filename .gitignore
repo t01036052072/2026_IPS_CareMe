@@ -8,3 +8,20 @@ __pycache__/
 # --- 이미지 업로드 파일 제외 (개인정보 보호) ---
 static/uploads/*
 !static/uploads/.gitkeep
+
+# Python 임시 파일
+__pycache__/
+*.py[cod]
+
+# 가상환경
+.venv/
+env/
+medical_ai/
+
+# 데이터베이스 및 업로드 파일
+*.db
+static/uploads/
+temp_*.png
+
+# 환경 변수 및 설정
+.env
