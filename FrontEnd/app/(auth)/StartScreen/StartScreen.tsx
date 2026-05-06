@@ -1,61 +1,46 @@
 import React from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  Image, 
-  TouchableOpacity, 
-  Dimensions 
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { useRouter } from 'expo-router';
 
-const { width, height } = Dimensions.get('window');
+// 1. 색상 변수를 미리 선언해둡니다.
+const main_navy = '#00246D'; 
 
-const MAIN_NAVY = '#00246D';   
-const PRIMARY_BLUE = '#5E91FF'; 
+export default function StartScreen() {
+  const router = useRouter();
 
-export default function StartScreen({navigation}: any) {
   return (
     <View style={styles.container}>
-      {}
       <View style={styles.logoSection}>
-        {}
         <Image 
-          source={require('../../assets/logo/CareMeIcon.svg')} 
-          style={styles.logoIcon} 
+          source={require('../../../assets/images/StartScreen/CareMeLogoIcon.png')} 
+          style={styles.logoIcon}
           resizeMode="contain"
         />
-        <Image 
-          source={require('../../assets/logo/CareMeText.svg')} 
-          style={styles.logoTextImg} 
-          resizeMode="contain"
-        />
+        <Text style={styles.mainTitle}>나만을 위한 건강관리</Text>
+        <Text style={styles.subTitle}>진단서 해석부터{"\n"}복약 · 일정관리까지</Text>
       </View>
 
-      {}
-      <View style={styles.textSection}>
-        <Text style={[styles.mainTitle, { color: MAIN_NAVY }]}>
-          나만을 위한 건강관리
-        </Text>
-        <Text style={[styles.subDescriptionText, { color: MAIN_NAVY }]}>
-          진단서 해석부터{"\n"}복약 · 일정관리까지
-        </Text>
-      </View>
-
-      {}
-      <View style={styles.bottomSection}>
-        <TouchableOpacity style={[styles.loginButton, { backgroundColor: PRIMARY_BLUE }]} 
-        onPress={() => navigation.navigate('Login')} //클릭시 로그인으로
+      <View style={styles.buttonSection}>
+        <TouchableOpacity 
+          style={styles.loginButton}
+          onPress={() => router.push('/(auth)/LoginScreen/LoginScreen')}
         >
           <Text style={styles.loginButtonText}>로그인하기</Text>
         </TouchableOpacity>
 
-        {}
-        <View style={styles.signupGuideContainer}>
-          <Text style={styles.guideText}>아직 회원이 아닌가요? </Text>
-          <TouchableOpacity>
-            <Text style={[styles.signupLinkText, { color: PRIMARY_BLUE }]}>회원가입</Text>
-          </TouchableOpacity>
+        <View style={styles.dividerContainer}>
+          <View style={styles.line} />
+          <Text style={styles.dividerText}>아직 회원이 아니라면?</Text>
+          <View style={styles.line} />
         </View>
+
+        {/* 2. 오타 수정: TouchableOpacit. -> TouchableOpacity */}
+        <TouchableOpacity 
+          style={styles.signupButton}
+          onPress={() => router.push('../(auth)/SignUpScreen/SignUpScreen1')}
+        >
+          <Text style={styles.signupButtonText}>회원가입하기</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -65,70 +50,72 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    width: width,
-    height: height,
+    paddingHorizontal: 24,
+    justifyContent: 'center',
   },
   logoSection: {
-    marginTop: height * 0.18, // 아이폰 16 상단 여백 설정
     alignItems: 'center',
+    marginBottom: 60,
   },
   logoIcon: {
-    width: 90,
-    height: 90,
-    marginBottom: 15,
-  },
-  logoTextImg: {
-    width: 200,
-    height: 60,
-  },
-  textSection: {
-    marginTop: 80,
-    alignItems: 'center',
+    width: 120,
+    height: 120,
+    marginBottom: 40,
   },
   mainTitle: {
     fontSize: 28,
     fontWeight: 'bold',
+    color: main_navy, // 3. 따옴표 없이 변수명 그대로 사용
     marginBottom: 12,
   },
-  subDescriptionText: {
+  subTitle: {
     fontSize: 18,
     textAlign: 'center',
+    color: main_navy,
     lineHeight: 26,
   },
-  bottomSection: {
-    position: 'absolute',
-    bottom: 70,
+  buttonSection: {
     width: '100%',
-    alignItems: 'center',
+    marginTop: 20,
   },
   loginButton: {
-    width: width * 0.85,
-    paddingVertical: 18,
-    borderRadius: 25,
+    backgroundColor: main_navy,
+    paddingVertical: 16,
+    borderRadius: 30,
     alignItems: 'center',
-    marginBottom: 20,
-    // iOS용 그림자 효과 [cite: 291]
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   loginButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: 'bold',
   },
-  signupGuideContainer: {
+  dividerContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
   },
-  guideText: {
-    fontSize: 14,
-    color: '#A4BFFF', // 가이드 문구는 연한 파란색 계열
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: main_navy,
   },
-  signupLinkText: {
+  dividerText: {
+    marginHorizontal: 10,
+    color: main_navy,
     fontSize: 14,
+    fontWeight: '600',
+  },
+  signupButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: main_navy,
+    paddingVertical: 16,
+    borderRadius: 30,
+    alignItems: 'center',
+  },
+  signupButtonText: {
+    color: main_navy,
+    fontSize: 18,
     fontWeight: 'bold',
-    textDecorationLine: 'underline',
   },
 });
