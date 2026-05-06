@@ -5,10 +5,13 @@ import os
 
 from pills import router as pill_router
 from pill_alarm import router as pill_alarm_router
+from hospital_appointment import router as appointment_router
+
 
 app = FastAPI(title="CareMe Medication Service")
 app.include_router(pill_router)
 app.include_router(pill_alarm_router)
+app.include_router(appointment_router)
 
 
 # --- 설정 및 초기화 ---
