@@ -1,6 +1,9 @@
 import os
-from routes import document
+os.environ['PADDLE_USE_ONEDNN'] = '0'
+os.environ['FLAGS_use_onednn'] = '0'
+import uvicorn
 from fastapi import FastAPI
+from routes import document
 from fastapi.staticfiles import StaticFiles
 from database import engine, Base
 from routes import user

@@ -2,8 +2,6 @@ import os
 import uuid
 import shutil
 import re
-os.environ['PADDLE_USE_ONEDNN'] = '0' 
-os.environ['FLAGS_use_onednn'] = '0'
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, asc
@@ -15,6 +13,11 @@ from datetime import datetime, timedelta
 from database import get_db
 from models import DocumentTable
 import schemas
+
+# [교정 1] 시스템 환경 변수 설정: PaddleOCR 로드 전 최상단에 배치하여 에러를 원천 차단합니다.
+os.environ['PADDLE_USE_ONEDNN'] = '0' 
+os.environ['FLAGS_use_onednn'] = '0'
+os.environ['FLAGS_allocator_strategy'] = 'naive_best_fit'
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
@@ -45,7 +48,14 @@ async def upload_document(
 ):
     global ocr_model
     if ocr_model is None:
-        ocr_model = PaddleOCR(lang='korean', ocr_version='PP-OCRv3', use_angle_cls=True)
+        # [교정 2] ocr_test.py에서 성공했던 안정적인 설정값으로 초기화합니다.
+        ocr_model = PaddleOCR(
+            lang='korean',
+            use_gpu=False,        # GPU 사용 안 함 (에러 방지)
+            enable_mkldnn=False,  # oneDNN 가속 해제 (가장 중요!)
+            cpu_threads=1,        # CPU 스레드 제한으로 안정성 확보
+            show_log=False
+        )
 
     extension = file.filename.split(".")[-1].lower()
     if extension not in ["jpg", "jpeg", "png"]:
@@ -64,19 +74,45 @@ async def upload_document(
     detected_hospital = "알 수 없는 병원" 
     
     try:
+        # [교정 3] OCR 실행 및 텍스트 추출 로직 개선
         ocr_result = ocr_model.ocr(file_path)
-        if ocr_result and ocr_result[0]:
-            for line in ocr_result[0]:
-                text = line[1][0].strip()
-                if text: extracted_texts.append(text)
+        # ... ocr_result 처리 부분 ...
+        if ocr_result:
+            for res in ocr_result:
+                if res is None: continue
+                for i, line in enumerate(res): # 줄 번호(i)를 함께 가져옵니다.
+                    text = line[1][0].strip()
+                    if text: extracted_texts.append(text)
 
-            keywords = ["병원", "의원", "내과", "외과", "소아과", "이비인후과", "피부과", "정형외과", "의료원", "치과"]
-            for text in extracted_texts:
-                if any(kw in text.replace(" ", "") for kw in keywords):
-                    detected_hospital = text
+            keywords = ["병원", "의원", "내과", "외과", "소아과", "이비인후과", "피부과", "정형외과", "의료원", "치과", "보건소"]
+            exclude_keywords = ["병의원명", "기관명", "소재지"]
+
+            for idx, text in enumerate(extracted_texts):
+                clean_text = text.replace(" ", "")
+                
+                # 1. '의원', '병원' 등의 키워드가 포함된 줄을 찾으면
+                if any(kw in clean_text for kw in keywords):
+                    # 2. '병의원명:' 같은 단순 항목명이면 패스
+                    if any(ex in clean_text for ex in exclude_keywords) and len(clean_text) < 8:
+                        continue
+                    
+                    # 3. 핵심: 만약 현재 줄이 '정형외과의원'처럼 이름의 일부라면, 
+                    #    바로 앞 줄(idx-1)에 '규린' 같은 이름이 있는지 확인해서 합칩니다.
+                    if idx > 0:
+                        prev_text = extracted_texts[idx-1]
+                        # 앞 줄이 항목명(병의원명:)이 아니고, 너무 길지 않다면 이름으로 간주
+                        if not any(ex in prev_text for ex in exclude_keywords) and len(prev_text) < 10:
+                            detected_hospital = f"{prev_text} {text}"
+                        else:
+                            detected_hospital = text
+                    else:
+                        detected_hospital = text
+                        
+                    print(f"✅ 병원 이름 결합 성공: {detected_hospital}")
                     break
+                    
     except Exception as e:
-        print(f"OCR 에러: {e}")
+        print(f"OCR 에러 상세: {e}")
 
     full_raw_text = "\n".join(extracted_texts)
     easy_description = simplify_medical_terms(full_raw_text)
@@ -97,22 +133,18 @@ async def upload_document(
     db.refresh(new_doc)
     return {"status": "success", "data": {"id": new_doc.id, "hospital": new_doc.hospital_name}}
 
-# 2. 문서 목록 조회 (스케치 기반 기간 설정 및 최신순 정렬 추가)
+# 2. 문서 목록 조회
 @router.get("/list")
 def get_document_list(
-    months: Optional[int] = None,  # 스케치: 1, 3, 6개월 필터
-    sort: str = "desc",            # 스케치: 최신순(desc), 오래된순(asc)
+    months: Optional[int] = None,
+    sort: str = "desc",
     db: Session = Depends(get_db)
 ):
     query = db.query(DocumentTable)
-
-    # 기간 필터링 로직
     if months:
-        # 가현님의 upload_date 형식(YYYY.MM.DD)에 맞춰 필터링
         limit_date = (datetime.now() - timedelta(days=30 * months)).strftime("%Y.%m.%d")
         query = query.filter(DocumentTable.upload_date >= limit_date)
 
-    # 정렬 로직 (최신순 기본)
     if sort == "asc":
         query = query.order_by(asc(DocumentTable.upload_date))
     else:
@@ -151,27 +183,22 @@ def get_document_detail(document_id: int, db: Session = Depends(get_db)):
         "content": document.raw_text
     }
 
-# 4. 문서 수정 (이미지 재업로드 및 재분석 전용)
+# 4. 문서 수정 (재분석 시에도 동일한 안정적 설정 적용)
 @router.put("/{document_id}")
 async def update_document_image(
     document_id: int,
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
-    # 1) 기존 문서 확인
     document = db.query(DocumentTable).filter(DocumentTable.id == document_id).first()
     if not document:
         raise HTTPException(status_code=404, detail="수정할 문서를 찾을 수 없습니다.")
 
-    # 2) 기존 이미지 파일 삭제 (서버 용량 관리)
     old_file_path = f".{document.image_url}"
     if os.path.exists(old_file_path):
-        try:
-            os.remove(old_file_path)
-        except Exception as e:
-            print(f"기존 파일 삭제 실패: {e}")
+        try: os.remove(old_file_path)
+        except: pass
 
-    # 3) 새 이미지 저장
     extension = file.filename.split(".")[-1].lower()
     unique_filename = f"updated_{uuid.uuid4()}.{extension}"
     new_file_path = os.path.join(UPLOAD_DIR, unique_filename)
@@ -179,51 +206,51 @@ async def update_document_image(
     with open(new_file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # 4) 새 이미지 OCR 및 언어 순화 재실행
     extracted_texts = []
+    detected_hospital = document.hospital_name # 기본은 기존 값 유지
+
     try:
-        # OCR 모델이 로드되지 않았을 경우를 대비
         global ocr_model
         if ocr_model is None:
-            ocr_model = PaddleOCR(lang='korean', ocr_version='PP-OCRv3', use_angle_cls=True)
+            ocr_model = PaddleOCR(lang='korean', use_gpu=False, enable_mkldnn=False, show_log=False)
             
         ocr_result = ocr_model.ocr(new_file_path)
-        if ocr_result and ocr_result[0]:
-            extracted_texts = [line[1][0].strip() for line in ocr_result[0] if line[1][0].strip()]
+        if ocr_result:
+            for res in ocr_result:
+                if res is None: continue
+                for line in res:
+                    text = line[1][0].strip()
+                    if text: extracted_texts.append(text)
+            
+            keywords = ["병원", "의원", "내과", "외과", "소아과", "이비인후과", "피부과", "정형외과", "의료원", "치과", "보건소"]
+            for text in extracted_texts:
+                if any(kw in text.replace(" ", "") for kw in keywords):
+                    detected_hospital = text
+                    break
     except Exception as e:
         print(f"재분석 OCR 에러: {e}")
 
-    full_raw_text = "\n".join(extracted_texts)
-    easy_description = simplify_medical_terms(full_raw_text)
-
-    # 5) DB 정보 업데이트 (날짜와 타입은 기존 값 유지)
     document.image_url = f"/static/uploads/{unique_filename}"
-    document.raw_text = full_raw_text
-    document.simplified_text = easy_description
+    document.hospital_name = detected_hospital # 수정 시 병원 이름도 새로 업데이트
+    document.raw_text = "\n".join(extracted_texts)
+    document.simplified_text = simplify_medical_terms(document.raw_text)
     document.ocr_count = len(extracted_texts)
 
     db.commit()
     db.refresh(document)
-    
-    return {
-        "status": "success", 
-        "message": "이미지가 교체되어 분석 결과가 업데이트되었습니다.",
-        "data": {"id": document.id, "hospital": document.hospital_name}
-    }
-# 5. 문서 삭제 (파일 및 데이터 완전 삭제)
+    return {"status": "success", "data": {"id": document.id, "hospital": document.hospital_name}}
+
+# 5. 문서 삭제
 @router.delete("/{document_id}")
 def delete_document(document_id: int, db: Session = Depends(get_db)):
     document = db.query(DocumentTable).filter(DocumentTable.id == document_id).first()
     if not document:
         raise HTTPException(status_code=404, detail="삭제할 문서를 찾을 수 없습니다.")
 
-    # 1) 실제 이미지 파일 삭제
     file_path = f".{document.image_url}"
     if os.path.exists(file_path):
         os.remove(file_path)
 
-    # 2) DB 데이터 삭제
     db.delete(document)
     db.commit()
-
-    return {"status": "success", "message": f"{document_id}번 문서와 분석 결과가 삭제되었습니다."}
+    return {"status": "success", "message": f"{document_id}번 문서가 삭제되었습니다."}
