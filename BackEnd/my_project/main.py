@@ -1,9 +1,9 @@
 import os
-from BackEnd.my_project.routes import document
+from routes import document
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from BackEnd.my_project.database import engine, Base
-from BackEnd.my_project.routes import user
+from database import engine, Base
+from routes import user
 
 # 테이블 생성
 Base.metadata.create_all(bind=engine)

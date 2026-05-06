@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from jose import jwt
 from passlib.context import CryptContext
-from BackEnd.my_project.database import get_db
-from BackEnd.my_project.models import UserTable
-from BackEnd.my_project.schemas import UserCreate, LoginRequest
+from database import get_db
+from models import UserTable
+from schemas import UserCreate, LoginRequest
 
 # 보안 설정
 SECRET_KEY = "health-care-ai-engineering-2026" 

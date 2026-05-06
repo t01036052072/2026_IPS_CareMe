@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Text
-from BackEnd.my_project.database import Base
+from database import Base
 
 class UserTable(Base):
     __tablename__ = "users"
@@ -24,3 +24,5 @@ class DocumentTable(Base):
     ocr_count = Column(Integer)
     raw_text = Column(Text)
     user_id = Column(Integer, ForeignKey("users.id"))
+    simplified_text = Column(Text)  # 용어 순화된 내용 저장용
+    medication_info = Column(Text)  # 처방 약 정보 저장용
