@@ -1,9 +1,12 @@
 import os
-from BackEnd.my_project.routes import document
+os.environ['PADDLE_USE_ONEDNN'] = '0'
+os.environ['FLAGS_use_onednn'] = '0'
+import uvicorn
 from fastapi import FastAPI
+from routes import document
 from fastapi.staticfiles import StaticFiles
-from BackEnd.my_project.database import engine, Base
-from BackEnd.my_project.routes import user
+from database import engine, Base
+from routes import user
 
 # 테이블 생성
 Base.metadata.create_all(bind=engine)

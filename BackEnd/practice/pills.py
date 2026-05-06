@@ -5,7 +5,7 @@ from datetime import datetime
 from database import PILL_DB
 
 # 라우터 설정: 모든 주소 앞에 /pills가 자동으로 붙습니다.
-router = APIRouter(prefix="/pills", tags=["pills"])
+router = APIRouter(prefix="/pills", tags=["약 검색"])
 
 # 사진 업로드 폴더 설정
 UPLOAD_DIR = "./uploads"
