@@ -40,7 +40,6 @@ class LoginRequest(BaseModel):
     password: str
 
 # 3. 문서(진단서) 관련 스키마
-# DocumentDetail이 상속받을 수 있도록 상단에 정의합니다.
 class DocumentBase(BaseModel):
     title: str
     content: Optional[str] = None
@@ -52,7 +51,15 @@ class DocumentDetail(DocumentBase):
     id: int
     owner_id: int
     created_at: datetime
-    # 상세 데이터 필드 (예: 분석된 질병명, 처방 약 등)
+    
+    # --- 가현님의 스케치 기획안 반영 필드 ---
+    hospital_name: Optional[str] = None      # 스케치: 병원 이름
+    upload_date: Optional[str] = None        # 스케치: 날짜 (예: 2025.12.01)
+    simplified_text: Optional[str] = None    # 핵심: 어려운 용어 순화 결과
+    medication_info: Optional[str] = None    # 스케치: 무슨 약 받았는지 기록
+    image_url: Optional[str] = None          # 스케치: '원본 보기'용 경로
+    # ---------------------------------------
+
     analysis_result: Optional[str] = None 
 
     class Config:
