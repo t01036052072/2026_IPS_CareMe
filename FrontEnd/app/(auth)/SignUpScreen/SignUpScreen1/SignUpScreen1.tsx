@@ -1,132 +1,143 @@
 import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  TextInput, 
-  TouchableOpacity, 
-  Image,
-  Keyboard,
-  TouchableWithoutFeedback,
-  SafeAreaView
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, SafeAreaView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-const MAIN_NAVY = '#00246D'; 
+const main_navy = '#00246D';
+const error_red = '#D32F2F';
 
-export default function SignupScreen1({ navigation }: any) {
+export default function LoginScreen() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
-  const [isEmailValid, setIsEmailValid] = useState(true); // 이메일 유효성 상태
+  const [password, setPassword] = useState(''); // 비밀번호 상태 유지
+  const [emailError, setEmailError] = useState(false);
 
-  const validateEmail = (text: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    setEmail(text); // 이메일 형식 검사 함수
-    
-    if (text.length > 0) {
-      setIsEmailValid(emailRegex.test(text)); // 조건에 안 맞으면 false
+  const handleEmailChange = (text: string) => {
+    setEmail(text);
+    if (text.length > 0 && !text.includes('@')) {
+      setEmailError(true);
     } else {
-      setIsEmailValid(true); 
+      setEmailError(false);
     }
   };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <SafeAreaView style={styles.container}>
-        
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Image 
-              source={require('../../../../assets/images/SignUpScreen/SignUpScreen1/back.png')} 
-              style={styles.backIcon}
-            />
-          </TouchableOpacity>
-        </View> // 뒤로가기 아이콘
-
-        <View style={styles.logoSection}>
-          <View style={styles.logoRow}>
-            <Image source={require('../../../../assets/images/SignUpScreen/SignUpScreen1/CareMeLogoIcon.png')} style={styles.logoIcon} resizeMode="contain" />
-            <Image source={require('../../../../assets/images/SignUpScreen/SignUpScreen1/CareMeLogoText.png')} style={styles.textLogo} resizeMode="contain" />
-          </View>
-        </View> // 로고 icon, 로고 text 이미지 삽입 
-
-        <View style={styles.titleSection}>
-          <Text style={[styles.pageTitle, { color: MAIN_NAVY }]}>회원가입하기</Text>
-        </View> // 회원가입하기 텍스트
-
-        {/* 입력 폼 영역 */}
-        <View style={styles.formSection}>
-          <View style={styles.inputContainer}>
-            <Text style={[styles.inputLabel, { color: MAIN_NAVY }]}>이메일</Text>
-            <TextInput 
-              style={[
-                styles.input, // 이메일 형식이 틀리면 빨간불 표시
-                { borderColor: isEmailValid ? '#E5E5E5' : '#C62828' } 
-              ]}
-              placeholder="이메일을 입력해 주세요"
-              placeholderTextColor="#bdbdbd"
-              value={email}
-              onChangeText={validateEmail} // 입력할 때마다 검사 실행
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-            {/* 조건이 안 맞을 때만 안내 문구 표시 */}
-            {!isEmailValid && (
-              <Text style={styles.errorText}>올바른 이메일 형식이 아닙니다.</Text>
-            )}
-          </View>
-
-          {/* 다음 버튼 */}
-          <View style={styles.loginActionSection}>
-            <TouchableOpacity 
-              style={[
-                styles.nextButton, 
-                { backgroundColor: (email.length > 0 && isEmailValid) ? '#5E91FF' : '#E0E0E0' }
-              ]} 
-              disabled={!(email.length > 0 && isEmailValid)}
-              onPress={() => navigation.navigate('SignupScreen2')}
-            >
-              <Text style={styles.nextButtonText}>다음</Text>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.flex}
+        >
+          {/* 상단 헤더 영역 */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={28} color={main_navy} />
             </TouchableOpacity>
           </View>
-        </View>
 
+          <View style={styles.content}>
+            <Text style={styles.title}>회원가입하기</Text>
+            
+            {/* 이메일 입력창 */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>이메일</Text>
+              <TextInput
+                style={[
+                  styles.input, 
+                  emailError && styles.inputError
+                ]}
+                placeholder="이메일을 입력해주세요"
+                value={email}
+                onChangeText={handleEmailChange}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              {emailError && (
+                <Text style={styles.errorText}>유효한 이메일을 입력해주세요</Text>
+              )}
+            </View>
+
+            {/* 로그인 버튼 (기존 디자인 유지) */}
+            <TouchableOpacity 
+              style={[styles.loginButton, { opacity: email && !emailError ? 1 : 0.5 }]}
+              disabled={!email || emailError}
+              onPress={() => router.push('/(auth)/SignUpScreen/SignUpScreen2/SignUpScreen2')}
+            >
+              <Text style={styles.loginButtonText}>다음</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-  header: { height: 50, justifyContent: 'center', paddingHorizontal: 26 },
-  backIcon: { width: 24, height: 24, resizeMode: 'contain' },
-  logoSection: { alignItems: 'center', marginTop: 20, marginBottom: 10 },
-  logoRow: { flexDirection: 'row', alignItems: 'center' },
-  logoIcon: { width: 40, height: 40, marginRight: 8 },
-  textLogo: { width: 100, height: 30 },
-  titleSection: { paddingHorizontal: 26, marginBottom: 30 },
-  pageTitle: { fontSize: 24, fontWeight: 'bold' },
-  formSection: { paddingHorizontal: 26 },
-  inputContainer: { marginBottom: 20 },
-  inputLabel: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  flex: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  backButton: {
+    padding: 4,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: main_navy,
+    marginBottom: 40,
+  },
+  inputContainer: {
+    marginBottom: 24,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: main_navy,
+    marginBottom: 8,
+  },
   input: {
-    width: '100%',
-    height: 44,
-    borderWidth: 1.5,
-    borderRadius: 10,
-    paddingHorizontal: 15,
+  borderWidth: 1.5,           // 1. 선 두께 (사방)
+  borderColor: '#main_navy',    // 2. 기본 테두리 색상
+  borderRadius: 12,          // 3. 박스 모서리 곡률
+  paddingVertical: 12,
+  paddingHorizontal: 16,     // 4. 박스 안쪽 좌우 여백 (필수)
+  fontSize: 16,
+  color: '#000',
+},
+ 
+  loginButton: {
+    backgroundColor: main_navy,
+    paddingVertical: 16,
+    borderRadius: 30,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  loginButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  // 오류 부분 수정: 'error_red' 따옴표 제거하여 변수 참조하게 함
+  inputError: {
+    borderBottomColor: error_red,
+    borderBottomWidth: 2,
   },
   errorText: {
-    color: '#C62828',
-    fontSize: 12,
-    marginTop: 5,
-    fontWeight: '500'
+    color: error_red,
+    fontSize: 14,
+    marginTop: 8,
+    fontWeight: 'bold',
   },
-  loginActionSection: { marginTop: 35 },
-  nextButton: {
-    width: '100%',
-    height: 44,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  nextButtonText: { color: '#ffffff', fontSize: 16, fontWeight: 'bold' },
 });

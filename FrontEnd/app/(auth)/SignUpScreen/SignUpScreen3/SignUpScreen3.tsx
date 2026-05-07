@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, SafeAreaView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons'; // 뒤로가기 아이콘용
+import { Ionicons } from '@expo/vector-icons';
 
 const main_navy = '#00246D';
+const error_red = '#D32F2F';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -17,7 +18,7 @@ export default function LoginScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.flex}
         >
-          {/* 상단 헤더 영역: 뒤로가기 버튼 */}
+          {/* 상단 헤더 영역 */}
           <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <Ionicons name="chevron-back" size={28} color={main_navy} />
@@ -25,48 +26,30 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.content}>
-            <Text style={styles.title}>로그인하기</Text>
-            
+            <Text style={styles.title}>회원가입하기</Text>
+            <Text style={styles.label}>이름</Text>
+
             {/* 이메일 입력창 */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>아이디</Text>
+            <View style={styles.input}>
               <TextInput
-                style={styles.input}
-                placeholder="아이디를 입력해주세요"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
+                style={{ fontSize: 16, color: '#000' }}
+                placeholder="이름을 입력해주세요"
                 autoCapitalize="none"
               />
+             
             </View>
-
-            {/* 비밀번호 입력창 */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>비밀번호</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="비밀번호를 입력해주세요"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry // 비밀번호 가리기
-              />
-            </View>
-
-            {/* 로그인 버튼 */}
+          
+            {/* 로그인 버튼 (기존 디자인 유지) */}
             <TouchableOpacity 
-              style={[styles.loginButton, { opacity: email && password ? 1 : 0.5 }]}
-              disabled={!email || !password}
-            >
-              <Text style={styles.loginButtonText}>로그인</Text>
-            </TouchableOpacity>
-
-            {/* 회원가입 유도 영역 */}
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>아직 회원이 아니신가요? </Text>
-              <TouchableOpacity onPress={() => router.push('/(auth)/SignUpScreen/SignUpScreen1/SignUpScreen1')}>
-                <Text style={styles.signupLink}>회원가입</Text>
-              </TouchableOpacity>
-            </View>
+  style={styles.loginButton}
+  onPress={() => router.push({
+    pathname: '/(auth)/SignUpScreen/SignUpScreen4/SignUpScreen4',
+    params: { userName: name } // 사용자가 입력한 name을 userName이라는 이름으로 전달
+  } as any
+  )}
+>
+  <Text style={styles.loginButtonText}>다음</Text>
+</TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -109,41 +92,27 @@ const styles = StyleSheet.create({
     color: main_navy,
     marginBottom: 8,
   },
- input: {
+  input: {
   borderWidth: 1.5,           // 1. 선 두께 (사방)
-  borderColor: '#main_navy',    // 2. 기본 테두리 색상
+  borderColor: 'main_navy',    // 2. 기본 테두리 색상
   borderRadius: 12,          // 3. 박스 모서리 곡률
   paddingVertical: 12,
   paddingHorizontal: 16,     // 4. 박스 안쪽 좌우 여백 (필수)
   fontSize: 16,
-  color: '#000',
+  color: 'main_navy',
 },
-
+ 
   loginButton: {
     backgroundColor: main_navy,
     paddingVertical: 16,
     borderRadius: 30,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 140,
   },
   loginButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: 'bold',
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 30,
-  },
-  footerText: {
-    color: '#666',
-    fontSize: 14,
-  },
-  signupLink: {
-    color: main_navy,
-    fontSize: 14,
-    fontWeight: 'bold',
-    textDecorationLine: 'underline',
-  },
+  
 });

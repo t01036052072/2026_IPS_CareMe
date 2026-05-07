@@ -1,14 +1,26 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, SafeAreaView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons'; // 뒤로가기 아이콘용
+import { Ionicons } from '@expo/vector-icons';
 
 const main_navy = '#00246D';
+const error_red = '#D32F2F';
 
-export default function LoginScreen() {
+export default function SignUpScreen2() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
+
+  // 비밀번호 확인 체크 함수
+  const handleConfirmPasswordChange = (text: string) => {
+    setConfirmPassword(text);
+    if (text.length > 0 && password !== text) {
+      setPasswordError(true);
+    } else {
+      setPasswordError(false);
+    }
+  };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -17,7 +29,7 @@ export default function LoginScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.flex}
         >
-          {/* 상단 헤더 영역: 뒤로가기 버튼 */}
+          {/* 상단 헤더 영역 */}
           <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <Ionicons name="chevron-back" size={28} color={main_navy} />
@@ -25,21 +37,8 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.content}>
-            <Text style={styles.title}>로그인하기</Text>
+            <Text style={styles.title}>회원가입하기</Text>
             
-            {/* 이메일 입력창 */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>아이디</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="아이디를 입력해주세요"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-
             {/* 비밀번호 입력창 */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>비밀번호</Text>
@@ -48,25 +47,40 @@ export default function LoginScreen() {
                 placeholder="비밀번호를 입력해주세요"
                 value={password}
                 onChangeText={setPassword}
-                secureTextEntry // 비밀번호 가리기
+                secureTextEntry
               />
             </View>
 
-            {/* 로그인 버튼 */}
-            <TouchableOpacity 
-              style={[styles.loginButton, { opacity: email && password ? 1 : 0.5 }]}
-              disabled={!email || !password}
-            >
-              <Text style={styles.loginButtonText}>로그인</Text>
-            </TouchableOpacity>
-
-            {/* 회원가입 유도 영역 */}
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>아직 회원이 아니신가요? </Text>
-              <TouchableOpacity onPress={() => router.push('/(auth)/SignUpScreen/SignUpScreen1/SignUpScreen1')}>
-                <Text style={styles.signupLink}>회원가입</Text>
-              </TouchableOpacity>
+            {/* 비밀번호 확인 입력창 */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>비밀번호 확인</Text>
+              <TextInput
+                style={[
+                  styles.input, 
+                  passwordError && styles.inputError
+                ]}
+                placeholder="비밀번호를 한 번 더 입력해주세요"
+                value={confirmPassword}
+                onChangeText={handleConfirmPasswordChange}
+                secureTextEntry
+              />
+              {passwordError && (
+                <Text style={styles.errorText}>비밀번호가 일치하지 않습니다</Text>
+              )}
             </View>
+
+            {/* 다음 버튼 */}
+            <TouchableOpacity 
+              style={[
+                styles.loginButton, 
+                { opacity: password && confirmPassword && !passwordError ? 1 : 0.5 }
+              ]}
+              disabled={!password || !confirmPassword || passwordError}
+            onPress={() => router.push('/(auth)/SignUpScreen/SignUpScreen3/SignUpScreen3')}
+
+            >
+              <Text style={styles.loginButtonText}>완료</Text>
+            </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -109,16 +123,27 @@ const styles = StyleSheet.create({
     color: main_navy,
     marginBottom: 8,
   },
- input: {
+  
+  input: {
   borderWidth: 1.5,           // 1. 선 두께 (사방)
   borderColor: '#main_navy',    // 2. 기본 테두리 색상
   borderRadius: 12,          // 3. 박스 모서리 곡률
   paddingVertical: 12,
   paddingHorizontal: 16,     // 4. 박스 안쪽 좌우 여백 (필수)
   fontSize: 16,
-  color: '#000',
+  color: 'main_navy',
 },
 
+  inputError: {
+    borderColor: error_red,
+    borderBottomWidth: 2,
+  },
+  errorText: {
+    color: error_red,
+    fontSize: 14,
+    marginTop: 8,
+    fontWeight: 'bold',
+  },
   loginButton: {
     backgroundColor: main_navy,
     paddingVertical: 16,
@@ -130,20 +155,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 30,
-  },
-  footerText: {
-    color: '#666',
-    fontSize: 14,
-  },
-  signupLink: {
-    color: main_navy,
-    fontSize: 14,
-    fontWeight: 'bold',
-    textDecorationLine: 'underline',
   },
 });
