@@ -1,18 +1,22 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Float, Text
 from database import Base
 
 class UserTable(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    password = Column(String)
-    name = Column(String)
+    email = Column(String, unique=True, index=True, nullable=False)
+    password = Column(String, nullable=False)
+    name = Column(String, nullable=False)
     age = Column(Integer)
     gender = Column(String)
-    is_under_treatment = Column(Boolean)
-    has_family_history = Column(Boolean)
-    is_b_hepatitis_carrier = Column(Boolean)
-    medical_history = Column(Text)
+    # [추가] 기획서 반영: 신체 정보
+    height = Column(Float, nullable=True) 
+    weight = Column(Float, nullable=True)
+
+    is_under_treatment = Column(Boolean, default=False)
+    has_family_history = Column(Boolean, default=False)
+    is_b_hepatitis_carrier = Column(Boolean, default=False)
+    medical_history = Column(Text, nullable=True)
 
 class DocumentTable(Base):
     __tablename__ = "documents"

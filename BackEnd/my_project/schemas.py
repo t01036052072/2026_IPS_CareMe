@@ -1,5 +1,5 @@
 import re
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import List, Optional
 from enum import Enum
 from datetime import datetime
@@ -9,6 +9,13 @@ class Gender(str, Enum):
     male = "남자"
     female = "여자"
 
+class MedicalHistoryItem(BaseModel):
+    name: str
+    is_diagnosed: bool
+    is_medicated: bool
+
+
+
 class DiseaseStatus(BaseModel):
     name: str
     is_diagnosed: bool
@@ -16,15 +23,20 @@ class DiseaseStatus(BaseModel):
 
 # 2. 회원가입 및 로그인 관련 스키마
 class UserCreate(BaseModel):
-    email: str
+    email: EmailStr
     name: str
     age: int
-    gender: Gender 
+    gender: Gender
     password: str = Field(..., min_length=8, max_length=50)
+
+    # [추가] 기획서 반영: 신체 정보
+    height: float
+    weight: float
+
     is_under_treatment: bool
     has_family_history: bool
     is_b_hepatitis_carrier: bool
-    medical_history: List[DiseaseStatus] = []
+    medical_history: List[MedicalHistoryItem]
 
     @field_validator('password')
     @classmethod
@@ -36,7 +48,7 @@ class UserCreate(BaseModel):
         return v
 
 class LoginRequest(BaseModel):
-    email: str
+    email: Emailstr
     password: str
 
 # 3. 문서(진단서) 관련 스키마
