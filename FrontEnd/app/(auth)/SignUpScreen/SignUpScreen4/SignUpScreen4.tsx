@@ -2,25 +2,46 @@ import React, { useState } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, TextInput, 
   SafeAreaView, KeyboardAvoidingView, Platform, 
-  TouchableWithoutFeedback, Keyboard, ScrollView 
+  TouchableWithoutFeedback, Keyboard, ScrollView, Modal
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router'; // 추가
-
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const main_navy = '#00246D';
 
 export default function SignUpScreen4() {
   const router = useRouter();
-  const { userName } = useLocalSearchParams<{ userName: string }>(); // 이전 페이지에서 보낸 userName 받기
+  const { username } = useLocalSearchParams<{ username: any }>();
   
-  // 초기값을 userName으로 설정 (없을 경우 빈 문자열)
-  const [name, setName] = useState(userName || '');
-const [gender, setGender] = useState(''); // '남성' 또는 '여성'
+
+  const [name] = useState(username || '');
+  const [gender, setGender] = useState('');
   const [birth, setBirth] = useState('');
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
+  const [date, setDate] = useState(new Date(1960, 0, 1)); 
+  const [showPicker, setShowPicker] = useState(false);
+
+
+  const handleHeightChange = (text: string) => {
+    const cleaned = text.replace(/[^0-9]/g, ''); 
+    setHeight(cleaned);
+  };
+
+  const handleWeightChange = (text: string) => {
+    const cleaned = text.replace(/[^0-9]/g, '');
+    setWeight(cleaned);
+  };
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') setShowPicker(false);
+    if (selectedDate) {
+      setDate(selectedDate);
+      const formattedDate = `${selectedDate.getFullYear()}년 ${selectedDate.getMonth() + 1}월 ${selectedDate.getDate()}일`;
+      setBirth(formattedDate);
+    }
+  };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -29,7 +50,6 @@ const [gender, setGender] = useState(''); // '남성' 또는 '여성'
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.flex}
         >
-          {/* 상단 헤더 */}
           <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <Ionicons name="chevron-back" size={28} color={main_navy} />
@@ -39,42 +59,24 @@ const [gender, setGender] = useState(''); // '남성' 또는 '여성'
           <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
             <Text style={styles.title}>기본 정보 입력하기</Text>
 
-            {/* 이름 입력 */}
+       
             <View style={styles.inputSection}>
               <Text style={styles.label}>이름</Text>
-              <View style={styles.inputBox}>
-                <TextInput
-                  style={styles.inputText}
-                  value={name}
-                  onChangeText={setName}
-                  placeholder="이름을 입력해주세요"
-                />
+              <View style={[styles.inputBox, { backgroundColor: '#ffffff' }]}>
+                <TextInput style={styles.inputtextbox} value={name} editable={false} />
               </View>
             </View>
 
-            {/* 성별 선택 */}
+          
             <View style={styles.inputSection}>
               <Text style={styles.label}>성별</Text>
               <View style={styles.genderContainer}>
-                <TouchableOpacity 
-                  style={styles.radioButton} 
-                  onPress={() => setGender('남성')}
-                >
-                  <Ionicons 
-                    name={gender === '남성' ? "radio-button-on" : "radio-button-off"} 
-                    size={20} color={main_navy} 
-                  />
+                <TouchableOpacity style={styles.radioButton} onPress={() => setGender('남성')}>
+                  <Ionicons name={gender === '남성' ? "radio-button-on" : "radio-button-off"} size={22} color={main_navy} />
                   <Text style={styles.radioLabel}>남성</Text>
                 </TouchableOpacity>
-
-                <TouchableOpacity 
-                  style={styles.radioButton} 
-                  onPress={() => setGender('여성')}
-                >
-                  <Ionicons 
-                    name={gender === '여성' ? "radio-button-on" : "radio-button-off"} 
-                    size={20} color={main_navy} 
-                  />
+                <TouchableOpacity style={styles.radioButton} onPress={() => setGender('여성')}>
+                  <Ionicons name={gender === '여성' ? "radio-button-on" : "radio-button-off"} size={22} color={main_navy} />
                   <Text style={styles.radioLabel}>여성</Text>
                 </TouchableOpacity>
               </View>
@@ -83,16 +85,10 @@ const [gender, setGender] = useState(''); // '남성' 또는 '여성'
             {/* 생년월일 */}
             <View style={styles.inputSection}>
               <Text style={styles.label}>생년월일</Text>
-              <View style={[styles.inputBox, styles.rowBetween]}>
-                <TextInput
-                  style={styles.inputText}
-                  value={birth}
-                  onChangeText={setBirth}
-                  placeholder="생년월일을 선택해주세요"
-                  editable={true} 
-                />
-                <Ionicons name="chevron-down" size={20} color="#CCC" />
-              </View>
+              <TouchableOpacity style={[styles.inputBox, styles.rowBetween]} onPress={() => setShowPicker(true)}>
+                <Text style={[styles.inputText, !birth && { color: '#ccc' }]}>{birth || "생년월일을 선택해주세요"}</Text>
+                <Ionicons name="calendar-outline" size={24} color={main_navy} /> 
+              </TouchableOpacity>
             </View>
 
             {/* 키 */}
@@ -102,39 +98,63 @@ const [gender, setGender] = useState(''); // '남성' 또는 '여성'
                 <TextInput
                   style={[styles.inputText, { flex: 1 }]}
                   value={height}
-                  onChangeText={setHeight}
-                  keyboardType="numeric"
+                  onChangeText={handleHeightChange}
+                  keyboardType="number-pad"
+                  maxLength={3}
+                  placeholder="000"
+                  placeholderTextColor="#CCC"
                 />
                 <Text style={styles.unitText}>cm</Text>
               </View>
             </View>
 
-            {/* 몸무게 */}
+   
             <View style={styles.inputSection}>
               <Text style={styles.label}>몸무게</Text>
               <View style={[styles.inputBox, styles.rowEnd]}>
                 <TextInput
                   style={[styles.inputText, { flex: 1 }]}
                   value={weight}
-                  onChangeText={setWeight}
-                  keyboardType="numeric"
+                  onChangeText={handleWeightChange}
+                  keyboardType="number-pad"
+                  maxLength={3}
+                  placeholder="000"
+                  placeholderTextColor="#CCC"
                 />
                 <Text style={styles.unitText}>kg</Text>
               </View>
             </View>
 
-            {/* 다음 버튼 */}
             <TouchableOpacity 
-              style={[
-                styles.nextButton, 
-                { opacity: name && gender && birth && height && weight ? 1 : 0.5 }
-              ]}
-              disabled={!(name && gender && birth && height && weight)}
-              onPress={() => router.push('/(auth)/SignUpScreen/SignUpScreen5/SignUpScreen5')}
+              style={[styles.nextButton, { backgroundColor: (gender && birth && height && weight) ? main_navy : '#E0E0E0' }]}
+              disabled={!(gender && birth && height && weight)}
+              onPress={() => router.push('/(auth)/SignUpScreen/SignUpScreen5/SignUpScreen5' as any)}
             >
-              <Text style={styles.nextButtonText}>다음</Text>
+              <Text style={[styles.nextButtonText, { color: (gender && birth && height && weight) ? '#FFF' : '#888' }]}>다음</Text>
             </TouchableOpacity>
           </ScrollView>
+
+    
+          <Modal transparent={true} visible={showPicker} animationType="slide">
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <TouchableOpacity onPress={() => setShowPicker(false)}>
+                    <Text style={styles.confirmText}>확인</Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePicker
+                  value={date}
+                  mode="date"
+                  display="spinner"
+                  onChange={onDateChange}
+                  locale="ko-KR"
+                  minimumDate={new Date(1900, 0, 1)}
+                  maximumDate={new Date()}
+                />
+              </View>
+            </View>
+          </Modal>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </TouchableWithoutFeedback>
@@ -146,31 +166,31 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: { paddingHorizontal: 16, paddingVertical: 10 },
   backButton: { padding: 4 },
-  scrollContent: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 40 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#000', marginBottom: 30 },
+  scrollContent: { paddingHorizontal: 24, paddingTop: 10, paddingBottom: 40 },
+  title: { fontSize: 30, fontWeight: 'bold', color: main_navy, marginBottom: 30 },
   inputSection: { marginBottom: 20 },
-  label: { fontSize: 16, fontWeight: '600', color: '#000', marginBottom: 8 },
+  label: { fontSize: 20, fontWeight: 'bold', color: main_navy, marginBottom: 8 },
   inputBox: {
-    borderWidth: 1.5,
-    borderColor: '#E0E0E0',
+    borderWidth: 2,
+    borderColor: main_navy,
     borderRadius: 12,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
     backgroundColor: '#FFF',
   },
-  inputText: { fontSize: 16, color: '#000' },
-  genderContainer: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 5 },
-  radioButton: { flexDirection: 'row', alignItems: 'center', marginLeft: 20 },
-  radioLabel: { fontSize: 16, marginLeft: 6, color: '#000' },
+  inputtextbox: { fontSize: 18, color: main_navy },
+  inputText: { fontSize: 18, color: main_navy },
+  genderContainer: { flexDirection: 'row', justifyContent: 'flex-start', marginTop: 5 },
+  radioButton: { flexDirection: 'row', alignItems: 'center', marginRight: 30 },
+  radioLabel: { fontSize: 20, marginLeft: 8, color: '#000000', fontWeight: 'bold' },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   rowEnd: { flexDirection: 'row', alignItems: 'center' },
-  unitText: { fontSize: 16, color: '#000', marginLeft: 8 },
-  nextButton: {
-    backgroundColor: '#E0E0E0', // 초기값 회색
-    paddingVertical: 16,
-    borderRadius: 30,
-    alignItems: 'center',
-    marginTop: 30,
-  },
-  nextButtonText: { color: '#888', fontSize: 18, fontWeight: 'bold' },
+  unitText: { fontSize: 20, color: main_navy, marginLeft: 8, fontWeight: 'bold' },
+  nextButton: { paddingVertical: 18, borderRadius: 30, alignItems: 'center', marginTop: 20
+},
+  nextButtonText: { fontSize: 20, fontWeight: 'bold' },
+  modalContainer: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 40 },
+  modalHeader: { padding: 15, alignItems: 'flex-end', borderBottomWidth: 0.5, borderBottomColor: '#EEE' },
+  confirmText: { fontSize: 22, fontWeight: 'bold', color: main_navy },
 });

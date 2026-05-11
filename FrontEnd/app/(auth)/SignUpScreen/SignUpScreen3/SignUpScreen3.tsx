@@ -33,6 +33,8 @@ export default function LoginScreen() {
             <View style={styles.input}>
               <TextInput
                 style={{ fontSize: 16, color: '#000' }}
+                value = {name}
+                onChangeText={(text) => setName(text)}
                 placeholder="이름을 입력해주세요"
                 autoCapitalize="none"
               />
@@ -44,7 +46,7 @@ export default function LoginScreen() {
   style={styles.loginButton}
   onPress={() => router.push({
     pathname: '/(auth)/SignUpScreen/SignUpScreen4/SignUpScreen4',
-    params: { userName: name } // 사용자가 입력한 name을 userName이라는 이름으로 전달
+    params: { username: name } // 사용자가 입력한 name을 userName이라는 이름으로 전달
   } as any
   )}
 >
@@ -93,11 +95,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-  borderWidth: 1.5,           // 1. 선 두께 (사방)
-  borderColor: 'main_navy',    // 2. 기본 테두리 색상
-  borderRadius: 12,          // 3. 박스 모서리 곡률
+  borderWidth: 1.5,           
+  borderColor: 'main_navy',   
+  borderRadius: 12,          
   paddingVertical: 12,
-  paddingHorizontal: 16,     // 4. 박스 안쪽 좌우 여백 (필수)
+  paddingHorizontal: 16,     
   fontSize: 16,
   color: 'main_navy',
 },

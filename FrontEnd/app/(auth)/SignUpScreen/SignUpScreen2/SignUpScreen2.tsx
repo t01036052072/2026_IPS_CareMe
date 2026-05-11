@@ -12,7 +12,7 @@ export default function SignUpScreen2() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState(false);
 
-  // 비밀번호 확인 체크 함수
+
   const handleConfirmPasswordChange = (text: string) => {
     setConfirmPassword(text);
     if (text.length > 0 && password !== text) {
@@ -29,7 +29,7 @@ export default function SignUpScreen2() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.flex}
         >
-          {/* 상단 헤더 영역 */}
+  
           <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <Ionicons name="chevron-back" size={28} color={main_navy} />
@@ -39,7 +39,7 @@ export default function SignUpScreen2() {
           <View style={styles.content}>
             <Text style={styles.title}>회원가입하기</Text>
             
-            {/* 비밀번호 입력창 */}
+       
             <View style={styles.inputContainer}>
               <Text style={styles.label}>비밀번호</Text>
               <TextInput
@@ -51,7 +51,7 @@ export default function SignUpScreen2() {
               />
             </View>
 
-            {/* 비밀번호 확인 입력창 */}
+
             <View style={styles.inputContainer}>
               <Text style={styles.label}>비밀번호 확인</Text>
               <TextInput
@@ -69,7 +69,6 @@ export default function SignUpScreen2() {
               )}
             </View>
 
-            {/* 다음 버튼 */}
             <TouchableOpacity 
               style={[
                 styles.loginButton, 
@@ -125,11 +124,11 @@ const styles = StyleSheet.create({
   },
   
   input: {
-  borderWidth: 1.5,           // 1. 선 두께 (사방)
-  borderColor: '#main_navy',    // 2. 기본 테두리 색상
-  borderRadius: 12,          // 3. 박스 모서리 곡률
+  borderWidth: 1.5,          
+  borderColor: '#main_navy',   
+  borderRadius: 12,          
   paddingVertical: 12,
-  paddingHorizontal: 16,     // 4. 박스 안쪽 좌우 여백 (필수)
+  paddingHorizontal: 16,     
   fontSize: 16,
   color: 'main_navy',
 },
