@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 
-// 1. 색상 변수를 미리 선언해둡니다.
 const main_navy = '#00246D'; 
 
 export default function StartScreen() {
@@ -34,7 +33,6 @@ export default function StartScreen() {
           <View style={styles.line} />
         </View>
 
-        {/* 2. 오타 수정: TouchableOpacit. -> TouchableOpacity */}
         <TouchableOpacity 
           style={styles.signupButton}
               onPress={() => router.push('/(auth)/SignUpScreen/SignUpScreen1/SignUpScreen1')}
@@ -66,7 +64,7 @@ const styles = StyleSheet.create({
   mainTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: main_navy, // 3. 따옴표 없이 변수명 그대로 사용
+    color: main_navy,
     marginBottom: 12,
   },
   subTitle: {

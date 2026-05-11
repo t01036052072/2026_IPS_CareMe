@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, SafeAreaView, 
-  KeyboardAvoidingView, Platform, ScrollView, Modal, Alert 
+  KeyboardAvoidingView, Platform, ScrollView, Modal
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,13 +20,17 @@ export default function SignUpScreen5() {
   const [select1, setSelect1] = useState('');
   const [select2, setSelect2] = useState('');
   const [select3, setSelect3] = useState('');
+  const [isSkipModalVisible, setIsSkipModalVisible] = useState(false); 
 
   const [isDiseaseModalVisible, setIsDiseaseModalVisible] = useState(false);
   const [isFamilyModalVisible, setIsFamilyModalVisible] = useState(false);
 
-  // 데이터 저장 구조 분리
   const [diseaseData, setDiseaseData] = useState<{[key: string]: {diagnosed: boolean, treated: boolean}}>({});
-  const [familyData, setFamilyData] = useState<string[]>([]); // 가족력은 단순 배열
+  const [familyData, setFamilyData] = useState<string[]>([]);
+
+  const handleSkip = () => {
+    setIsSkipModalVisible(true); 
+  };
 
   const handleSelect1 = (val: string) => {
     setSelect1(val);
@@ -36,21 +40,6 @@ export default function SignUpScreen5() {
   const handleSelect2 = (val: string) => {
     setSelect2(val);
     if (val === '예') setIsFamilyModalVisible(true);
-  };
-
-  const handleSkip = () => {
-    Alert.alert(
-      "정말 건너뛰시겠습니까?",
-      "건강 정보를 입력해주시면 더 정확한 맞춤 건강 분석을 해드릴 수 있어요!",
-      [
-        { text: "다시 작성하기", style: "cancel" },
-        { 
-          text: "정말 건너뛰기", 
-          onPress: () => router.replace('/HomeScreen' as any),
-          style: "destructive" 
-        }
-      ]
-    );
   };
 
   const toggleDisease = (name: string, type: 'diagnosed' | 'treated') => {
@@ -69,13 +58,17 @@ export default function SignUpScreen5() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.progressContainer}><View style={[styles.progressBar, { width: '83%' }]} /></View>
-      <View style={styles.header}><TouchableOpacity onPress={() => router.back()}><Ionicons name="chevron-back" size={28} color={main_navy} /></TouchableOpacity></View>
+      
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={28} color={main_navy} />
+        </TouchableOpacity>
+      </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>건강 정보 입력하기</Text>
         <Text style={styles.subTitle}>질환력</Text>
 
-        {/* 질문 1: 질환력 */}
         <View style={styles.inputSection}>
           <Text style={styles.label}>현재 약물 치료 중인 질병이 있나요?</Text>
           <View style={styles.radioGroup}>
@@ -88,7 +81,9 @@ export default function SignUpScreen5() {
           </View>
           {select1 === '예' && Object.keys(diseaseData).length > 0 && (
             <View style={styles.summaryBox}>
-              <Text style={styles.summaryText}>선택된 항목: {Object.entries(diseaseData).filter(([_, v]) => v.diagnosed || v.treated).map(([k, v]) => `✔️ ${k}`).join(', ')}</Text>
+              <Text style={styles.summaryText}>
+                선택된 항목: {Object.entries(diseaseData).filter(([_, v]) => v.diagnosed || v.treated).map(([k]) => `✔️ ${k}`).join(', ')}
+              </Text>
             </View>
           )}
         </View>
@@ -157,7 +152,7 @@ export default function SignUpScreen5() {
         </View>
       </Modal>
 
-=      <Modal visible={isFamilyModalVisible} transparent animationType="slide">
+      <Modal visible={isFamilyModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.popupBox}>
             <Text style={styles.popupTitle}>해당하는 가족력을 모두 선택해주세요</Text>
@@ -174,6 +169,35 @@ export default function SignUpScreen5() {
           </View>
         </View>
       </Modal>
+
+      <Modal visible={isSkipModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.popupBox, { height: 'auto', paddingVertical: 30 }]}>
+            <Text style={styles.customSkipTitle}>정말 건너뛰시겠습니까?</Text>
+            <Text style={styles.customSkipContent}>
+              건강 정보를 등록해주시면{'\n'}더 정확한 맞춤 건강 분석을{'\n'}해드릴 수 있어요!
+            </Text>
+            <View style={styles.popupFooter}>
+              <TouchableOpacity 
+                style={[styles.cancelBtn, { backgroundColor: main_navy }]} 
+                onPress={() => setIsSkipModalVisible(false)}
+              >
+                <Text style={[styles.footerText, { color: "#ffffff" }]}>다시 작성</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.confirmBtn} 
+                onPress={() => {
+                  setIsSkipModalVisible(false);
+                  router.replace('/HomeScreen' as any);
+                }}
+              >
+                <Text style={styles.footerText}>건너뛰기</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -191,8 +215,14 @@ const styles = StyleSheet.create({
   radioGroup: { flexDirection: 'row' },
   radioButton: { flexDirection: 'row', alignItems: 'center', marginRight: 40 },
   radioLabel: { fontSize: 20, marginLeft: 8, fontWeight: 'bold' },
-  summaryBox: { marginTop: 10, padding: 12, backgroundColor: '#F8F9FA', borderRadius: 10, borderLeftWidth: 4, borderLeftColor: main_navy },
-  summaryText: { fontSize: 16, color: main_navy, fontWeight: 'bold' },
+  
+  summaryBox: { 
+    marginTop: 10, 
+    padding: 15, 
+    backgroundColor: '#F1F4F9', 
+    borderRadius: 15,
+  },
+  summaryText: { fontSize: 17, color: main_navy, fontWeight: 'bold', lineHeight: 24 },
   
   bottomRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
   skipBtn: { width: '30%', paddingVertical: 18, borderRadius: 30, borderWidth: 2, borderColor: red_cancel, alignItems: 'center' },
@@ -216,6 +246,21 @@ const styles = StyleSheet.create({
 
   popupFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
   cancelBtn: { width: '35%', padding: 15, borderRadius: 30, backgroundColor: red_cancel, alignItems: 'center' },
-  confirmBtn: { width: '60%', padding: 15, borderRadius: 30, backgroundColor: main_navy, alignItems: 'center' },
-  footerText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' }
+  confirmBtn: { width: '60%', padding: 15, borderRadius: 30, backgroundColor: red_cancel, alignItems: 'center' },
+  footerText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+
+  customSkipTitle: {
+    fontSize: 26, 
+    fontWeight: 'bold',
+    color: red_cancel, 
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  customSkipContent: {
+    fontSize: 20, 
+    color: '#000000',
+    textAlign: 'center',
+    lineHeight: 26,
+    marginBottom: 10,
+  },
 });

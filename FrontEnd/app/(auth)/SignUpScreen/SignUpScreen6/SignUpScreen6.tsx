@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, SafeAreaView, 
-  ScrollView, Alert 
+  ScrollView, Alert, Modal
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+
 
 const main_navy = '#00246D';
 const light_gray = '#E0E0E0';
@@ -17,6 +18,8 @@ const DRINK_OPTIONS = [
 ];
 
 export default function SignUpScreen6() {
+  const [isSkipModalVisible, setIsSkipModalVisible] = useState(false);
+  const [isFinishModalVisible, setIsFinishModalVisible] = useState(false); 
   const router = useRouter();
   const params = useLocalSearchParams(); 
 
@@ -25,36 +28,21 @@ export default function SignUpScreen6() {
   const [smoke3, setSmoke3] = useState('');
   const [drinkFreq, setDrinkFreq] = useState('');
 
-  const handleSkip = () => {
-    Alert.alert(
-      "정말 건너뛰시겠습니까?",
-      "흡연 및 음주 정보를 알려주시면 더 정확한 맞춤 건강 분석을 해드릴 수 있어요!",
-      [
-        { text: "다시 작성하기", style: "cancel" },
-        { 
-          text: "정말 건너뛰기", 
-          onPress: () => router.replace('/HomeScreen' as any), // 홈 화면으로 이동
-          style: "destructive" 
-        }
-      ]
-    );
+   const handleSkip = () => {
+    setIsSkipModalVisible(true); 
   };
 
   const handleFinish = () => {
-    const finalData = {
-      ...params,
-      smoke1, smoke2, smoke3, drinkFreq
-    };
-    console.log("최종 가입 데이터:", finalData);
-    
-    Alert.alert("가입 완료!", "규린님의 건강 관리를 위한 모든 준비가 끝났습니다.", [
-      { text: "확인", onPress: () => router.replace('/HomeScreen' as any) }
-    ]);
+  const finalData = {
+    ...params,
+    smoke1, smoke2, smoke3, drinkFreq
   };
+  console.log("최종 가입 데이터:", finalData);
+  
+  setIsFinishModalVisible(true);  }
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 🔝 진행률 표시 바 (100% 완료) */}
       <View style={styles.progressContainer}>
         <View style={[styles.progressBar, { width: '100%' }]} /> 
       </View>
@@ -69,7 +57,7 @@ export default function SignUpScreen6() {
         <Text style={styles.title}>건강 정보 입력하기</Text>
         <Text style={styles.subTitle}>흡연 및 음주</Text>
 
-        {/* 질문 1: 일반담배 */}
+
         <View style={styles.inputSection}>
           <Text style={styles.label}>지금까지 평생 총 5갑(100개비) 이상의{'\n'}일반담배(궐련)를 피운 적이 있나요?</Text>
           <View style={styles.radioGroup}>
@@ -84,7 +72,7 @@ export default function SignUpScreen6() {
           </View>
         </View>
 
-        {/* 질문 2: 궐련형 전담 */}
+
         <View style={styles.inputSection}>
           <Text style={styles.label}>지금까지 궐련형 전자담배(아이코스, 글로, 릴 등)를 사용한 적이 있나요?</Text>
           <View style={styles.radioGroup}>
@@ -154,12 +142,75 @@ export default function SignUpScreen6() {
             </Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+        </ScrollView>
+
+
+        <Modal visible={isSkipModalVisible} transparent animationType="fade">
+                <View style={styles.modalOverlay}>
+                  <View style={[styles.popupBox, { height: 'auto', paddingVertical: 30 }]}>
+                    <Text style={styles.customSkipTitle}>정말 건너뛰시겠습니까?</Text>
+                    <Text style={styles.customSkipContent}>
+                      건강 정보를 등록해주시면{'\n'}더 정확한 맞춤 건강 분석을{'\n'}해드릴 수 있어요!
+                    </Text>
+                    <View style={styles.popupFooter}>
+                      <TouchableOpacity 
+                        style={[styles.cancelBtn, { backgroundColor: main_navy }]} 
+                        onPress={() => setIsSkipModalVisible(false)}
+                      >
+                        <Text style={[styles.footerText, { color: "#ffffff" }]}>다시 작성</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.confirmBtn} 
+                        onPress={() => {
+                          setIsSkipModalVisible(false);
+                          router.replace('/HomeScreen' as any);
+                        }}
+                      >
+                        <Text style={styles.footerText}>건너뛰기</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </Modal>
+
+
+              <Modal visible={isFinishModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.popupBox, { height: 'auto', paddingVertical: 40 }]}>
+            
+            <Ionicons name="checkmark-circle" size={60} color={main_navy} style={{ alignSelf: 'center', marginBottom: 15 }} />
+            
+            <Text style={styles.customFinishTitle}>가입 완료!</Text>
+            
+            <Text style={styles.customSkipContent}>
+              건강 관리를 위한{'\n'}모든 준비가 끝났습니다.
+            </Text>
+
+            <View style={{ marginTop: 10 }}>
+              <TouchableOpacity 
+                style={[styles.FinishBtn, { width: '100%' }]} 
+                onPress={() => {
+                  setIsFinishModalVisible(false);
+                  router.replace('/HomeScreen' as any);
+                }}
+              >
+                <Text style={styles.footerText}>시작하기</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+        
+
     </SafeAreaView>
   );
 }
 
+
 const styles = StyleSheet.create({
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
+  popupBox: { width: '92%', height: '70%', backgroundColor: '#FFF', borderRadius: 25, padding: 20 },
+  popupTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   container: { flex: 1, backgroundColor: '#FFFFFF' },
   progressContainer: { height: 6, backgroundColor: '#F0F0F0' },
   progressBar: { height: '100%', backgroundColor: main_navy },
@@ -194,4 +245,35 @@ const styles = StyleSheet.create({
   skipBtnText: { color: red_cancel, fontSize: 16, fontWeight: 'bold' },
   nextBtn: { width: '65%', paddingVertical: 18, borderRadius: 30, alignItems: 'center' },
   nextBtnText: { fontSize: 20, fontWeight: 'bold' },
+
+
+  popupFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
+  cancelBtn: { width: '35%', padding: 15, borderRadius: 30, backgroundColor: red_cancel, alignItems: 'center' },
+  confirmBtn: { width: '60%', padding: 15, borderRadius: 30, backgroundColor: red_cancel, alignItems: 'center' },
+  footerText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  FinishBtn: { width: '30%', paddingVertical: 18, borderRadius: 30, borderWidth: 2, backgroundColor: main_navy, alignItems: 'center' },
+
+  customSkipTitle: {
+    fontSize: 26, 
+    fontWeight: 'bold',
+    color: red_cancel, 
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  customSkipContent: {
+    fontSize: 20, 
+    color: '#000000',
+    textAlign: 'center',
+    lineHeight: 26,
+    marginBottom: 10,
+  },
+
+    customFinishTitle: {
+    fontSize: 26, 
+    fontWeight: 'bold',
+    color: main_navy, 
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+
 });

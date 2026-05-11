@@ -17,7 +17,6 @@ export default function LoginScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.flex}
         >
-          {/* 상단 헤더 영역: 뒤로가기 버튼 */}
           <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <Ionicons name="chevron-back" size={28} color={main_navy} />
@@ -27,7 +26,6 @@ export default function LoginScreen() {
           <View style={styles.content}>
             <Text style={styles.title}>로그인하기</Text>
             
-            {/* 이메일 입력창 */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>아이디</Text>
               <TextInput
@@ -40,7 +38,6 @@ export default function LoginScreen() {
               />
             </View>
 
-            {/* 비밀번호 입력창 */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>비밀번호</Text>
               <TextInput
@@ -48,11 +45,10 @@ export default function LoginScreen() {
                 placeholder="비밀번호를 입력해주세요"
                 value={password}
                 onChangeText={setPassword}
-                secureTextEntry // 비밀번호 가리기
+                secureTextEntry 
               />
             </View>
 
-            {/* 로그인 버튼 */}
             <TouchableOpacity 
               style={[styles.loginButton, { opacity: email && password ? 1 : 0.5 }]}
               disabled={!email || !password}
@@ -60,7 +56,6 @@ export default function LoginScreen() {
               <Text style={styles.loginButtonText}>로그인</Text>
             </TouchableOpacity>
 
-            {/* 회원가입 유도 영역 */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>아직 회원이 아니신가요? </Text>
               <TouchableOpacity onPress={() => router.push('/(auth)/SignUpScreen/SignUpScreen1/SignUpScreen1')}>
