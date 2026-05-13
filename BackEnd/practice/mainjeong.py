@@ -2,17 +2,25 @@
 from fastapi import FastAPI, HTTPException, File, UploadFile
 from signin import UserCreate, LoginRequest
 import os
-
+import notifications 
+# 이렇게 임포트하는 순간 notifications.py 안의 scheduler.start()가 실행됨
 from pills import router as pill_router
 from pill_alarm import router as pill_alarm_router
 from hospital_appointment import router as appointment_router
 
+
+from database import engine
+import models # models.py 임포트
 
 app = FastAPI(title="CareMe Medication Service")
 app.include_router(pill_router)
 app.include_router(pill_alarm_router)
 app.include_router(appointment_router)
 
+
+
+# 앱 시작 시 실제 MySQL에 테이블 생성
+models.Base.metadata.create_all(bind=engine)
 
 # --- 설정 및 초기화 ---
 UPLOAD_DIR = "./uploads"

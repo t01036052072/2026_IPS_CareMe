@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, field_validator
 from typing import List, Optional, Literal
+from datetime import date, timedelta
+from apscheduler.schedulers.background import BackgroundScheduler
 import re
 
 #모든 주소 앞에 자동으로 /medications가 붙는 것 (= 라우터 설정)
@@ -20,7 +22,8 @@ class MedicationCreate(BaseModel):
     period:        Literal["오전", "오후"]   # 오전/오후 외 값 자동 에러
     time:          str#시간                       # "HH:MM" 예: "08:30"
     count:         int#갯수
-    duration_days: int#기간
+    duration_days: int#기간\
+    start_date:    date
 
     @field_validator("time")
     #시간 범위 제한 00:00 구조여야 하며 시간은 01~12, 분은 00:59까지 허용
@@ -59,6 +62,8 @@ class MedicationDetail(BaseModel):
     time_label:    str#보여주기용 12시간 형식 ex. "오전 08:30" 형식
     count:         int
     duration_days: int
+    start_date:    date#등록 시작일
+    end_date:      date#만료일 (start_date + duraiondays - 1) 
 
 #> 버튼 누르기 전 목록 화면 (팝업 창 띄우기 전이기 때문에 이름과 시간 정보만)
 class MedicationSummary(BaseModel):
@@ -88,8 +93,35 @@ def _make_detail(med: dict) -> MedicationDetail:
     return MedicationDetail(
         id=med["id"], user_id=med["user_id"], name=med["name"],
         period=med["period"], time=med["time"], time_label=time_label,
-        count=med["count"], duration_days=med["duration_days"],
+        count=med["count"], duration_days=med["duration_days"],start_date=med["start_date"], 
+        end_date=med["start_date"] + timedelta(days=med["duration_days"] - 1), 
     )
+
+
+# ── 자동 삭제 스케줄러 ────────────────────────────────────
+def remove_expired_medications():
+    """매일 자정에 실행 — end_date를 지난 일정 자동 삭제"""
+    global medications_db
+    today = date.today()
+    before = len(medications_db)
+
+    medications_db = [
+        m for m in medications_db
+        # end_date가 오늘보다 크거나 같으면 유효
+        if m["end_date"] >= today
+    ]
+
+    removed = before - len(medications_db)
+    if removed:
+        print(f"[Scheduler] 만료된 복약 일정 {removed}건 자동 삭제됨 ({today})")
+
+
+
+# 스케줄러 등록 (매일 00:00 실행)
+scheduler = BackgroundScheduler()
+scheduler.add_job(remove_expired_medications, "cron", hour=0, minute=0)
+scheduler.start()
+
 
 
 # 1. 복약 일정 조회
@@ -128,6 +160,7 @@ def create_medication(payload: MedicationCreate):
         "time":          time_24h,
         "count":         payload.count,
         "duration_days": payload.duration_days,
+        "start_date":    payload.start_date,
     }
     #사용자가 입력한 값이 담긴 리스트 추가
     medications_db.append(med)
