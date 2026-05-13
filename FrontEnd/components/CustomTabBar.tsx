@@ -21,7 +21,7 @@ export default function CustomTabBar() {
 
   const tabs = [
     // 약 아이콘
-    { name: 'Pill', path: '/pill', 
+    { name: '약 검색', path: '/pill', 
       icon: (
         <Pill
           size = {24}
@@ -31,18 +31,18 @@ export default function CustomTabBar() {
     },
 
     // 건강 아이콘
-    { name: 'Health', path: '/healthcare',
+    { name: '건강 관리', path: '/healthcare',
       icon: <HealthTab width={24} height={24} />
     },
 
     // 홈 아이콘
     { name: 'Home', path: '/',
-      icon: <House size={24} color={pathname === '/,' ? MAIN_NAVY : GRAY} />,
+      icon: <House size={24} color={pathname === '/,' ? MAIN_NAVY : WHITE} />,
       isCenter: true
     },
 
     // 달력 아이콘
-    { name: 'Calendar', path: '/calendar',
+    { name: '일정 관리', path: '/calendar',
       icon: (
         <CalendarDays
           size={24}
@@ -52,7 +52,7 @@ export default function CustomTabBar() {
     },
 
     // 챗봇 아이콘
-    { name: 'Chatbot', path: '/chatbot',
+    { name: '케미 상담', path: '/chatbot',
       icon: (
         <MessageCircleMore
           size={24}
