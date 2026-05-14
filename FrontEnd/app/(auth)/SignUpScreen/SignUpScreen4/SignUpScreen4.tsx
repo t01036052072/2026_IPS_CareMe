@@ -98,12 +98,12 @@ export default function SignUpScreen4() {
             <View style={styles.inputSection}>
               <Text style={styles.label}>성별</Text>
               <View style={styles.genderContainer}>
-                <TouchableOpacity style={styles.radioButton} onPress={() => setGender('남성')}>
-                  <Ionicons name={gender === '남성' ? "radio-button-on" : "radio-button-off"} size={22} color={main_navy} />
+                <TouchableOpacity style={styles.radioButton} onPress={() => setGender('남자')}>
+                  <Ionicons name={gender === '남자' ? "radio-button-on" : "radio-button-off"} size={22} color={main_navy} />
                   <Text style={styles.radioLabel}>남성</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.radioButton} onPress={() => setGender('여성')}>
-                  <Ionicons name={gender === '여성' ? "radio-button-on" : "radio-button-off"} size={22} color={main_navy} />
+                <TouchableOpacity style={styles.radioButton} onPress={() => setGender('여자')}>
+                  <Ionicons name={gender === '여자' ? "radio-button-on" : "radio-button-off"} size={22} color={main_navy} />
                   <Text style={styles.radioLabel}>여성</Text>
                 </TouchableOpacity>
               </View>
