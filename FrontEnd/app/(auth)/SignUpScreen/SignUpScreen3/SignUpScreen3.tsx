@@ -1,0 +1,120 @@
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, SafeAreaView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+
+const main_navy = '#00246D';
+const error_red = '#D32F2F';
+
+export default function LoginScreen() {
+  const router = useRouter();
+  const [name, setName] = useState('');
+  
+
+  return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <SafeAreaView style={styles.container}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.flex}
+        >
+          {/* 상단 헤더 영역 */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={28} color={main_navy} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.content}>
+            <Text style={styles.title}>회원가입하기</Text>
+            <Text style={styles.label}>이름</Text>
+
+            {/* 이메일 입력창 */}
+            <View style={styles.input}>
+              <TextInput
+                style={{ fontSize: 16, color: '#000' }}
+                value = {name}
+                onChangeText={(text) => setName(text)}
+                placeholder="이름을 입력해주세요"
+                autoCapitalize="none"
+              />
+             
+            </View>
+          
+            {/* 로그인 버튼 (기존 디자인 유지) */}
+            <TouchableOpacity 
+  style={styles.loginButton}
+  onPress={() => router.push({
+    pathname: '/(auth)/SignUpScreen/SignUpScreen4/SignUpScreen4',
+    params: { username: name } // 사용자가 입력한 name을 userName이라는 이름으로 전달
+  } as any
+  )}
+>
+  <Text style={styles.loginButtonText}>다음</Text>
+</TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  flex: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  backButton: {
+    padding: 4,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: main_navy,
+    marginBottom: 40,
+  },
+  inputContainer: {
+    marginBottom: 24,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: main_navy,
+    marginBottom: 8,
+  },
+  input: {
+  borderWidth: 1.5,           
+  borderColor: 'main_navy',   
+  borderRadius: 12,          
+  paddingVertical: 12,
+  paddingHorizontal: 16,     
+  fontSize: 16,
+  color: 'main_navy',
+},
+ 
+  loginButton: {
+    backgroundColor: main_navy,
+    paddingVertical: 16,
+    borderRadius: 30,
+    alignItems: 'center',
+    marginTop: 140,
+  },
+  loginButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  
+});
