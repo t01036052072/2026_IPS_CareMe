@@ -18,6 +18,12 @@ class UserTable(Base):
     is_b_hepatitis_carrier = Column(Boolean, default=False)
     medical_history = Column(Text, nullable=True)
 
+    # 🆕 라이프스타일 추가 필드
+    smoked_regular = Column(Boolean, default=False)       # 일반담배
+    used_heated_tobacco = Column(Boolean, default=False)  # 궐련형 전자담배
+    used_vaping = Column(Boolean, default=False)          # 액상형 전자담배
+    drinking_frequency = Column(String, nullable=True)     # 음주 빈도
+
 class DocumentTable(Base):
     __tablename__ = "documents"
     id = Column(Integer, primary_key=True, index=True)

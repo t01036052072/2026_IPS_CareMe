@@ -46,9 +46,15 @@ class UserCreate(BaseModel):
         if not re.search(r'[A-Za-z]', v) or not re.search(r'\d', v):
             raise ValueError('비밀번호는 영문자와 숫자를 모두 포함해야 합니다.')
         return v
+    
+    # 🆕 와이어프레임 기준 추가 필드
+    smoked_regular: bool
+    used_heated_tobacco: bool
+    used_vaping: bool
+    drinking_frequency: str  # "1회 미만", "1~2회" 등 문자열로 수집
 
 class LoginRequest(BaseModel):
-    email: Emailstr
+    email: EmailStr
     password: str
 
 # 3. 문서(진단서) 관련 스키마
