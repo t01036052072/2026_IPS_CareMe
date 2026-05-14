@@ -14,6 +14,7 @@ interface Schedule {
   title: string;
   time: string;
   alarm: string;
+  //수정함
 }
 
 const main_navy = '#00246D';
