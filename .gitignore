@@ -26,6 +26,9 @@ temp_*.png
 # 환경 변수 및 설정
 .env
 
+# frontend (React Native / Expo)    
+frontend/node_modules/
+frontend/.expo/
 # frontend (React Native / Expo)
 node_modules/
 .expo/
@@ -33,3 +36,8 @@ node_modules/
 # 개발 환경
 .vscode/
 
+
+# 민감한 정보 및 개인 정보 보호를 위해 제외
+.env
+__pycache__/
+serviceAccountKey.json
