@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, SafeAreaView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router'; 
 import { Ionicons } from '@expo/vector-icons';
 
 const main_navy = '#00246D';
@@ -8,10 +8,12 @@ const error_red = '#D32F2F';
 
 export default function SignUpScreen2() {
   const router = useRouter();
+// 넘어온 데이터 받기
+  const params = useLocalSearchParams(); 
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState(false);
-
 
   const handleConfirmPasswordChange = (text: string) => {
     setConfirmPassword(text);
@@ -29,7 +31,6 @@ export default function SignUpScreen2() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.flex}
         >
-  
           <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <Ionicons name="chevron-back" size={28} color={main_navy} />
@@ -39,7 +40,6 @@ export default function SignUpScreen2() {
           <View style={styles.content}>
             <Text style={styles.title}>회원가입하기</Text>
             
-       
             <View style={styles.inputContainer}>
               <Text style={styles.label}>비밀번호</Text>
               <TextInput
@@ -50,7 +50,6 @@ export default function SignUpScreen2() {
                 secureTextEntry
               />
             </View>
-
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>비밀번호 확인</Text>
@@ -75,10 +74,16 @@ export default function SignUpScreen2() {
                 { opacity: password && confirmPassword && !passwordError ? 1 : 0.5 }
               ]}
               disabled={!password || !confirmPassword || passwordError}
-            onPress={() => router.push('/(auth)/SignUpScreen/SignUpScreen3/SignUpScreen3')}
-
+            // 이메일, 비번 같이 보내기  
+              onPress={() => router.push({
+                pathname: '/(auth)/SignUpScreen/SignUpScreen3/SignUpScreen3',
+                params: { 
+                  ...params,      
+                  password: password 
+                }
+              } as any)}
             >
-              <Text style={styles.loginButtonText}>완료</Text>
+              <Text style={styles.loginButtonText}>다음</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -88,6 +93,15 @@ export default function SignUpScreen2() {
 }
 
 const styles = StyleSheet.create({
+  input: {
+    borderWidth: 1.5,          
+    borderColor: main_navy, 
+    borderRadius: 12,          
+    paddingVertical: 12,
+    paddingHorizontal: 16,     
+    fontSize: 16,
+    color: '#000', 
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -123,15 +137,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   
-  input: {
-  borderWidth: 1.5,          
-  borderColor: '#main_navy',   
-  borderRadius: 12,          
-  paddingVertical: 12,
-  paddingHorizontal: 16,     
-  fontSize: 16,
-  color: 'main_navy',
-},
 
   inputError: {
     borderColor: error_red,
