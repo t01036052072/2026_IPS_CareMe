@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, SafeAreaView, 
-  ScrollView, TextInput, Modal, Alert, KeyboardAvoidingView, Platform,
+  ScrollView, TextInput, Modal, KeyboardAvoidingView, Platform,
   Keyboard, TouchableWithoutFeedback 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useRouter } from 'expo-router'; 
 
 interface Schedule {
   id: number;
@@ -25,25 +26,27 @@ const initialSchedules: Schedule[] = [
 ];
 
 export default function HospitalCalendarScreen() {
+  const router = useRouter();
+  
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isMonthView, setIsMonthView] = useState(false); 
   const [schedules, setSchedules] = useState<Schedule[]>(initialSchedules);
-  
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editId, setEditId] = useState<number | null>(null);
-  
+  const [showYearMonthPicker, setShowYearMonthPicker] = useState(false);
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
+  const [alertMsg, setAlertMsg] = useState('');
+
   const [hospitalName, setHospitalName] = useState('');
   const [scheduleTime, setScheduleTime] = useState<Date | null>(null);
   const [alarmTime, setAlarmTime] = useState<Date | null>(null);
-  
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
   const [showAlarmPicker, setShowAlarmPicker] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
 
-  // 화면 빈 곳을 터치하면 꺼지도록 하는 함수
   const dismissAll = () => {
-    Keyboard.dismiss(); // 키보드 내리기
-    setShowSchedulePicker(false); // 시간 창 닫기
-    setShowAlarmPicker(false); // 알람 창 닫기
+    Keyboard.dismiss();
+    setShowSchedulePicker(false);
+    setShowAlarmPicker(false);
   };
 
   const formatDate = (date: Date) => date.toISOString().split('T')[0];
@@ -80,7 +83,6 @@ export default function HospitalCalendarScreen() {
     const month = selectedDate.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    
     const days = Array(firstDay).fill(null); 
     for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i));
     return days;
@@ -88,44 +90,36 @@ export default function HospitalCalendarScreen() {
 
   const handleSave = () => {
     if (!hospitalName.trim() || !scheduleTime) {
-      Alert.alert("알림", "병원명과 방문 시간을 모두 입력해주세요.");
+      setShowSchedulePicker(false);
+      setShowAlarmPicker(false);
+      setAlertMsg("병원명과 방문 시간을\n모두 입력해주세요.");
+      setIsAlertVisible(true);
       return;
     }
-    
-    let finalAlarm = alarmTime;
-    if (!finalAlarm) {
-      finalAlarm = new Date(scheduleTime);
-      finalAlarm.setHours(finalAlarm.getHours() - 3);
-    }
-
     const newEntry: Schedule = {
       id: editId || Date.now(),
       date: formatDate(selectedDate),
       title: hospitalName,
       time: formatTime(scheduleTime, ""),
-      alarm: formatTime(finalAlarm, ""),
+      alarm: formatTime(alarmTime, "미설정"),
     };
-
     if (editId) setSchedules(schedules.map(s => s.id === editId ? newEntry : s));
     else setSchedules([...schedules, newEntry]);
-
     setIsModalVisible(false);
-  };
-
-  const deleteSchedule = (id: number) => {
-    Alert.alert("일정 삭제", "이 일정을 정말 삭제하시겠습니까?", [
-      { text: "취소", style: "cancel" },
-      { text: "삭제하기", style: "destructive", onPress: () => {
-        setSchedules(schedules.filter(s => s.id !== id));
-        setIsModalVisible(false);
-      }}
-    ]);
+    setHospitalName('');
+    setScheduleTime(null);
+    setAlarmTime(null);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>병원 일정 관리</Text>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={32} color={main_navy} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>병원 일정 관리</Text>
+        </View>
         <TouchableOpacity style={styles.viewToggle} onPress={() => setIsMonthView(!isMonthView)}>
           <Ionicons name={isMonthView ? "list-outline" : "calendar-outline"} size={24} color={main_navy} />
           <Text style={styles.viewToggleText}>{isMonthView ? "주간 보기" : "전체 달력"}</Text>
@@ -134,37 +128,47 @@ export default function HospitalCalendarScreen() {
 
       <View style={styles.monthNavigator}>
         <TouchableOpacity onPress={() => changeDate(-1)}><Ionicons name="chevron-back" size={28} color={main_navy} /></TouchableOpacity>
-        <Text style={styles.monthText}>{selectedDate.getFullYear()}년 {selectedDate.getMonth() + 1}월</Text>
+        <TouchableOpacity style={styles.monthPickerBtn} onPress={() => setShowYearMonthPicker(true)}>
+          <Text style={styles.monthText}>{selectedDate.getFullYear()}년 {selectedDate.getMonth() + 1}월</Text>
+          <Ionicons name="chevron-down" size={18} color="#333" style={{ marginLeft: 5 }} />
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => changeDate(1)}><Ionicons name="chevron-forward" size={28} color={main_navy} /></TouchableOpacity>
       </View>
 
-      <View style={styles.calendarArea}>
+      <View style={styles.calendarArea}>       
         {!isMonthView ? (
           <View style={styles.weekContainer}>
-            {getWeekDays().map((item) => (
-              <TouchableOpacity 
-                key={item.fullStr}
-                style={[styles.dayBox, formatDate(selectedDate) === item.fullStr && styles.selectedDayBox]}
-                onPress={() => setSelectedDate(item.date)}
-              >
-                <Text style={[styles.dayText, formatDate(selectedDate) === item.fullStr && styles.selectedText]}>{['일','월','화','수','목','금','토'][item.date.getDay()]}</Text>
-                <Text style={[styles.dateText, formatDate(selectedDate) === item.fullStr && styles.selectedText]}>{item.dayNum}</Text>
-              </TouchableOpacity>
-            ))}
+            {getWeekDays().map((item, index) => {
+              const isSun = index === 0;
+              const isSat = index === 6;
+              const isSelected = formatDate(selectedDate) === item.fullStr;
+              return (
+                <TouchableOpacity key={item.fullStr} style={[styles.dayBox, isSelected && styles.selectedDayBox]} onPress={() => setSelectedDate(item.date)}>
+                  <Text style={[styles.dayText, isSun && { color: red_point }, isSat && { color: main_navy }, isSelected && { color: '#FFF' }]}>
+                    {['일','월','화','수','목','금','토'][index]}
+                  </Text>
+                  <Text style={[styles.dateText, isSun && { color: red_point }, isSat && { color: main_navy }, isSelected && { color: '#FFF' }]}>{item.dayNum}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         ) : (
           <View style={styles.monthContainer}>
             <View style={styles.monthGrid}>
-              {['일','월','화','수','목','금','토'].map((d, i) => <Text key={i} style={styles.monthWeekText}>{d}</Text>)}
-              {getMonthDays().map((d, index) => (
-                <TouchableOpacity 
-                  key={index} 
-                  style={[styles.monthDay, d && formatDate(d) === formatDate(selectedDate) && styles.selectedMonthDay]}
-                  onPress={() => d && setSelectedDate(d)}
-                >
-                  <Text style={[styles.monthDayText, d && formatDate(d) === formatDate(selectedDate) && styles.selectedText]}>{d ? d.getDate() : ""}</Text>
-                </TouchableOpacity>
+              {['일','월','화','수','목','금','토'].map((d, i) => (
+                <Text key={i} style={[styles.monthWeekText, i === 0 && { color: red_point }, i === 6 && { color: main_navy }]}>{d}</Text>
               ))}
+              {getMonthDays().map((d, index) => {
+                const isSelected = d && formatDate(d) === formatDate(selectedDate);
+                const dayOfWeek = index % 7;
+                return (
+                  <TouchableOpacity key={index} style={[styles.monthDay, isSelected && styles.selectedMonthDay]} onPress={() => d && setSelectedDate(d)}>
+                    <Text style={[styles.monthDayText, dayOfWeek === 0 && { color: red_point }, dayOfWeek === 6 && { color: main_navy }, isSelected && { color: '#FFF' }]}>
+                      {d ? d.getDate() : ""}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
         )}
@@ -172,41 +176,52 @@ export default function HospitalCalendarScreen() {
 
       <ScrollView style={styles.listArea} contentContainerStyle={{ padding: 20 }}>
         <Text style={styles.listTitle}>{selectedDate.getMonth()+1}월 {selectedDate.getDate()}일 일정</Text>
-        
         {schedules.filter(s => s.date === formatDate(selectedDate)).map(item => (
           <TouchableOpacity key={item.id} style={styles.scheduleCard} onPress={() => { setEditId(item.id); setHospitalName(item.title); setIsModalVisible(true); }}>
             <View>
               <Text style={styles.cardTitle}>{item.title}</Text>
               <Text style={styles.cardInfo}>방문 시간: {item.time}</Text>
-              <Text style={styles.cardAlarm}>알람 설정: {item.alarm}</Text>
             </View>
             <Ionicons name="chevron-forward" size={24} color="#CCC" />
           </TouchableOpacity>
         ))}
-
         <TouchableOpacity style={styles.addBtn} onPress={() => { setEditId(null); setHospitalName(''); setScheduleTime(null); setAlarmTime(null); setIsModalVisible(true); }}>
           <Ionicons name="add-circle" size={28} color="#FFF" />
           <Text style={styles.addBtnText}>새로운 병원 일정 등록하기</Text>
         </TouchableOpacity>
       </ScrollView>
 
+      {showYearMonthPicker && (
+        <Modal transparent visible={true} animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.pickerPopup}>
+              <DateTimePicker value={selectedDate} mode="date" display="spinner" onChange={(e, d) => d && setSelectedDate(d)} />
+              <TouchableOpacity style={styles.saveBtn} onPress={() => setShowYearMonthPicker(false)}>
+                <Text style={styles.saveBtnText}>선택 완료</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
+
       <Modal visible={isModalVisible} transparent animationType="slide">
         <TouchableWithoutFeedback onPress={dismissAll}>
           <View style={styles.modalOverlay}>
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%' }}>
-              
               <TouchableWithoutFeedback onPress={dismissAll}>
                 <View style={styles.modalContent}>
                   
                   <View style={styles.modalHeader}>
                     <Text style={styles.modalTitle}>{editId ? "병원 일정 확인" : "새로운 병원 일정 등록하기"}</Text>
-                    <TouchableOpacity onPress={() => setIsModalVisible(false)}><Ionicons name="close" size={32} color="#333" /></TouchableOpacity>
+                    <TouchableOpacity onPress={() => setIsModalVisible(false)}>
+                      <Ionicons name="close" size={32} color="#333" />
+                    </TouchableOpacity>
                   </View>
 
                   <Text style={styles.inputLabel}>병원명</Text>
                   <TextInput 
                     style={styles.inputBox} 
-                    placeholder="예: 서울안과 진료" 
+                    placeholder="병원명을 입력해주세요"
                     value={hospitalName} 
                     onChangeText={setHospitalName}
                     returnKeyType="done" 
@@ -237,7 +252,7 @@ export default function HospitalCalendarScreen() {
                     </Text>
                     <Ionicons name="notifications-outline" size={24} color={main_navy} />
                   </TouchableOpacity>
-                  <Text style={styles.helperText}>*미등록시 방문 3시간 전으로 자동 등록됩니다*</Text>
+                  <Text style={styles.helperText}>*알람 미등록시 방문 3시간 전으로 자동 등록됩니다*</Text>
 
                   {Platform.OS === 'ios' && showAlarmPicker && (
                     <View style={styles.iosPickerBox}>
@@ -251,7 +266,13 @@ export default function HospitalCalendarScreen() {
                   <View style={styles.modalBtnRow}>
                     {editId ? (
                       <>
-                        <TouchableOpacity style={styles.deleteBtnCustom} onPress={() => deleteSchedule(editId)}>
+                        <TouchableOpacity
+                          style={styles.deleteBtnCustom}
+                          onPress={() => {
+                            setAlertMsg("정말 삭제하시겠습니까?");
+                            setIsAlertVisible(true);
+                          }}
+                        >
                           <Text style={styles.deleteBtnTextCustom}>삭제하기</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.editBtnCustom} onPress={handleSave}>
@@ -259,7 +280,13 @@ export default function HospitalCalendarScreen() {
                         </TouchableOpacity>
                       </>
                     ) : (
-                      <TouchableOpacity style={[styles.saveBtn, { width: '100%' }]} onPress={handleSave}>
+                      <TouchableOpacity
+                        style={[styles.saveBtn, { width: '100%' }]}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleSave();
+                        }}
+                      >
                         <Text style={styles.saveBtnText}>등록하기</Text>
                       </TouchableOpacity>
                     )}
@@ -283,6 +310,27 @@ export default function HospitalCalendarScreen() {
             onChange={(e, d) => { setShowAlarmPicker(false); if(e.type === 'set' && d) setAlarmTime(d); }}
           />
         )}
+
+        <Modal visible={isAlertVisible} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.alertBox}>
+              <Text style={styles.alertText}>{alertMsg}</Text>
+              <TouchableOpacity
+                style={styles.alertBtn}
+                onPress={() => {
+                  if (alertMsg === "정말 삭제하시겠습니까?") {
+                    setSchedules(schedules.filter(s => s.id !== editId));
+                    setIsModalVisible(false);
+                  }
+                  setIsAlertVisible(false);
+                }}
+              >
+                <Text style={styles.saveBtnText}>확인</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
       </Modal>
 
     </SafeAreaView>
@@ -292,57 +340,53 @@ export default function HospitalCalendarScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF' },
   header: { paddingHorizontal: 20, paddingTop: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerTitle: { fontSize: 26, fontWeight: 'bold', color: main_navy },
-  viewToggle: { flexDirection: 'row', alignItems: 'center', backgroundColor: light_navy, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10 },
-  viewToggleText: { marginLeft: 5, color: main_navy, fontWeight: 'bold', fontSize: 16 },
-
+  headerLeft: { flexDirection: 'row', alignItems: 'center' },
+  backBtn: { marginRight: 8 },
+  headerTitle: { fontSize: 24, fontWeight: 'bold', color: main_navy },
+  viewToggle: { flexDirection: 'row', alignItems: 'center', backgroundColor: light_navy, padding: 8, borderRadius: 10 },
+  viewToggleText: { marginLeft: 5, color: main_navy, fontWeight: 'bold', fontSize: 14 },
   monthNavigator: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 30, paddingVertical: 15 },
-  monthText: { fontSize: 22, fontWeight: 'bold', color: '#333' },
-
-  calendarArea: { backgroundColor: light_navy, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#EEE' },
+  monthText: { fontSize: 20, fontWeight: '500', color: '#333' },
+  monthPickerBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F0F0', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  calendarArea: { backgroundColor: light_navy, paddingVertical: 15 },
   weekContainer: { flexDirection: 'row', justifyContent: 'space-around' },
   dayBox: { alignItems: 'center', padding: 10, borderRadius: 15, width: 50 },
   selectedDayBox: { backgroundColor: main_navy },
-  dayText: { fontSize: 15, color: '#666', marginBottom: 5 },
+  dayText: { fontSize: 15, fontWeight: 'bold' },
   dateText: { fontSize: 20, fontWeight: 'bold' },
-  selectedText: { color: '#FFF' },
-
   monthContainer: { paddingHorizontal: 10 },
   monthGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-  monthWeekText: { width: '14.28%', textAlign: 'center', fontSize: 16, color: '#666', marginBottom: 10, fontWeight: 'bold' },
-  monthDay: { width: '14.28%', height: 45, justifyContent: 'center', alignItems: 'center', marginBottom: 5 },
-  monthDayText: { fontSize: 18, color: '#333' },
+  monthWeekText: { width: '14.28%', textAlign: 'center', fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
+  monthDay: { width: '14.28%', height: 45, justifyContent: 'center', alignItems: 'center' },
+  monthDayText: { fontSize: 18, fontWeight: 'bold' },
   selectedMonthDay: { backgroundColor: main_navy, borderRadius: 22 },
-
   listArea: { flex: 1 },
   listTitle: { fontSize: 22, fontWeight: 'bold', color: main_navy, marginBottom: 15 },
-  scheduleCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#FFF', padding: 20, borderRadius: 15, marginBottom: 12, borderWidth: 1, borderColor: '#EEE', elevation: 2 },
-  cardTitle: { fontSize: 22, fontWeight: 'bold', color: '#111', marginBottom: 5 },
-  cardInfo: { fontSize: 16, color: main_navy, marginBottom: 2 },
-  cardAlarm: { fontSize: 15, color: '#666', fontWeight: 'bold' },
-  emptyText: { fontSize: 18, color: '#AAA', textAlign: 'center', marginVertical: 30 },
-
-  addBtn: { backgroundColor: main_navy, flexDirection: 'row', padding: 20, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginTop: 10, marginBottom: 30 },
-  addBtnText: { color: '#FFF', fontSize: 20, fontWeight: 'bold', marginLeft: 8 },
-
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 25, paddingBottom: 40 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 },
-  modalTitle: { fontSize: 24, fontWeight: 'bold', color: main_navy },
-  inputLabel: { fontSize: 18, fontWeight: 'bold', color: '#333', marginTop: 10, marginBottom: 8 },
-  inputBox: { backgroundColor: input_bg, borderRadius: 12, padding: 18, fontSize: 18 },
-  selectBox: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: input_bg, borderRadius: 12, padding: 18, borderWidth: 1, borderColor: '#E0E0E0' },
+  scheduleCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#FFF', padding: 20, borderRadius: 15, marginBottom: 12, borderWidth: 1, borderColor: '#EEE' },
+  cardTitle: { fontSize: 20, fontWeight: 'bold' },
+  cardInfo: { fontSize: 16, color: main_navy },
+  addBtn: { backgroundColor: main_navy, flexDirection: 'row', padding: 20, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
+  addBtnText: { color: '#FFF', fontSize: 18, fontWeight: 'bold', marginLeft: 8 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end', alignItems: 'center' },
+  modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 25, width: '100%', position: 'absolute', bottom: 0 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { fontSize: 22, fontWeight: 'bold', color: main_navy },
+  inputLabel: { fontSize: 16, fontWeight: 'bold', marginTop: 10, marginBottom: 5 },
+  inputBox: { backgroundColor: input_bg, borderRadius: 12, padding: 15, fontSize: 16 },
   selectText: { fontSize: 17, color: '#333' },
   helperText: { fontSize: 14, color: '#888', marginTop: 8, fontWeight: '600', marginBottom: 10 },
-  
+  selectBox: { backgroundColor: input_bg, borderRadius: 12, padding: 15, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  saveBtn: { backgroundColor: main_navy, paddingVertical: 18, borderRadius: 15, alignItems: 'center', marginTop: 20, width: '100%' },
+  saveBtnText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  pickerPopup: { backgroundColor: '#FFF', padding: 20, borderRadius: 25, width: '90%', alignItems: 'center' },
+  alertBox: { backgroundColor: '#FFF', padding: 30, borderRadius: 25, width: '80%', alignItems: 'center' },
+  alertText: { fontSize: 18, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   modalBtnRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 15 },
   deleteBtnCustom: { width: '32%', backgroundColor: '#FFF', borderWidth: 2, borderColor: red_point, paddingVertical: 18, borderRadius: 15, alignItems: 'center' },
   deleteBtnTextCustom: { color: red_point, fontSize: 20, fontWeight: 'bold' },
   editBtnCustom: { width: '63%', backgroundColor: main_navy, paddingVertical: 18, borderRadius: 15, alignItems: 'center' },
-  saveBtn: { backgroundColor: main_navy, paddingVertical: 18, borderRadius: 15, alignItems: 'center' },
-  saveBtnText: { color: '#FFF', fontSize: 20, fontWeight: 'bold' },
-
   iosPickerBox: { backgroundColor: '#FFF', borderWidth: 1, borderColor: '#EEE', borderRadius: 12, marginTop: 10, padding: 10, alignItems: 'center' },
   iosPickerConfirmBtn: { backgroundColor: main_navy, paddingVertical: 12, paddingHorizontal: 30, borderRadius: 10, marginTop: 10 },
   iosPickerConfirmText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  alertBtn: { backgroundColor: red_point, paddingVertical: 12, paddingHorizontal: 40, borderRadius: 15 },
 });

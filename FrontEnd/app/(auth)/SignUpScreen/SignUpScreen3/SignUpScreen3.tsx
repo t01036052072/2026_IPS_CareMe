@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, SafeAreaView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router'; 
 import { Ionicons } from '@expo/vector-icons';
 
 const main_navy = '#00246D';
-const error_red = '#D32F2F';
 
-export default function LoginScreen() {
+export default function SignUpScreen3() {
   const router = useRouter();
+  const params = useLocalSearchParams(); //1, 2페이지에서 넘어온 데이터 받기
   const [name, setName] = useState('');
-  
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -18,7 +17,6 @@ export default function LoginScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.flex}
         >
-          {/* 상단 헤더 영역 */}
           <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <Ionicons name="chevron-back" size={28} color={main_navy} />
@@ -29,29 +27,30 @@ export default function LoginScreen() {
             <Text style={styles.title}>회원가입하기</Text>
             <Text style={styles.label}>이름</Text>
 
-            {/* 이메일 입력창 */}
             <View style={styles.input}>
               <TextInput
                 style={{ fontSize: 16, color: '#000' }}
-                value = {name}
+                value={name}
                 onChangeText={(text) => setName(text)}
                 placeholder="이름을 입력해주세요"
                 autoCapitalize="none"
               />
-             
             </View>
           
-            {/* 로그인 버튼 (기존 디자인 유지) */}
             <TouchableOpacity 
-  style={styles.loginButton}
-  onPress={() => router.push({
-    pathname: '/(auth)/SignUpScreen/SignUpScreen4/SignUpScreen4',
-    params: { username: name } // 사용자가 입력한 name을 userName이라는 이름으로 전달
-  } as any
-  )}
->
-  <Text style={styles.loginButtonText}>다음</Text>
-</TouchableOpacity>
+              style={[styles.loginButton, { opacity: name ? 1 : 0.5 }]} 
+              disabled={!name}
+              onPress={() => router.push({
+                pathname: '/(auth)/SignUpScreen/SignUpScreen4/SignUpScreen4',
+                params: { 
+                  ...params,      // 1, 2페이지 데이터(email, password) 유지
+                  name: name,     // 현재 페이지 입력값 추가
+                  username: name  
+                } 
+              } as any)}
+            >
+              <Text style={styles.loginButtonText}>다음</Text>
+            </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -85,9 +84,6 @@ const styles = StyleSheet.create({
     color: main_navy,
     marginBottom: 40,
   },
-  inputContainer: {
-    marginBottom: 24,
-  },
   label: {
     fontSize: 16,
     fontWeight: '600',
@@ -95,15 +91,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-  borderWidth: 1.5,           
-  borderColor: 'main_navy',   
-  borderRadius: 12,          
-  paddingVertical: 12,
-  paddingHorizontal: 16,     
-  fontSize: 16,
-  color: 'main_navy',
-},
- 
+    borderWidth: 1.5,
+    borderColor: main_navy, // 따옴표 없는 변수명 그대로 사용
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    justifyContent: 'center', // 텍스트 중앙 정렬용
+  },
   loginButton: {
     backgroundColor: main_navy,
     paddingVertical: 16,
@@ -116,5 +110,4 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  
 });

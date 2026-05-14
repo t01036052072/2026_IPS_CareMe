@@ -5,6 +5,8 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { signupAPI } from '@/api/auth';
+import { SignupRequest, MedicalHistoryItem } from '@/types/auth';
 
 
 const main_navy = '#00246D';
@@ -32,14 +34,46 @@ export default function SignUpScreen6() {
     setIsSkipModalVisible(true); 
   };
 
-  const handleFinish = () => {
-  const finalData = {
-    ...params,
-    smoke1, smoke2, smoke3, drinkFreq
+  const handleFinish = async () => {
+    try {
+     
+      const finalData: SignupRequest = {
+        email: params.email as string,
+        password: params.password as string,
+        name: params.name as string,
+        age: Number(params.age), // Integer
+        gender: params.gender as '남자' | '여자',
+        height: parseFloat(params.height as string), // Float
+        weight: parseFloat(params.weight as string), // Float
+        
+        // 질환력/가족력 관련 (앞 페이지에서 넘어옴)
+        is_under_treatment: params.is_under_treatment === 'true', 
+        has_family_history: params.has_family_history === 'true',
+        is_b_hepatitis_carrier: params.is_b_hepatitis_carrier === 'true',
+        
+        // 상세 질환 리스트 (앞 페이지에서 넘어옴)
+        medical_history: JSON.parse(params.medical_history as string || '[]'), 
+        
+        smoked_regular: smoke1 === '예',        // Boolean으로 변환
+        used_heated_tobacco: smoke2 === '예',   // Boolean으로 변환
+        used_vaping: smoke3 === '예',           // Boolean으로 변환
+        drinking_frequency: drinkFreq           // String 그대로 전달
+
+      };
+
+      console.log("백엔드로 넘어가는 최종 데이터:", finalData);
+
+      // 백엔드 서버로 전송
+      const response = await signupAPI(finalData);
+      
+      // 성공 시 가입 완료 모듈 띄움
+      setIsFinishModalVisible(true); 
+
+    } catch (error: any) {
+      // 에러 발생 시 
+      Alert.alert("회원가입 실패", error.message || "입력 정보를 다시 확인해주세요.");
+    }
   };
-  console.log("최종 가입 데이터:", finalData);
-  
-  setIsFinishModalVisible(true);  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -204,6 +238,8 @@ export default function SignUpScreen6() {
 
     </SafeAreaView>
   );
+
+
 }
 
 

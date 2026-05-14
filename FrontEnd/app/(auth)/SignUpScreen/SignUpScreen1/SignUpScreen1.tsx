@@ -57,7 +57,6 @@ export default function LoginScreen() {
               )}
             </View>
 
-            {/* 로그인 버튼 (기존 디자인 유지) */}
             <TouchableOpacity 
               style={[styles.loginButton, { opacity: email && !emailError ? 1 : 0.5 }]}
               disabled={!email || emailError}
@@ -129,7 +128,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  // 오류 부분 수정: 'error_red' 따옴표 제거하여 변수 참조하게 함
   inputError: {
     borderBottomColor: error_red,
     borderBottomWidth: 2,

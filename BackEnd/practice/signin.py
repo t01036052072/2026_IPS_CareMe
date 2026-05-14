@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field, field_validator
 from enum import Enum
 import re
-#아 진짜~
 #성별 선택지 정의
 class Gender(str, Enum):
     male = "남자"

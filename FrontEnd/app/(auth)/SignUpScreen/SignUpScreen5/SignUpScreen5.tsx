@@ -15,7 +15,7 @@ const FAMILY_DISEASE_LIST = ["뇌졸중 (중풍)", "심근경색/협심증", "�
 
 export default function SignUpScreen5() {
   const router = useRouter();
-  const params = useLocalSearchParams();
+  const params = useLocalSearchParams(); // 1~4 화면에서 넘어온 데이터
 
   const [select1, setSelect1] = useState('');
   const [select2, setSelect2] = useState('');
@@ -53,6 +53,25 @@ export default function SignUpScreen5() {
     setFamilyData(prev => 
       prev.includes(name) ? prev.filter(i => i !== name) : [...prev, name]
     );
+  };
+
+  const handleNext = () => {
+    const screen5Data = {
+      ...params,
+      hasDisease: select1, 
+      diseaseDetails: JSON.stringify(diseaseData), 
+      hasFamilyDisease: select2,
+      familyDiseaseDetails: JSON.stringify(familyData), 
+      isHepatitisB: select3,
+    };
+
+    console.log("5번 화면까지 모인 데이터:", screen5Data);
+
+    // 6번 화면으로 데이터를 담아서 이동합니다.
+    router.push({
+      pathname: '/(auth)/SignUpScreen/SignUpScreen6/SignUpScreen6' as any,
+      params: screen5Data,
+    });
   };
 
   return (
@@ -121,10 +140,12 @@ export default function SignUpScreen5() {
           <TouchableOpacity style={styles.skipBtn} onPress={handleSkip}>
             <Text style={styles.skipBtnText}>건너뛰기</Text>
           </TouchableOpacity>
+
+          {/* 💡 onPress 이벤트에 handleNext 함수를 연결했습니다! */}
           <TouchableOpacity 
             style={[styles.nextBtn, { backgroundColor: (select1 && select2 && select3) ? main_navy : light_gray }]}
             disabled={!(select1 && select2 && select3)}
-            onPress={() => router.push('/(auth)/SignUpScreen/SignUpScreen6/SignUpScreen6' as any)}
+            onPress={handleNext} 
           >
             <Text style={[styles.nextBtnText, { color: (select1 && select2 && select3) ? '#FFF' : '#888' }]}>다음</Text>
           </TouchableOpacity>
@@ -230,7 +251,7 @@ const styles = StyleSheet.create({
   nextBtn: { width: '65%', paddingVertical: 18, borderRadius: 30, alignItems: 'center' },
   nextBtnText: { fontSize: 20, fontWeight: 'bold' },
 
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
+modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
   popupBox: { width: '92%', height: '70%', backgroundColor: '#FFF', borderRadius: 25, padding: 20 },
   popupTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   diseaseRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#EEE' },

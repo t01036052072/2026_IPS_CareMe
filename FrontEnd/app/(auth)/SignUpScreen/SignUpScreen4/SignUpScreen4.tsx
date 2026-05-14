@@ -12,17 +12,17 @@ const main_navy = '#00246D';
 
 export default function SignUpScreen4() {
   const router = useRouter();
-  const { username } = useLocalSearchParams<{ username: any }>();
+  // ⭐ 1~3페이지에서 넘어온 데이터를 받기 위해 추가
+  const params = useLocalSearchParams(); 
   
-
-  const [name] = useState(username || '');
+  // 이전 페이지에서 넘어온 username이 있으면 기본값으로 사용
+  const [name, setName] = useState((params.username as string) || (params.name as string) || '');
   const [gender, setGender] = useState('');
   const [birth, setBirth] = useState('');
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [date, setDate] = useState(new Date(1960, 0, 1)); 
   const [showPicker, setShowPicker] = useState(false);
-
 
   const handleHeightChange = (text: string) => {
     const cleaned = text.replace(/[^0-9]/g, ''); 
@@ -43,6 +43,30 @@ export default function SignUpScreen4() {
     }
   };
 
+  // ⭐ 데이터 조립 및 이동 함수
+  const handleNext = () => {
+    // 1. 만 나이 계산
+    const today = new Date();
+    let calculatedAge = today.getFullYear() - date.getFullYear();
+    const m = today.getMonth() - date.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < date.getDate())) {
+      calculatedAge--;
+    }
+
+    // 2. 보따리 싸서 5페이지로 이동
+    router.push({
+      pathname: '/(auth)/SignUpScreen/SignUpScreen5/SignUpScreen5' as any,
+      params: { 
+        ...params,           // 이전 데이터
+        name: name,          // 이름
+        gender: gender,      // 성별
+        age: calculatedAge,  // 계산된 나이 (숫자)
+        height: height,      // 키
+        weight: weight       // 몸무게
+      }
+    });
+  };
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <SafeAreaView style={styles.container}>
@@ -59,15 +83,18 @@ export default function SignUpScreen4() {
           <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
             <Text style={styles.title}>기본 정보 입력하기</Text>
 
-       
             <View style={styles.inputSection}>
               <Text style={styles.label}>이름</Text>
-              <View style={[styles.inputBox, { backgroundColor: '#ffffff' }]}>
-                <TextInput style={styles.inputtextbox} value={name} editable={false} />
+              <View style={styles.inputBox}>
+                <TextInput 
+                  style={styles.inputtextbox} 
+                  value={name} 
+                  onChangeText={setName} // 이름 수정 가능하게 변경
+                  placeholder="이름을 입력해주세요"
+                />
               </View>
             </View>
 
-          
             <View style={styles.inputSection}>
               <Text style={styles.label}>성별</Text>
               <View style={styles.genderContainer}>
@@ -82,7 +109,6 @@ export default function SignUpScreen4() {
               </View>
             </View>
 
-            {/* 생년월일 */}
             <View style={styles.inputSection}>
               <Text style={styles.label}>생년월일</Text>
               <TouchableOpacity style={[styles.inputBox, styles.rowBetween]} onPress={() => setShowPicker(true)}>
@@ -91,7 +117,6 @@ export default function SignUpScreen4() {
               </TouchableOpacity>
             </View>
 
-            {/* 키 */}
             <View style={styles.inputSection}>
               <Text style={styles.label}>키</Text>
               <View style={[styles.inputBox, styles.rowEnd]}>
@@ -108,7 +133,6 @@ export default function SignUpScreen4() {
               </View>
             </View>
 
-   
             <View style={styles.inputSection}>
               <Text style={styles.label}>몸무게</Text>
               <View style={[styles.inputBox, styles.rowEnd]}>
@@ -128,13 +152,12 @@ export default function SignUpScreen4() {
             <TouchableOpacity 
               style={[styles.nextButton, { backgroundColor: (gender && birth && height && weight) ? main_navy : '#E0E0E0' }]}
               disabled={!(gender && birth && height && weight)}
-              onPress={() => router.push('/(auth)/SignUpScreen/SignUpScreen5/SignUpScreen5' as any)}
+              onPress={handleNext} 
             >
               <Text style={[styles.nextButtonText, { color: (gender && birth && height && weight) ? '#FFF' : '#888' }]}>다음</Text>
             </TouchableOpacity>
           </ScrollView>
 
-    
           <Modal transparent={true} visible={showPicker} animationType="slide">
             <View style={styles.modalContainer}>
               <View style={styles.modalContent}>
@@ -172,7 +195,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 20, fontWeight: 'bold', color: main_navy, marginBottom: 8 },
   inputBox: {
     borderWidth: 2,
-    borderColor: main_navy,
+    borderColor: main_navy, 
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -186,8 +209,7 @@ const styles = StyleSheet.create({
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   rowEnd: { flexDirection: 'row', alignItems: 'center' },
   unitText: { fontSize: 20, color: main_navy, marginLeft: 8, fontWeight: 'bold' },
-  nextButton: { paddingVertical: 18, borderRadius: 30, alignItems: 'center', marginTop: 20
-},
+  nextButton: { paddingVertical: 18, borderRadius: 30, alignItems: 'center', marginTop: 20 },
   nextButtonText: { fontSize: 20, fontWeight: 'bold' },
   modalContainer: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
   modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 40 },
