@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://127.0.0.1:8000/docs';
+const BASE_URL = 'http://52.63.115.68:8000';
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
