@@ -1,98 +1,121 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React from 'react';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import {View, Text, StyleSheet, TouchableOpacity, Image, } from 'react-native';
+import {useRouter} from 'expo-router';
+
+import {CircleUserRound, User,} from 'lucide-react-native';
+
+// 파일 삽입
+import CareMeLogoText from '../../assets/images/StartScreen/CareMeLogoText.png';
+import Profile from '../../assets/home/profileCircle.svg';
+import PillHome from '../../assets/home/pillHome.svg';
+import HealthHome from '../../assets/home/healthHome.svg';
+import CalendarHome from '../../assets/home/calendarHome.svg';
+import DocumentHome from '../../assets/home/documentHome.svg';
+
+const MAIN_NAVY = '#00246D';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const router = useRouter();
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const buttons = [
+    {
+      title: '복약 관리',
+      icon: <PillHome width={100} height={100} />,
+      path: '/pill'
+    },
+    {
+      title: '일정 관리',
+      icon: <CalendarHome width={100} height={100} />,
+      path: '/calendar'
+    },
+    {
+      title: '건강 관리',
+      icon: <HealthHome width={100} height={100} />,
+      path: '/healthcare'
+    },
+    {
+      title: '문서 관리',
+      icon: <DocumentHome width={100} height={100} />,
+      path: '/documents'
+    }
+  ];
+
+  return (
+    <View style={styles.container}>
+      <View style = {styles.header}>
+
+        <Image source={CareMeLogoText} 
+          style={{
+            width: 120,
+            height: 40,
+            resizeMode: 'contain',
+          }} />
+
+        <TouchableOpacity>
+          <Profile width={40} height={40} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.grid}>
+        {buttons.map((button, index) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.card}
+            onPress={() => router.push(button.path as any)}
+          >
+            {button.icon}
+            <Text style={styles.cardText}>{button.title}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 24,
+    paddingTop: 70,
+  },
+
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+    marginBottom: 60,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    columnGap: 30,
+    rowGap: 30,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+
+  card: {
+    width: '40%',
+    height: 230,
+    backgroundColor: '#EFF5FF',
+    borderRadius: 20,
+    borderColor: '#cedeff',
+    borderWidth: 0.05,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 25,
+    shadowColor: '#3f3f3f',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 3,
   },
-});
+
+  cardText: {
+    fontSize: 25,
+    fontWeight: '600',
+    color: '#000320',
+  }
+})

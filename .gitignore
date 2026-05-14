@@ -29,6 +29,9 @@ temp_*.png
 # frontend (React Native / Expo)    
 frontend/node_modules/
 frontend/.expo/
+# frontend (React Native / Expo)
+node_modules/
+.expo/
 
 # 개발 환경
 .vscode/
