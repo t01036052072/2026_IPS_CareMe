@@ -18,10 +18,27 @@ from my_project.routes.user import router as friend_user_router
 from my_project.routes.document import router as friend_doc_router
 # 기존 import들 아래에 추가
 from my_project.models import Base
-from firebase_admin import credentials, initialize_app
-cred_path = os.path.join(os.path.dirname(__file__), 'serviceAccountKey.json')
-cred = credentials.Certificate(cred_path)
-initialize_app(cred)
+import firebase_admin
+from firebase_admin import credentials
+
+
+def initialize_firebase_if_available():
+    candidate_paths = [
+        os.path.join(os.path.dirname(__file__), "serviceAccountKey.json"),
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), "serviceAccountKey.json"),
+    ]
+
+    cred_path = next((path for path in candidate_paths if os.path.exists(path)), None)
+    if not cred_path:
+        print("[Firebase] serviceAccountKey.json 파일이 없어 푸시 알림 초기화를 건너뜁니다.")
+        return
+
+    if not firebase_admin._apps:
+        cred = credentials.Certificate(cred_path)
+        firebase_admin.initialize_app(cred)
+
+
+initialize_firebase_if_available()
 
 # --- 1. 앱 객체 생성 ---
 app = FastAPI(title="CareMe Medication Service")

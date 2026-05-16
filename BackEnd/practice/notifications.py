@@ -8,15 +8,30 @@ from practice.database import SessionLocal
 from my_project.models import Medication, Appointment
 
 
-# 1. Firebase 초기화 (기존 로직 유지)
+# 1. Firebase 초기화: 키 파일이 없으면 서버 시작을 막지 않고 알림만 비활성화합니다.
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-cred_path = os.path.join(base_dir, 'serviceAccountKey.json')
-cred = credentials.Certificate(cred_path)
-if not firebase_admin._apps:
-    firebase_admin.initialize_app(cred)
+practice_dir = os.path.dirname(os.path.abspath(__file__))
+candidate_cred_paths = [
+    os.path.join(practice_dir, "serviceAccountKey.json"),
+    os.path.join(base_dir, "serviceAccountKey.json"),
+]
+cred_path = next((path for path in candidate_cred_paths if os.path.exists(path)), None)
+firebase_enabled = False
+
+if cred_path:
+    cred = credentials.Certificate(cred_path)
+    if not firebase_admin._apps:
+        firebase_admin.initialize_app(cred)
+    firebase_enabled = True
+else:
+    print("[Firebase] serviceAccountKey.json 파일이 없어 푸시 알림을 비활성화합니다.")
 
 def send_actual_push(token: str, title: str, body: str):
     """실제로 FCM을 통해 푸시를 쏘는 함수"""
+    if not firebase_enabled:
+        print("[FCM] Firebase가 초기화되지 않아 푸시 알림을 건너뜁니다.")
+        return
+
     if not token:
         print("[FCM] 전송 실패: 기기 토큰이 없습니다.")
         return
