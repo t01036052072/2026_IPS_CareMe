@@ -1,4 +1,3 @@
-
 import os
 from pathlib import Path
 
@@ -94,9 +93,89 @@ def get_db():
 
 
 # -----------------------------
-# 기존 notifications.py 호환용
+# 모델 설정 (기존 호환용)
 # -----------------------------
-# 현재 notifications.py 에서 import 중이라
-# 서버 실행 오류 방지용으로 임시 추가
-medications_db = []
-appointments_db = []
+from sqlalchemy import Column, Integer, String, DateTime
+
+# 1. 약 정보 테이블 설정 (기존 medications_db)
+class Medication(Base):
+    __tablename__ = "medications"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String(50), index=True)       # 사용자 ID (Firebase UID 등)
+    medication_name = Column(String(100), nullable=False) # 약 이름
+    dose = Column(String(50))                      # 복용량
+    time = Column(String(50))                      # 복용 시간
+
+# 2. 예약 정보 테이블 설정 (기존 appointments_db)
+class Appointment(Base):
+    __tablename__ = "appointments"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String(50), index=True)
+    title = Column(String(100), nullable=False)    # 진료 항목/일정 이름
+    hospital_name = Column(String(100))            # 병원 이름
+    appointment_time = Column(DateTime)            # 예약 날짜 및 시간
+
+# 3. 알약 정보 테이블 설정 (진짜 AI Hub 연동을 대비한 완벽한 구조)
+class Pill(Base):
+    __tablename__ = "pills"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    pill_code = Column(String(50), unique=True, index=True) # 알약 고유 코드
+    pill_name = Column(String(100), nullable=False)         # 알약 이름
+    enterprise = Column(String(100))                       # 제약 회사명
+    effect = Column(String(500))                           # 효능
+    image_url = Column(String(500))                        # 이미지 주소
+
+
+# -----------------------------
+# ⚠️ 순서 변경 1: 먼저 AWS RDS에 테이블부터 안전하게 생성합니다.
+# -----------------------------
+Base.metadata.create_all(bind=engine)
+
+
+# -----------------------------
+# AI Hub 연동 전 임시 알약 더미 데이터 자동 삽입 코드
+# -----------------------------
+from sqlalchemy.orm import Session
+
+def insert_dummy_pills():
+    db: Session = SessionLocal()
+    try:
+        # 이미 데이터가 들어있다면 중복으로 넣지 않기 위해 개수 체크
+        if db.query(Pill).count() == 0:
+            dummy_pills = [
+                Pill(
+                    pill_code="A11A001",
+                    pill_name="타이레놀정500mg",
+                    enterprise="(주)한국얀센",
+                    effect="감기로 인한 발열 및 통증, 두통, 신경통",
+                    image_url="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500"
+                ),
+                Pill(
+                    pill_code="A11A002",
+                    pill_name="아스피린정100mg",
+                    enterprise="바이엘코리아(주)",
+                    effect="혈전 생성 억제 (심혈관 질환 예방)",
+                    image_url="https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=500"
+                ),
+                Pill(
+                    pill_code="A11A003",
+                    pill_name="이부프로펜정400mg",
+                    enterprise="대웅제약(주)",
+                    effect="소염진통제, 관절염, 몸살감기",
+                    image_url="https://images.unsplash.com/photo-1628771065518-0d82f1938462?w=500"
+                )
+            ]
+            db.add_all(dummy_pills)
+            db.commit()
+            print("🎉 알약 더미 데이터 3건이 MySQL에 성공적으로 삽입되었습니다!")
+    except Exception as e:
+        db.rollback()
+        print(f"❌ 더미 데이터 삽입 중 오류 발생: {e}")
+    finally:
+        db.close()
+
+# ⚠️ 순서 변경 2: 테이블이 생성된 후에 더미 데이터를 밀어 넣습니다.
+insert_dummy_pills()
