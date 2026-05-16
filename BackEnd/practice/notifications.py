@@ -2,7 +2,7 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
-from database import medications_db, appointments_db
+from practice.database import medications_db, appointments_db
 
 #핸드폰에 앱을 설치하면 FCM이 그 기기에 기기토큰을 부여, 이를 fastapi에 보내주어 DB에 저장해두면, 
 #나중에 알림 보낼 때 그 토큰을 이용해서 특정 기기에 푸시를 보낼 수 있음
