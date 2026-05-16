@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from jose import jwt
 from passlib.context import CryptContext
 from practice.database import Base
+from my_project.database import get_db
 from my_project.models import UserTable
 from my_project.schemas import UserCreate, LoginRequest
 
