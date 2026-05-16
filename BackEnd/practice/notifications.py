@@ -9,7 +9,9 @@ from practice.database import medications_db, appointments_db
 #나중에 알림 보낼 때 그 토큰을 이용해서 특정 기기에 푸시를 보낼 수 있음
 
 # 1. Firebase 초기화
-cred = credentials.Certificate("serviceAccountKey.json") # 다운받은 키 파일 경로
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+cred_path = os.path.join(base_dir, 'serviceAccountKey.json')
+cred = credentials.Certificate(cred_path)
 firebase_admin.initialize_app(cred)
 
 def send_actual_push(token: str, title: str, body: str):
