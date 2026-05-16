@@ -2,17 +2,18 @@ import os
 import uuid
 import shutil
 import re
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, asc
+from my_project.database import get_db
 from paddleocr import PaddleOCR
 from typing import Optional, List
 from datetime import datetime, timedelta
 
 # 프로젝트 구조에 맞춘 임포트
-from practice.database import Base
 from my_project.models import DocumentTable
-import my_project.schemas
+from my_project import schemas
 
 # [교정 1] 시스템 환경 변수 설정: PaddleOCR 로드 전 최상단에 배치하여 에러를 원천 차단합니다.
 os.environ['PADDLE_USE_ONEDNN'] = '0' 
@@ -23,7 +24,13 @@ router = APIRouter(prefix="/documents", tags=["Documents"])
 
 # OCR 모델 지연 로딩
 ocr_model = None
-UPLOAD_DIR = "./static/uploads"
+STATIC_DIR = Path(__file__).resolve().parents[1] / "static"
+UPLOAD_DIR = STATIC_DIR / "uploads"
+
+
+def get_upload_path_from_url(image_url: str) -> Path:
+    relative_path = image_url.removeprefix("/static/").lstrip("/")
+    return STATIC_DIR / relative_path
 
 # --- [NLP] 어려운 의학 용어 순화 함수 ---
 def simplify_medical_terms(raw_text: str) -> str:
@@ -61,11 +68,10 @@ async def upload_document(
     if extension not in ["jpg", "jpeg", "png"]:
         raise HTTPException(status_code=400, detail="이미지 파일만 업로드 가능합니다.")
 
-    if not os.path.exists(UPLOAD_DIR):
-        os.makedirs(UPLOAD_DIR)
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
     unique_filename = f"{doc_type}_{uuid.uuid4()}.{extension}"
-    file_path = os.path.join(UPLOAD_DIR, unique_filename)
+    file_path = UPLOAD_DIR / unique_filename
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
@@ -75,7 +81,7 @@ async def upload_document(
     
     try:
         # [교정 3] OCR 실행 및 텍스트 추출 로직 개선
-        ocr_result = ocr_model.ocr(file_path)
+        ocr_result = ocr_model.ocr(str(file_path))
         # ... ocr_result 처리 부분 ...
         if ocr_result:
             for res in ocr_result:
@@ -194,14 +200,15 @@ async def update_document_image(
     if not document:
         raise HTTPException(status_code=404, detail="수정할 문서를 찾을 수 없습니다.")
 
-    old_file_path = f".{document.image_url}"
+    old_file_path = get_upload_path_from_url(document.image_url)
     if os.path.exists(old_file_path):
         try: os.remove(old_file_path)
         except: pass
 
     extension = file.filename.split(".")[-1].lower()
     unique_filename = f"updated_{uuid.uuid4()}.{extension}"
-    new_file_path = os.path.join(UPLOAD_DIR, unique_filename)
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    new_file_path = UPLOAD_DIR / unique_filename
 
     with open(new_file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
@@ -214,7 +221,7 @@ async def update_document_image(
         if ocr_model is None:
             ocr_model = PaddleOCR(lang='korean', use_gpu=False, enable_mkldnn=False, show_log=False)
             
-        ocr_result = ocr_model.ocr(new_file_path)
+        ocr_result = ocr_model.ocr(str(new_file_path))
         if ocr_result:
             for res in ocr_result:
                 if res is None: continue
@@ -247,7 +254,7 @@ def delete_document(document_id: int, db: Session = Depends(get_db)):
     if not document:
         raise HTTPException(status_code=404, detail="삭제할 문서를 찾을 수 없습니다.")
 
-    file_path = f".{document.image_url}"
+    file_path = get_upload_path_from_url(document.image_url)
     if os.path.exists(file_path):
         os.remove(file_path)
 

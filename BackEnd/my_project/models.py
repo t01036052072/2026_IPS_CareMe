@@ -1,6 +1,6 @@
 # my_project/models.py
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Text, DateTime
-from practice.database import Base  # 💡 연결할 진짜 DB의 Base를 바라보게 합니다.
+from my_project.database import Base
 
 # ========================================================
 # 1. 친구 프로젝트 기능용 테이블 (기존 내용 그대로)

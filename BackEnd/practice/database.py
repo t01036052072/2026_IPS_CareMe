@@ -108,6 +108,7 @@ Base.metadata.create_all(bind=engine)
 # AI Hub 연동 전 임시 알약 더미 데이터 자동 삽입 코드
 # -----------------------------
 from sqlalchemy.orm import Session
+from my_project.models import Pill
 
 #이거 좀 어려워서 질문하기...
 
