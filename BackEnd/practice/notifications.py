@@ -3,27 +3,26 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
-from practice.database import medications_db, appointments_db
 
-#핸드폰에 앱을 설치하면 FCM이 그 기기에 기기토큰을 부여, 이를 fastapi에 보내주어 DB에 저장해두면, 
-#나중에 알림 보낼 때 그 토큰을 이용해서 특정 기기에 푸시를 보낼 수 있음
+# 💡 리스트 임포트 다 지우고, 백그라운드용 세션 팩토리와 모델 가져오기
+from practice.database import SessionLocal, Medication, Appointment
 
-# 1. Firebase 초기화
+# 1. Firebase 초기화 (기존 로직 유지)
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 cred_path = os.path.join(base_dir, 'serviceAccountKey.json')
 cred = credentials.Certificate(cred_path)
-firebase_admin.initialize_app(cred)
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred)
 
 def send_actual_push(token: str, title: str, body: str):
-    """
-    실제로 FCM을 통해 휴대폰으로 푸시를 쏘는 함수
-    """
+    """실제로 FCM을 통해 푸시를 쏘는 함수"""
+    if not token:
+        print("[FCM] 전송 실패: 기기 토큰이 없습니다.")
+        return
+        
     message = messaging.Message(
-        notification=messaging.Notification(
-            title=title,
-            body=body,
-        ),
-        token=token, # 사용자의 휴대폰 고유 토큰
+        notification=messaging.Notification(title=title, body=body),
+        token=token,
     )
     try:
         response = messaging.send(message)
@@ -32,27 +31,44 @@ def send_actual_push(token: str, title: str, body: str):
         print(f"Error sending message: {e}")
 
 def check_and_send_alarms():
-    now = datetime.now()
-    current_date = now.date()
-    current_time_str = now.strftime("%H:%M")
+    """백그라운드에서 주기적으로 돌며 클라우드 DB의 일정을 체크해 푸시를 보냅니다."""
+    # 💡 요청을 받아서 처리하는 API가 아니라 스스로 도는 스케줄러이므로, SessionLocal()로 직접 DB 연결 통로를 열어줍니다.
+    db = SessionLocal()
+    try:
+        now = datetime.now()
+        current_date_str = now.strftime("%Y-%m-%d")
+        current_time_str = now.strftime("%H:%M")
 
-    # 1. 병원 예약 알림
-    for appt in appointments_db:#병원 예약 일정 등록한 것 관리하는 db
-        if appt.get("alarm_date") == current_date and appt.get("alarm_time") == current_time_str:
-            # 기기 토큰은 보통 사용자 DB에 저장되어 있음
-            user_token = appt.get("user_fcm_token") 
-            msg = f"{appt['appointment_time']}에 {appt['hospital_name']} 예약이 있습니다."
-            send_actual_push(user_token, "병원 예약 알림", msg)
+        # 💡 리스트 대신 AWS RDS 클라우드 DB에서 실시간 전체 예약 및 복약 데이터를 가져옵니다!
+        appointments = db.query(Appointment).all()
+        medications = db.query(Medication).all()
 
-    # 2. 복약 일정 알림
-    for med in medications_db:#복약 일정 등록한 것 관리하는 db
-        if med["start_date"] <= current_date <= med["end_date"]:
-            if med["time"] == current_time_str:
-                user_token = med.get("user_fcm_token")
-                msg = f"{med['name']}을 {med['count']}알 복용하세요."
-                send_actual_push(user_token, "복약 시간 알림", msg)
+        # 1. 병원 예약 알림 검사
+        for appt in appointments:
+            appt_time_str = appt.appointment_time.strftime("%H:%M")
+            appt_date_str = appt.appointment_time.strftime("%Y-%m-%d")
+            
+            # 임시 매핑 로직 (진짜 앱 구동 시에는 DB 구조에 알람설정 컬럼을 맞춰 연결하면 좋습니다)
+            if appt_date_str == current_date_str and appt_time_str == current_time_str:
+                # 임시 하드코딩 테스트용 토큰 사용 예시 (실제로는 User 테이블 연동)
+                user_token = "mock_fcm_token_from_db" 
+                msg = f"{appt_time_str}에 {appt.hospital_name} 예약이 있습니다."
+                send_actual_push(user_token, "병원 예약 알림", msg)
 
-# 스케줄러 설정 (1분마다 체크)
+        # 2. 복약 일정 알림 검사
+        for med in medications:
+            if med.time == current_time_str:
+                user_token = "mock_fcm_token_from_db"
+                msg = f"[{med.medication_name}] 복용 시간입니다. ({med.dose})"
+                send_actual_push(user_token, "복약 알림", msg)
+                
+    except Exception as e:
+        print(f"[Scheduler Error] 알림 검사 중 오류 발생: {e}")
+    finally:
+        # 💡 작업이 끝나면 데이터베이스 커넥션을 안전하게 닫아줍니다.
+        db.close()
+
+# 스케줄러 설정 (매 분마다 알림 조건이 충족되었는지 백그라운드 체크)
 scheduler = BackgroundScheduler()
-scheduler.add_job(check_and_send_alarms, "interval", minutes=1)
+scheduler.add_job(check_and_send_alarms, "cron", second=0)  # 매 분 0초마다 실행
 scheduler.start()
