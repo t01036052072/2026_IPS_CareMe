@@ -2,9 +2,9 @@
 from fastapi import FastAPI, HTTPException, File, UploadFile
 import os
 
-# DB 및 모델 관련 (내 폴더 기준)
-from practice.database import engine
-from practice import models 
+# DB 및 모델 
+from practice.database import engine, Base
+from my_project import models
 
 # 내 기능들 가져오기
 from practice import notifications 
@@ -18,6 +18,10 @@ from my_project.routes.user import router as friend_user_router
 from my_project.routes.document import router as friend_doc_router
 # 기존 import들 아래에 추가
 from my_project.models import Base
+from firebase_admin import credentials, initialize_app
+cred_path = os.path.join(os.path.dirname(__file__), 'serviceAccountKey.json')
+cred = credentials.Certificate(cred_path)
+initialize_app(cred)
 
 # --- 1. 앱 객체 생성 ---
 app = FastAPI(title="CareMe Medication Service")
