@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 import re
 
 # database.py에서 DB 세션 연동 함수와 Appointment 테이블 모델 가져오기
-from practice.database import get_db, Appointment
+from practice.database import get_db
+from my_project.models import Appointment
 
 router = APIRouter(prefix="/appointments", tags=["병원 예약"])
 

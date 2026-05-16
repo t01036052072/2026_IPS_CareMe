@@ -5,8 +5,9 @@ from datetime import date, timedelta, datetime
 from sqlalchemy.orm import Session
 import re
 
-# database.py에서 연동 기능과 테이블 모델 가져오기
-from practice.database import get_db, Medication
+# database.py에서 DB 세션 연동 함수와 Medication 테이블 모델 가져오기
+from practice.database import get_db
+from my_project.models import Medication
 
 # 모든 주소 앞에 자동으로 /medications가 붙는 것 (= 라우터 설정)
 router = APIRouter(prefix="/medications", tags=["복약 일정"])

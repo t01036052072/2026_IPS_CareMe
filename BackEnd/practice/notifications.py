@@ -3,9 +3,10 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
+#DB 세션 팩토리와 통합 모델 가져오기
+from practice.database import SessionLocal
+from my_project.models import Medication, Appointment
 
-# 💡 리스트 임포트 다 지우고, 백그라운드용 세션 팩토리와 모델 가져오기
-from practice.database import SessionLocal, Medication, Appointment
 
 # 1. Firebase 초기화 (기존 로직 유지)
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

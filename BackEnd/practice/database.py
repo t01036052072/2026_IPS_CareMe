@@ -97,37 +97,6 @@ def get_db():
 # -----------------------------
 from sqlalchemy import Column, Integer, String, DateTime
 
-# 1. 약 정보 테이블 설정 (기존 medications_db)
-class Medication(Base):
-    __tablename__ = "medications"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String(50), index=True)       # 사용자 ID (Firebase UID 등)
-    medication_name = Column(String(100), nullable=False) # 약 이름
-    dose = Column(String(50))                      # 복용량
-    time = Column(String(50))                      # 복용 시간
-
-# 2. 예약 정보 테이블 설정 (기존 appointments_db)
-class Appointment(Base):
-    __tablename__ = "appointments"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String(50), index=True)
-    title = Column(String(100), nullable=False)    # 진료 항목/일정 이름
-    hospital_name = Column(String(100))            # 병원 이름
-    appointment_time = Column(DateTime)            # 예약 날짜 및 시간
-
-# 3. 알약 정보 테이블 설정 (진짜 AI Hub 연동을 대비한 완벽한 구조)
-class Pill(Base):
-    __tablename__ = "pills"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    pill_code = Column(String(50), unique=True, index=True) # 알약 고유 코드
-    pill_name = Column(String(100), nullable=False)         # 알약 이름
-    enterprise = Column(String(100))                       # 제약 회사명
-    effect = Column(String(500))                           # 효능
-    image_url = Column(String(500))                        # 이미지 주소
-
 
 # -----------------------------
 # ⚠️ 순서 변경 1: 먼저 AWS RDS에 테이블부터 안전하게 생성합니다.
@@ -139,6 +108,8 @@ Base.metadata.create_all(bind=engine)
 # AI Hub 연동 전 임시 알약 더미 데이터 자동 삽입 코드
 # -----------------------------
 from sqlalchemy.orm import Session
+
+#이거 좀 어려워서 질문하기...
 
 def insert_dummy_pills():
     db: Session = SessionLocal()
