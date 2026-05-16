@@ -10,7 +10,7 @@ from typing import Optional, List
 from datetime import datetime, timedelta
 
 # 프로젝트 구조에 맞춘 임포트
-from database import get_db
+from practice.database import Base
 from models import DocumentTable
 import schemas
 

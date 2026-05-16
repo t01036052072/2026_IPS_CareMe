@@ -5,7 +5,7 @@ import uvicorn
 from fastapi import FastAPI
 from routes import document
 from fastapi.staticfiles import StaticFiles
-from database import engine, Base
+from practice.database import Base
 from routes import user
 
 # 테이블 생성
