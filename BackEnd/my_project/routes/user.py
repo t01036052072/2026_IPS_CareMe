@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from jose import jwt
 from passlib.context import CryptContext
 from practice.database import Base
-from models import UserTable
+from my_project.models import UserTable
 from schemas import UserCreate, LoginRequest
 
 # 보안 설정

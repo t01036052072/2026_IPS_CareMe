@@ -5,7 +5,8 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 # database.py에서 진짜 DB 세션과 Pill 테이블 모델 가져오기
-from practice.database import get_db, Pill
+from practice.database import get_db
+from my_project.models import Pill
 
 router = APIRouter(prefix="/pills", tags=["약 검색"])
 
