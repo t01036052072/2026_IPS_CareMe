@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 
 # 프로젝트 구조에 맞춘 임포트
 from practice.database import Base
-from models import DocumentTable
+from my_project.models import DocumentTable
 import my_project.schemas
 
 # [교정 1] 시스템 환경 변수 설정: PaddleOCR 로드 전 최상단에 배치하여 에러를 원천 차단합니다.
