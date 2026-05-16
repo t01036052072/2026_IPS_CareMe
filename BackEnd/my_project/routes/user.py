@@ -5,7 +5,7 @@ from jose import jwt
 from passlib.context import CryptContext
 from practice.database import Base
 from my_project.models import UserTable
-from schemas import UserCreate, LoginRequest
+from my_project.schemas import UserCreate, LoginRequest
 
 # 보안 설정
 SECRET_KEY = "health-care-ai-engineering-2026" 
