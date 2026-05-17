@@ -1,5 +1,7 @@
 # practice/mainjeong.py
-from fastapi import Depends, FastAPI, HTTPException, File, UploadFile
+from fastapi import Depends, FastAPI, HTTPException, File, Request, UploadFile
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 import os
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -66,6 +68,21 @@ def ensure_user_profile_columns():
 
 # --- 1. 앱 객체 생성 ---
 app = FastAPI(title="CareMe Medication Service")
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    body = await request.body()
+    print(
+        "[ValidationError]",
+        request.method,
+        request.url.path,
+        "errors=",
+        exc.errors(),
+        "body=",
+        body.decode("utf-8", errors="replace"),
+    )
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
 
 # --- 2. 라우터 등록 (기능 합치기) ---
 # 내 기능
