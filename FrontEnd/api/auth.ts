@@ -2,11 +2,16 @@ import { apiClient } from './api';
 import { SignupRequest } from '../types/auth';
 
 // 1. 회원가입
+
+
 export const signupAPI = async (userData: SignupRequest) => {
+  console.log('signupAPI 함수 진입');  // ← 여기 추가
   try {
-    const response = await apiClient.post('/friend/user/signup', userData); // ← 수정
+    console.log('signupAPI 호출됨');   // ← 여기 추가
+    const response = await apiClient.post('/friend/user/signup', userData);
     return response.data;
   } catch (error: any) {
+    console.log('signupAPI catch 진입');
     console.log('signupAPI 에러 response:', error.response?.data);
     console.log('signupAPI 에러 message:', error.message);
     if (error.response) {
@@ -15,7 +20,6 @@ export const signupAPI = async (userData: SignupRequest) => {
     throw new Error('서버와 통신 중 오류가 발생했습니다.');
   }
 };
-
 // 2. 로그인
 export const loginAPI = async (loginData: any) => {
   try {

@@ -130,6 +130,8 @@ export default function SignUpScreen() {
     is_medicated: v.treated      // ← treated → is_medicated
   }));
 
+  
+
       const finalData: SignupRequest = {
         email,
         password,
@@ -149,12 +151,16 @@ export default function SignUpScreen() {
       };
 
       console.log("최종 데이터:", finalData);
-      await signupAPI(finalData);
-      setIsFinishModalVisible(true);
-    } catch (error: any) {
-      Alert.alert("회원가입 실패", error.message || "입력 정보를 다시 확인해주세요.");
-    }
-  };
+    console.log('회원가입 시작');                    // ← 추가
+    const response = await signupAPI(finalData);
+    console.log('회원가입 응답:', response);          // ← 추가
+    setIsFinishModalVisible(true);
+
+  } catch (error: any) {
+    console.log('회원가입 catch 진입:', error.message); // ← 추가
+    Alert.alert("회원가입 실패", error.message || "입력 정보를 다시 확인해주세요.");
+  }
+};
 
   const handleSkipToHome = async () => {
     setIsSkipModalVisible(false);
