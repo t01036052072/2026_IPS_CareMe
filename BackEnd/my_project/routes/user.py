@@ -61,9 +61,10 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
             status_code=400,
             detail="비밀번호가 너무 깁니다. (최대 72bytes)"
         )
-    print(user.password)
-    print(len(user.password))
-    print(len(user.password.encode("utf-8")))
+    print("PASSWORD:", user.password)
+    print("TYPE:", type(user.password))
+    print("LEN:", len(user.password))
+    print("BYTES:", len(user.password.encode("utf-8")))
 
     hashed_password = pwd_context.hash(user.password)
 
