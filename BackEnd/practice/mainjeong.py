@@ -91,8 +91,8 @@ app.include_router(pill_alarm_router)
 app.include_router(appointment_router)
 
 # 친구 기능 (경로가 겹치지 않게 /friend를 붙였습니다)
-app.include_router(friend_user_router, prefix="/friend/user", tags=["친구 회원가입 기능"])
-app.include_router(friend_doc_router, prefix="/friend/doc", tags=["친구 진단서 기능"])
+app.include_router(friend_user_router, prefix="/friend/user", tags=["회원가입 기능"])
+app.include_router(friend_doc_router, prefix="/friend/doc", tags=["진단서 기능"])
 
 # 앱 시작 시 실제 MySQL에 테이블 생성
 Base.metadata.create_all(bind=engine)
@@ -108,68 +108,10 @@ if not os.path.exists(UPLOAD_DIR):
 
 @app.get("/")
 def root():
-    return {"message": "나와 친구의 모든 기능이 합쳐진 통합 서버입니다!"}
+    return {"message": "통합 서버."}
 
 @app.get("/items/{item_id}")
 def read_item(item_id: int, q: str = None):
     return {"item_id": item_id, "query": q}
 
-@app.post("/signup")
-def signup(user: UserCreate, db: Session = Depends(get_db)):
-    existing_user = db.query(UserTable).filter(UserTable.email == user.email).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="이미 등록된 이메일입니다.")
-
-    hashed_password = pwd_context.hash(user.password)
-
-    history_list = []
-    for disease in user.medical_history:
-        status_list = []
-        if disease.is_diagnosed:
-            status_list.append("진단")
-        if disease.is_medicated:
-            status_list.append("약물치료")
-        if status_list:
-            history_list.append(f"{disease.name}({'+'.join(status_list)})")
-
-    try:
-        new_user = UserTable(
-            email=user.email,
-            name=user.name,
-            password=hashed_password,
-            age=user.age,
-            gender=user.gender.value,
-            height=user.height,
-            weight=user.weight,
-            is_under_treatment=user.is_under_treatment,
-            has_family_history=user.has_family_history,
-            is_b_hepatitis_carrier=user.is_b_hepatitis_carrier,
-            medical_history=", ".join(history_list),
-            smoked_regular=user.smoked_regular,
-            used_heated_tobacco=user.used_heated_tobacco,
-            used_vaping=user.used_vaping,
-            drinking_frequency=user.drinking_frequency,
-        )
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
-        return {"message": "회원가입이 완료되었습니다.", "user_name": new_user.name}
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"회원가입 중 오류 발생: {str(e)}")
-
-
-@app.post("/login")
-def login(request: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(UserTable).filter(UserTable.email == request.email).first()
-    if not user or not pwd_context.verify(request.password, user.password):
-        raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 잘못되었습니다.")
-
-    access_token = create_access_token(data={"sub": user.email})
-    return {
-        "message": f"환영합니다, {user.name}님!",
-        "status": "success",
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user_name": user.name,
-    }
+#아니깃헙아 push 받아달라고
