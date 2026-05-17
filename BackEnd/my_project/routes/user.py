@@ -15,7 +15,7 @@ SECRET_KEY = "health-care-ai-engineering-2026"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", truncate_error=False)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 router = APIRouter(tags=["인증"])
@@ -56,11 +56,7 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="이미 등록된 이메일입니다.")
 
     # bcrypt 72bytes 제한 검사
-    if len(user.password.encode("utf-8")) > 72:
-        raise HTTPException(
-            status_code=400,
-            detail="비밀번호가 너무 깁니다. (최대 72bytes)"
-        )
+   
     print("PASSWORD:", user.password)
     print("TYPE:", type(user.password))
     print("LEN:", len(user.password))
