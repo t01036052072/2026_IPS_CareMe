@@ -1,6 +1,7 @@
 # practice/mainjeong.py
 from fastapi import Depends, FastAPI, HTTPException, File, UploadFile
 import os
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 # DB 및 모델 
@@ -43,6 +44,26 @@ def initialize_firebase_if_available():
 
 initialize_firebase_if_available()
 
+
+def ensure_user_profile_columns():
+    required_columns = {
+        "height": "FLOAT NULL",
+        "weight": "FLOAT NULL",
+        "smoked_regular": "BOOL DEFAULT 0",
+        "used_heated_tobacco": "BOOL DEFAULT 0",
+        "used_vaping": "BOOL DEFAULT 0",
+        "drinking_frequency": "VARCHAR(100) NULL",
+    }
+
+    with engine.begin() as conn:
+        existing_columns = {
+            row[0] for row in conn.execute(text("DESCRIBE users")).fetchall()
+        }
+        for column_name, column_type in required_columns.items():
+            if column_name not in existing_columns:
+                conn.execute(text(f"ALTER TABLE users ADD COLUMN {column_name} {column_type}"))
+                print(f"[DB] users.{column_name} 컬럼을 추가했습니다.")
+
 # --- 1. 앱 객체 생성 ---
 app = FastAPI(title="CareMe Medication Service")
 
@@ -58,6 +79,7 @@ app.include_router(friend_doc_router, prefix="/friend/doc", tags=["친구 진단
 
 # 앱 시작 시 실제 MySQL에 테이블 생성
 Base.metadata.create_all(bind=engine)
+ensure_user_profile_columns()
 
 
 # --- 3. 설정 및 초기화 --- 

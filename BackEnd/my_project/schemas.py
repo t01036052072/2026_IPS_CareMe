@@ -8,6 +8,8 @@ from datetime import datetime
 class Gender(str, Enum):
     male = "남자"
     female = "여자"
+    male_formal = "남성"
+    female_formal = "여성"
 
 class MedicalHistoryItem(BaseModel):
     name: str
