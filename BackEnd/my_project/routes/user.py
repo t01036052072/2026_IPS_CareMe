@@ -18,7 +18,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-router = APIRouter(tags=["Auth"])
+router = APIRouter(tags=["인증"])
 
 
 def create_access_token(data: dict):
@@ -48,22 +48,35 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     return user
 
-
 @router.post("/signup")
 def signup(user: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(UserTable).filter(UserTable.email == user.email).first()
+
     if existing_user:
         raise HTTPException(status_code=400, detail="이미 등록된 이메일입니다.")
+
+    # bcrypt 72bytes 제한 검사
+    if len(user.password.encode("utf-8")) > 72:
+        raise HTTPException(
+            status_code=400,
+            detail="비밀번호가 너무 깁니다. (최대 72bytes)"
+        )
+    print(user.password)
+    print(len(user.password))
+    print(len(user.password.encode("utf-8")))
 
     hashed_password = pwd_context.hash(user.password)
 
     history_list = []
     for disease in user.medical_history:
         status_list = []
+
         if disease.is_diagnosed:
             status_list.append("진단")
+
         if disease.is_medicated:
             status_list.append("약물치료")
+
         if status_list:
             history_list.append(f"{disease.name}({'+'.join(status_list)})")
 
@@ -87,25 +100,21 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
             used_vaping=user.used_vaping,
             drinking_frequency=user.drinking_frequency,
         )
+
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
-        return {"message": f"{new_user.name}님, 생활습관 정보까지 포함된 가입이 완료되었습니다!"}
+
+        return {
+            "message": f"{new_user.name}님, 생활습관 정보까지 포함된 가입이 완료되었습니다!"
+        }
+
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"회원가입 중 오류 발생: {str(e)}")
-
-
-@router.post("/login")
-def login(request: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(UserTable).filter(UserTable.email == request.username).first()
-
-    if not user or not pwd_context.verify(request.password, user.password):
-        raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 잘못되었습니다.")
-
-    access_token = create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer", "user_name": user.name}
-
+        raise HTTPException(
+            status_code=500,
+            detail=f"회원가입 중 오류 발생: {str(e)}"
+        )
 
 @router.get("/me")
 def read_users_me(current_user: UserTable = Depends(get_current_user)):
