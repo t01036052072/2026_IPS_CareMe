@@ -1,40 +1,70 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from database.connection import get_db
+from database.models import Chat
 from schemas.chat import ChatRequest
+
+from services.openai_service import get_ai_response
 
 router = APIRouter()
 
-chat_history = []
-
 @router.post("")
-def chat(payload: ChatRequest):
+def chat(payload: ChatRequest, db: Session = Depends(get_db)):
 
-    user_message = {
-        "role": "user",
-        "content": payload.message
-    }
+    message = payload.message.strip()
 
-    assistant_message = {
-        "role": "assistant",
-        "content": f"입력한 메시지: {payload.message}"
-    }
+    # GPT 응답 생성
+    ai_reply = get_ai_response(message)
 
-    chat_history.append(user_message)
-    chat_history.append(assistant_message)
+    # 유저 메시지 저장
+    user_msg = Chat(
+        role="user",
+        content=message
+    )
+
+    # AI 메시지 저장
+    assistant_msg = Chat(
+        role="assistant",
+        content=ai_reply
+    )
+
+    db.add(user_msg)
+    db.add(assistant_msg)
+
+    db.commit()
 
     return {
-        "reply": assistant_message["content"]
+        "reply": ai_reply
     }
+
 
 @router.get("/history")
-def get_chat_history():
+def get_chat_history(db: Session = Depends(get_db)):
+
+    messages = db.query(Chat).all()
+
+    result = []
+
+    for msg in messages:
+        result.append({
+            "id": msg.id,
+            "role": msg.role,
+            "content": msg.content
+        })
 
     return {
-        "messages": chat_history
+        "messages": result
     }
 
+
 @router.delete("/history")
-def clear_chat_history():
-    chat_history.clear()
+def clear_chat_history(db: Session = Depends(get_db)):
+
+    db.query(Chat).delete()
+
+    db.commit()
+
     return {
         "message": "채팅 기록 삭제 완료"
     }
