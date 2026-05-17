@@ -1,47 +1,46 @@
 import { Stack, useRouter, useSegments } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRootNavigationState } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
- export default function RootLayout() {
-  /* const segments = useSegments(); 
+export default function RootLayout() {
+  const segments = useSegments();
+  const router = useRouter();
   const navigationState = useRootNavigationState();
-
-  // 로그인 상태 (지금은 테스트용으로 false, 나중에 서버랑 연결)
-  const [isLoggedIn, setIsLoggedIn] = useState(false); 
-  */
-    const router = useRouter();
-
-
-  /* useEffect(() => {
   
+
+  useEffect(() => {
     if (!navigationState?.key) return;
 
-    const timeout = setTimeout(() => {
+    const checkAndRoute = async () => {
+      const token = await AsyncStorage.getItem('access_token');
+      const loggedIn = !!token;
       const inTabsGroup = segments[0] === "(tabs)";
+      const inAuthGroup = segments[0] === "(auth)";
 
-      if (!isLoggedIn && inTabsGroup) {
+      console.log('segments:', segments);
+      console.log('token:', token);
+      console.log('loggedIn:', loggedIn);
+
+      if (!loggedIn && inTabsGroup) {
         router.replace("/(auth)/StartScreen/StartScreen");
-
-      } else if (isLoggedIn && !inTabsGroup) {
+      } else if (!loggedIn && !inAuthGroup) {
+        router.replace("/(auth)/StartScreen/StartScreen");
+      } else if (loggedIn && !inTabsGroup) {
         router.replace("/(tabs)");
       }
-    }, 1);
+    };
 
-    return () => clearTimeout(timeout);
-  }, [isLoggedIn, segments, navigationState?.key]);
+    checkAndRoute();
+  }, [segments, navigationState?.key]);
 
-  */
-
-    return (
+  return (
     <Stack screenOptions={{ headerShown: false }}>
-
-      {/* auth */}
       <Stack.Screen name="(auth)/StartScreen/StartScreen" />
       <Stack.Screen name="(auth)/LoginScreen/LoginScreen" />
-      <Stack.Screen name="(auth)/SignUpScreen/SignUpScreen1" />
-
-      {/* tabs */}
+      <Stack.Screen name="(auth)/SignUpScreen/SignUpScreen" />
+     
       <Stack.Screen name="(tabs)" />
     </Stack>
   );
-} 
+}
