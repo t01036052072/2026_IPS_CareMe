@@ -1,5 +1,5 @@
 import re
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import List, Optional
 from enum import Enum
 from datetime import datetime
@@ -9,6 +9,13 @@ class Gender(str, Enum):
     male = "남자"
     female = "여자"
 
+class MedicalHistoryItem(BaseModel):
+    name: str
+    is_diagnosed: bool
+    is_medicated: bool
+
+
+
 class DiseaseStatus(BaseModel):
     name: str
     is_diagnosed: bool
@@ -16,15 +23,20 @@ class DiseaseStatus(BaseModel):
 
 # 2. 회원가입 및 로그인 관련 스키마
 class UserCreate(BaseModel):
-    email: str
+    email: EmailStr
     name: str
     age: int
-    gender: Gender 
+    gender: Gender
     password: str = Field(..., min_length=8, max_length=50)
+
+    # [추가] 기획서 반영: 신체 정보
+    height: float
+    weight: float
+
     is_under_treatment: bool
     has_family_history: bool
     is_b_hepatitis_carrier: bool
-    medical_history: List[DiseaseStatus] = []
+    medical_history: List[MedicalHistoryItem]
 
     @field_validator('password')
     @classmethod
@@ -34,9 +46,15 @@ class UserCreate(BaseModel):
         if not re.search(r'[A-Za-z]', v) or not re.search(r'\d', v):
             raise ValueError('비밀번호는 영문자와 숫자를 모두 포함해야 합니다.')
         return v
+    
+    # 🆕 와이어프레임 기준 추가 필드
+    smoked_regular: bool
+    used_heated_tobacco: bool
+    used_vaping: bool
+    drinking_frequency: str  # "1회 미만", "1~2회" 등 문자열로 수집
 
 class LoginRequest(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
 # 3. 문서(진단서) 관련 스키마

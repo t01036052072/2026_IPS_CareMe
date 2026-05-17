@@ -35,7 +35,7 @@ export default function StartScreen() {
 
         <TouchableOpacity 
           style={styles.signupButton}
-              onPress={() => router.push('/(auth)/calendar/calendar')}
+              onPress={() => router.push('../(auth)/SignUpScreen/SignUpScreen1/SignUpScreen1')}
         >
           
           <Text style={styles.signupButtonText}>회원가입하기</Text>
