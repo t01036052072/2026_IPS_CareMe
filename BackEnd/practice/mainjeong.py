@@ -20,7 +20,7 @@ from practice.hospital_appointment import router as appointment_router
 from my_project.schemas import UserCreate, LoginRequest
 from my_project.database import get_db
 from my_project.models import UserTable
-from my_project.routes.user import create_access_token, pwd_context, router as friend_user_router
+from my_project.routes.user import router as friend_user_router
 from my_project.routes.document import router as friend_doc_router
 # 기존 import들 아래에 추가
 from my_project.models import Base
