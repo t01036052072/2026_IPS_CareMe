@@ -65,6 +65,11 @@ def _model_to_detail(appt: Appointment, alarm_date_str: str, alarm_time_str: str
 
 
 # ── 1. 병원 예약 등록 ──────────────────────────────────────
+# 병원 예약 등록 API
+# - 프론트에서 병원명, 예약 날짜, 예약 시간, 알림 날짜, 알림 시간을 보내면 DB에 저장합니다.
+# - date와 time 문자열을 합쳐 appointment_time DateTime 값으로 변환합니다.
+# - 현재는 payload.user_id 기준으로 예약을 저장하며, 추후 토큰 기반 current_user.id 저장으로 확장할 수 있습니다.
+# - 통합 서버에서는 /appointments 경로에 POST로 호출됩니다.
 @router.post("", response_model=AppointmentDetail, status_code=201, summary="병원 예약 등록")
 def create_appointment(payload: AppointmentCreate, db: Session = Depends(get_db)):
     # 프론트가 보낸 날짜와 시간을 파이썬 datetime 객체로 결합 및 변환
@@ -88,6 +93,11 @@ def create_appointment(payload: AppointmentCreate, db: Session = Depends(get_db)
 
 
 # ── 2. 병원 예약 조회 ──────────────────────────────────────
+# 병원 예약 조회 API
+# - 특정 user_id가 등록한 병원 예약 목록을 MySQL appointments 테이블에서 조회합니다.
+# - month 파라미터는 월별 필터링 확장을 위해 받아두었지만, 현재 구현은 user_id 기준 전체 예약을 반환합니다.
+# - 응답에는 병원명, 예약 날짜/시간, 알림 날짜/시간이 포함됩니다.
+# - 통합 서버에서는 /appointments 경로에 GET으로 호출됩니다.
 @router.get("", response_model=List[AppointmentDetail], summary="병원 예약 조회")
 def get_appointments(user_id: int, month: Optional[str] = None, db: Session = Depends(get_db)):
     # 💡 덤프 리스트 대신 MySQL에서 해당 유저의 모든 예약을 긁어옵니다.
@@ -106,6 +116,11 @@ def get_appointments(user_id: int, month: Optional[str] = None, db: Session = De
 
 
 # ── 3. 병원 예약 수정 ──────────────────────────────────────
+# 병원 예약 수정 API
+# - appointment_id에 해당하는 기존 예약을 찾아 병원명과 예약 시간을 새 값으로 갱신합니다.
+# - 요청 바디는 등록 API와 같은 AppointmentCreate 형식을 사용합니다.
+# - 예약을 찾지 못하면 404를 반환합니다.
+# - 통합 서버에서는 /appointments/{appointment_id} 경로에 PUT으로 호출됩니다.
 @router.put("/{appointment_id}", response_model=AppointmentDetail, summary="병원 예약 수정")
 def update_appointment(appointment_id: int, payload: AppointmentCreate, db: Session = Depends(get_db)):
     # MySQL에서 수정할 데이터를 찾습니다.
@@ -126,6 +141,10 @@ def update_appointment(appointment_id: int, payload: AppointmentCreate, db: Sess
 
 
 # ── 4. 병원 예약 삭제 ──────────────────────────────────────
+# 병원 예약 삭제 API
+# - appointment_id에 해당하는 병원 예약을 MySQL appointments 테이블에서 삭제합니다.
+# - 해당 id의 예약이 없으면 404를 반환합니다.
+# - 통합 서버에서는 /appointments/{appointment_id} 경로에 DELETE로 호출됩니다.
 @router.delete("/{appointment_id}", summary="병원 예약 삭제")
 def delete_appointment(appointment_id: int, db: Session = Depends(get_db)):
     # MySQL에서 삭제할 데이터를 찾습니다.

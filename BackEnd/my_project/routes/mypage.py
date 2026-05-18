@@ -37,8 +37,21 @@ class AccountUpdate(BaseModel):
         return value
 
 
+class PasswordUpdate(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=8, max_length=50)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, value: str):
+        if not re.search(r"[A-Za-z]", value) or not re.search(r"\d", value):
+            raise ValueError("비밀번호는 영문자와 숫자를 모두 포함해야 합니다.")
+        return value
+
+
 class ProfileUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    age: Optional[int] = Field(default=None, ge=0, le=150)
     gender: Optional[str] = Field(default=None, max_length=50)
     height: Optional[float] = Field(default=None, gt=0, le=300)
     weight: Optional[float] = Field(default=None, gt=0, le=500)
@@ -60,6 +73,71 @@ class ProfileUpdate(BaseModel):
         return self
 
 
+class BasicProfileUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    age: Optional[int] = Field(default=None, ge=0, le=150)
+    gender: Optional[str] = Field(default=None, max_length=50)
+    height: Optional[float] = Field(default=None, gt=0, le=300)
+    weight: Optional[float] = Field(default=None, gt=0, le=500)
+
+    @model_validator(mode="after")
+    def validate_has_update(self):
+        if not self.model_fields_set or all(
+            getattr(self, field_name) is None for field_name in self.model_fields_set
+        ):
+            raise ValueError("수정할 기본정보를 입력해주세요.")
+        return self
+
+
+class HealthProfileUpdate(BaseModel):
+    is_under_treatment: Optional[bool] = None
+    has_family_history: Optional[bool] = None
+    is_b_hepatitis_carrier: Optional[bool] = None
+    medical_history: Optional[str] = None
+    smoked_regular: Optional[bool] = None
+    used_heated_tobacco: Optional[bool] = None
+    used_vaping: Optional[bool] = None
+    drinking_frequency: Optional[str] = Field(default=None, max_length=100)
+
+    @model_validator(mode="after")
+    def validate_has_update(self):
+        if not self.model_fields_set or all(
+            getattr(self, field_name) is None for field_name in self.model_fields_set
+        ):
+            raise ValueError("수정할 건강정보를 입력해주세요.")
+        return self
+
+
+class DiseaseHistoryUpdate(BaseModel):
+    is_under_treatment: Optional[bool] = None
+    has_family_history: Optional[bool] = None
+    is_b_hepatitis_carrier: Optional[bool] = None
+    medical_history: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_has_update(self):
+        if not self.model_fields_set or all(
+            getattr(self, field_name) is None for field_name in self.model_fields_set
+        ):
+            raise ValueError("수정할 질환력 정보를 입력해주세요.")
+        return self
+
+
+class LifestyleUpdate(BaseModel):
+    smoked_regular: Optional[bool] = None
+    used_heated_tobacco: Optional[bool] = None
+    used_vaping: Optional[bool] = None
+    drinking_frequency: Optional[str] = Field(default=None, max_length=100)
+
+    @model_validator(mode="after")
+    def validate_has_update(self):
+        if not self.model_fields_set or all(
+            getattr(self, field_name) is None for field_name in self.model_fields_set
+        ):
+            raise ValueError("수정할 흡연 및 음주 정보를 입력해주세요.")
+        return self
+
+
 def serialize_user(user: UserTable) -> dict:
     return {
         "id": user.id,
@@ -78,6 +156,62 @@ def serialize_user(user: UserTable) -> dict:
         "used_vaping": user.used_vaping,
         "drinking_frequency": user.drinking_frequency,
     }
+
+
+def serialize_basic_profile(user: UserTable) -> dict:
+    return {
+        "name": user.name,
+        "age": user.age,
+        "gender": user.gender,
+        "height": user.height,
+        "weight": user.weight,
+    }
+
+
+def serialize_health_profile(user: UserTable) -> dict:
+    return {
+        "is_under_treatment": user.is_under_treatment,
+        "has_family_history": user.has_family_history,
+        "is_b_hepatitis_carrier": user.is_b_hepatitis_carrier,
+        "medical_history": user.medical_history,
+        "smoked_regular": user.smoked_regular,
+        "used_heated_tobacco": user.used_heated_tobacco,
+        "used_vaping": user.used_vaping,
+        "drinking_frequency": user.drinking_frequency,
+    }
+
+
+def serialize_disease_history(user: UserTable) -> dict:
+    return {
+        "is_under_treatment": user.is_under_treatment,
+        "has_family_history": user.has_family_history,
+        "is_b_hepatitis_carrier": user.is_b_hepatitis_carrier,
+        "medical_history": user.medical_history,
+    }
+
+
+def serialize_lifestyle(user: UserTable) -> dict:
+    return {
+        "smoked_regular": user.smoked_regular,
+        "used_heated_tobacco": user.used_heated_tobacco,
+        "used_vaping": user.used_vaping,
+        "drinking_frequency": user.drinking_frequency,
+    }
+
+
+def update_user_fields(user: UserTable, update_data: BaseModel) -> None:
+    for field_name, value in update_data.model_dump(exclude_unset=True).items():
+        if value is not None:
+            setattr(user, field_name, value)
+
+
+def update_password(user: UserTable, current_password: str, new_password: str) -> None:
+    if not verify_password(current_password, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="현재 비밀번호가 올바르지 않습니다.",
+        )
+    user.password = hash_password(new_password)
 
 
 def serialize_document(document: DocumentTable) -> dict:
@@ -128,6 +262,90 @@ def read_my_profile(current_user: UserTable = Depends(get_current_user)):
     return serialize_user(current_user)
 
 
+@router.get("/profile/basic")
+def read_my_basic_profile(current_user: UserTable = Depends(get_current_user)):
+    return serialize_basic_profile(current_user)
+
+
+@router.patch("/profile/basic")
+def update_my_basic_profile(
+    update_data: BasicProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: UserTable = Depends(get_current_user),
+):
+    update_user_fields(current_user, update_data)
+    db.commit()
+    db.refresh(current_user)
+
+    return {
+        "message": "기본정보가 변경되었습니다.",
+        "profile": serialize_basic_profile(current_user),
+    }
+
+
+@router.get("/profile/health")
+def read_my_health_profile(current_user: UserTable = Depends(get_current_user)):
+    return serialize_health_profile(current_user)
+
+
+@router.patch("/profile/health")
+def update_my_health_profile(
+    update_data: HealthProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: UserTable = Depends(get_current_user),
+):
+    update_user_fields(current_user, update_data)
+    db.commit()
+    db.refresh(current_user)
+
+    return {
+        "message": "건강정보가 변경되었습니다.",
+        "profile": serialize_health_profile(current_user),
+    }
+
+
+@router.get("/profile/health/disease")
+def read_my_disease_history(current_user: UserTable = Depends(get_current_user)):
+    return serialize_disease_history(current_user)
+
+
+@router.patch("/profile/health/disease")
+def update_my_disease_history(
+    update_data: DiseaseHistoryUpdate,
+    db: Session = Depends(get_db),
+    current_user: UserTable = Depends(get_current_user),
+):
+    update_user_fields(current_user, update_data)
+    db.commit()
+    db.refresh(current_user)
+
+    return {
+        "message": "질환력 정보가 변경되었습니다.",
+        "profile": serialize_disease_history(current_user),
+    }
+
+
+@router.get("/profile/health/lifestyle")
+def read_my_lifestyle(current_user: UserTable = Depends(get_current_user)):
+    return serialize_lifestyle(current_user)
+
+
+@router.patch("/profile/health/lifestyle")
+def update_my_lifestyle(
+    update_data: LifestyleUpdate,
+    db: Session = Depends(get_db),
+    current_user: UserTable = Depends(get_current_user),
+):
+    update_user_fields(current_user, update_data)
+    db.commit()
+    db.refresh(current_user)
+
+    return {
+        "message": "흡연 및 음주 정보가 변경되었습니다.",
+        "profile": serialize_lifestyle(current_user),
+    }
+
+
 # 마이페이지 기본정보 수정 API
 # - 통합 서버에서는 PATCH /friend/mypage/profile 경로로 호출됩니다.
 # - 요청 body 예시: {"name": "홍길동", "gender": "남자", "height": 170, "weight": 60}
@@ -137,10 +355,7 @@ def update_my_profile(
     db: Session = Depends(get_db),
     current_user: UserTable = Depends(get_current_user),
 ):
-    for field_name, value in update_data.model_dump(exclude_unset=True).items():
-        if value is not None:
-            setattr(current_user, field_name, value)
-
+    update_user_fields(current_user, update_data)
     db.commit()
     db.refresh(current_user)
 
@@ -173,6 +388,18 @@ def read_my_documents(
 # - 비밀번호 변경 시 현재 비밀번호를 검증한 뒤 새 비밀번호를 해시로 저장합니다.
 # - 이메일이 바뀌면 JWT payload의 sub도 바뀌어야 하므로 새 access_token을 함께 반환합니다.
 # - 통합 서버에서는 /friend/mypage/account 경로로 호출됩니다.
+@router.patch("/account/password")
+def update_my_password(
+    update_data: PasswordUpdate,
+    db: Session = Depends(get_db),
+    current_user: UserTable = Depends(get_current_user),
+):
+    update_password(current_user, update_data.current_password, update_data.new_password)
+    db.commit()
+
+    return {"message": "비밀번호가 변경되었습니다."}
+
+
 @router.patch("/account")
 def update_my_account(
     update_data: AccountUpdate,
