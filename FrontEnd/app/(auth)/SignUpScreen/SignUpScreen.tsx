@@ -13,7 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const main_navy = '#00246D';
 const light_gray = '#E0E0E0';
-const red = '#C0392B'; // ← 하나로 통일, 더 진한 빨강
+const red = '#C0392B';
 
 const DISEASE_LIST = ["뇌졸중 (중풍)", "심근경색/협심증", "고혈압", "당뇨", "이상지질혈증", "폐결핵", "우울증", "조기정신증", "C형 간염", "기타"];
 const FAMILY_DISEASE_LIST = ["뇌졸중 (중풍)", "심근경색/협심증", "고혈압", "당뇨병", "기타"];
@@ -62,6 +62,8 @@ export default function SignUpScreen() {
   const [smoke2, setSmoke2] = useState('');
   const [smoke3, setSmoke3] = useState('');
   const [drinkFreq, setDrinkFreq] = useState('');
+  const [accessToken, setAccessToken] = useState('');
+
 
   // 공통 모달
   const [isSkipModalVisible, setIsSkipModalVisible] = useState(false);
@@ -69,28 +71,26 @@ export default function SignUpScreen() {
 
   // ───── Step 1 핸들러 ─────
   const handleEmailChange = (text: string) => {
-  setEmail(text);
-  setEmailDuplicateError(false);
-  // @ 앞뒤에 글자 있고 . 있어야 함
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  setEmailError(text.length > 0 && !emailRegex.test(text));
-};
+    setEmail(text);
+    setEmailDuplicateError(false);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    setEmailError(text.length > 0 && !emailRegex.test(text));
+  };
 
   // ───── Step 2 핸들러 ─────
   const handlePasswordChange = (text: string) => {
-  setPassword(text);
-  // 8자 미만이거나 영어 없거나 숫자 없으면 오류
-  const hasLetter = /[a-zA-Z]/.test(text);
-  const hasNumber = /[0-9]/.test(text);
-  setPasswordLengthError(text.length > 0 && (text.length < 8 || !hasLetter || !hasNumber));
-  if (confirmPassword.length > 0) setPasswordMatchError(text !== confirmPassword);
-};
-
+    setPassword(text);
+    const hasLetter = /[a-zA-Z]/.test(text);
+    const hasNumber = /[0-9]/.test(text);
+    setPasswordLengthError(text.length > 0 && (text.length < 8 || !hasLetter || !hasNumber));
+    if (confirmPassword.length > 0) setPasswordMatchError(text !== confirmPassword);
+  };
 
   const handleConfirmPasswordChange = (text: string) => {
     setConfirmPassword(text);
     setPasswordMatchError(text.length > 0 && password !== text);
   };
+
 
   // ───── Step 4 핸들러 ─────
   const onDateChange = (event: any, selectedDate?: Date) => {
@@ -107,6 +107,16 @@ export default function SignUpScreen() {
     }
   };
 
+  // 소수점 포함 숫자 입력 핸들러
+  const handleDecimalInput = (text: string, setter: (v: string) => void) => {
+    // 숫자와 소수점만 허용, 소수점은 하나만
+    const cleaned = text.replace(/[^0-9.]/g, '');
+    const parts = cleaned.split('.');
+    if (parts.length > 2) return; // 소수점 두 개 이상 방지
+    if (parts[1] && parts[1].length > 1) return; // 소수점 이하 1자리만
+    setter(cleaned);
+  };
+
   // ───── Step 5 핸들러 ─────
   const toggleDisease = (diseaseName: string, type: 'diagnosed' | 'treated') => {
     setDiseaseData(prev => {
@@ -119,18 +129,54 @@ export default function SignUpScreen() {
     setFamilyData(prev => prev.includes(diseaseName) ? prev.filter(i => i !== diseaseName) : [...prev, diseaseName]);
   };
 
+  // ───── 건너뛰기 (기본정보만 저장) ─────
+  const handleSkipToHome = async () => {
+    try {
+      const skipData: SignupRequest = {
+        email,
+        password,
+        name,
+        age,
+        gender: gender as '남자' | '여자',
+        height: parseFloat(height) || 0,
+        weight: parseFloat(weight) || 0,
+        // 나머지는 기본값
+        is_under_treatment: false,
+        has_family_history: false,
+        is_b_hepatitis_carrier: false,
+        medical_history: [],
+        smoked_regular: false,
+        used_heated_tobacco: false,
+        used_vaping: false,
+        drinking_frequency: '',
+      };
+
+      console.log('건너뛰기 데이터:', skipData);
+      const response = await signupAPI(skipData);
+      console.log('건너뛰기 회원가입 응답:', response);
+
+      setIsSkipModalVisible(false);
+      await AsyncStorage.setItem('access_token', response.access_token);
+      router.replace('/(tabs)' as any);
+    } catch (error: any) {
+      console.log('건너뛰기 오류:', error.message);
+      setIsSkipModalVisible(false);
+      Alert.alert('회원가입 실패', error.message || '입력 정보를 다시 확인해주세요.');
+    }
+  };
+
   // ───── 최종 제출 ─────
   const handleFinish = async () => {
     try {
-      const medicalHistory = Object.entries(diseaseData)
-  .filter(([_, v]) => v.diagnosed || v.treated)
-  .map(([n, v]) => ({ 
-    name: n, 
-    is_diagnosed: v.diagnosed,   // ← diagnosed → is_diagnosed
-    is_medicated: v.treated      // ← treated → is_medicated
-  }));
 
-  
+
+      const medicalHistory = Object.entries(diseaseData)
+        .filter(([_, v]) => v.diagnosed || v.treated)
+        .map(([n, v]) => ({
+          name: n,
+          is_diagnosed: v.diagnosed,
+          is_medicated: v.treated
+        }));
 
       const finalData: SignupRequest = {
         email,
@@ -150,22 +196,14 @@ export default function SignUpScreen() {
         drinking_frequency: drinkFreq,
       };
 
-      console.log("최종 데이터:", finalData);
-    console.log('회원가입 시작');                    // ← 추가
-    const response = await signupAPI(finalData);
-    console.log('회원가입 응답:', response);          // ← 추가
-    setIsFinishModalVisible(true);
-
-  } catch (error: any) {
-    console.log('회원가입 catch 진입:', error.message); // ← 추가
-    Alert.alert("회원가입 실패", error.message || "입력 정보를 다시 확인해주세요.");
-  }
-};
-
-  const handleSkipToHome = async () => {
-    setIsSkipModalVisible(false);
-    await AsyncStorage.setItem('access_token', 'temp_token');
-    router.replace('/(tabs)' as any);
+      console.log('최종 데이터:', finalData);
+      const response = await signupAPI(finalData);
+setAccessToken(response.access_token);  // ← 저장
+setIsFinishModalVisible(true);
+    } catch (error: any) {
+      console.log('회원가입 catch 진입:', error.message);
+      Alert.alert('회원가입 실패', error.message || '입력 정보를 다시 확인해주세요.');
+    }
   };
 
   // ───── 공통 헤더 ─────
@@ -255,8 +293,9 @@ export default function SignUpScreen() {
                   value={password}
                   onChangeText={handlePasswordChange}
                   secureTextEntry
+                  maxLength={20}
                 />
-                {passwordLengthError && <Text style={styles.errorText}>비밀번호는 영문자와 숫자를 포함하여 8자 이상이어야 합니다</Text>}
+                {passwordLengthError && <Text style={styles.errorText}>영문자와 숫자를 포함하여 8자 이상 입력해주세요</Text>}
               </View>
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>비밀번호 확인</Text>
@@ -266,6 +305,7 @@ export default function SignUpScreen() {
                   value={confirmPassword}
                   onChangeText={handleConfirmPasswordChange}
                   secureTextEntry
+                  maxLength={20}
                 />
                 {passwordMatchError && <Text style={styles.errorText}>비밀번호가 일치하지 않습니다</Text>}
               </View>
@@ -288,7 +328,6 @@ export default function SignUpScreen() {
   // ═══════════════════════════════════════
   if (step === 3) {
     return (
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <SafeAreaView style={styles.container}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
             {renderHeader(() => setStep(2))}
@@ -314,7 +353,6 @@ export default function SignUpScreen() {
             </View>
           </KeyboardAvoidingView>
         </SafeAreaView>
-      </TouchableWithoutFeedback>
     );
   }
 
@@ -360,32 +398,34 @@ export default function SignUpScreen() {
                 </TouchableOpacity>
               </View>
 
+              {/* 키 - 소수점 입력 가능 (000.0) */}
               <View style={styles.inputSection}>
                 <Text style={styles.labelLarge}>키</Text>
                 <View style={[styles.inputBoxLarge, styles.rowEnd]}>
                   <TextInput
                     style={[styles.inputTextLarge, { flex: 1 }]}
                     value={height}
-                    onChangeText={text => setHeight(text.replace(/[^0-9]/g, ''))}
+                    onChangeText={text => handleDecimalInput(text, setHeight)}
                     keyboardType="decimal-pad"
                     maxLength={5}
-                    placeholder="000"
+                    placeholder="000.0"
                     placeholderTextColor="#CCC"
                   />
                   <Text style={styles.unitText}>cm</Text>
                 </View>
               </View>
 
+              {/* 몸무게 - 소수점 입력 가능 (000.0) */}
               <View style={styles.inputSection}>
                 <Text style={styles.labelLarge}>몸무게</Text>
                 <View style={[styles.inputBoxLarge, styles.rowEnd]}>
                   <TextInput
                     style={[styles.inputTextLarge, { flex: 1 }]}
                     value={weight}
-                    onChangeText={text => setWeight(text.replace(/[^0-9]/g, ''))}
+                    onChangeText={text => handleDecimalInput(text, setWeight)}
                     keyboardType="decimal-pad"
-                    maxLength={3}
-                    placeholder="000"
+                    maxLength={5}
+                    placeholder="000.0"
                     placeholderTextColor="#CCC"
                   />
                   <Text style={styles.unitText}>kg</Text>
@@ -631,7 +671,7 @@ export default function SignUpScreen() {
             <TouchableOpacity
               style={[styles.nextButton, { marginTop: 10 }]}
               onPress={async () => {
-                await AsyncStorage.setItem('access_token', 'temp_token');
+                await AsyncStorage.setItem('access_token', accessToken);
                 router.replace('/(tabs)' as any);
               }}
             >

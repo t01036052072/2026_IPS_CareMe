@@ -1,6 +1,7 @@
 # practice/mainjeong.py
 from fastapi import Depends, FastAPI, HTTPException, File, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import os
 from sqlalchemy import text
@@ -69,6 +70,20 @@ def ensure_user_profile_columns():
 
 # --- 1. 앱 객체 생성 ---
 app = FastAPI(title="CareMe Medication Service")
+
+frontend_origins = os.getenv(
+    "FRONTEND_ORIGINS",
+    "http://localhost:8087,http://127.0.0.1:8087,http://localhost:8081,http://127.0.0.1:8081",
+).split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[origin.strip() for origin in frontend_origins if origin.strip()],
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1):\d+",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.exception_handler(RequestValidationError)
