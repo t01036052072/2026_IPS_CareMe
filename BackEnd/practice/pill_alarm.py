@@ -100,6 +100,11 @@ def _model_to_detail(med: Medication, period: str, duration_days: int, start_dat
 
 
 # ── 1. 복약 일정 조회 ──────────────────────────────────────
+# 복약 일정 조회 API
+# - 특정 user_id가 등록한 모든 복약 일정을 MySQL medications 테이블에서 조회합니다.
+# - show_detail=true로 호출하면 복약명, 시간뿐 아니라 복용 기간/횟수/시작일/종료일 상세 정보까지 함께 내려줍니다.
+# - 현재는 요청 파라미터의 user_id 기준으로 조회하며, 추후 토큰 기반 current_user.id 조회로 확장할 수 있습니다.
+# - 통합 서버에서는 /medications 경로에 GET으로 호출됩니다.
 @router.get("", response_model=List[MedicationSummary], summary="복약 일정 조회")
 def get_medications(user_id: int, show_detail: bool = False, db: Session = Depends(get_db)):
     # 💡 덤프 리스트 대신 MySQL에서 사용자가 등록한 데이터를 실시간 조회합니다.
@@ -123,6 +128,11 @@ def get_medications(user_id: int, show_detail: bool = False, db: Session = Depen
 
 
 # ── 2. 복약 일정 등록 ──────────────────────────────────────
+# 복약 일정 등록 API
+# - 프론트에서 복약명, 오전/오후, 복용 시간, 복용 개수, 복용 기간, 시작일을 보내면 DB에 저장합니다.
+# - 사용자가 입력하는 12시간제 시간을 DB 저장용 24시간제 시간으로 변환합니다.
+# - Medication 테이블에는 medication_name, dose, time, user_id 중심으로 저장됩니다.
+# - 통합 서버에서는 /medications 경로에 POST로 호출됩니다.
 @router.post("", response_model=MedicationDetail, status_code=201, summary="복약 일정 등록")
 def create_medication(payload: MedicationCreate, db: Session = Depends(get_db)):
     # 24시간 형식 시간 변환
@@ -146,6 +156,10 @@ def create_medication(payload: MedicationCreate, db: Session = Depends(get_db)):
 
 
 # ── 3. 복약 일정 삭제 ──────────────────────────────────────
+# 복약 일정 삭제 API
+# - medication_id에 해당하는 복약 일정을 MySQL medications 테이블에서 삭제합니다.
+# - 해당 id의 데이터가 없으면 404를 반환합니다.
+# - 통합 서버에서는 /medications/{medication_id} 경로에 DELETE로 호출됩니다.
 @router.delete("/{medication_id}", summary="복약 일정 삭제")
 def delete_medication(medication_id: int, db: Session = Depends(get_db)):
     # 💡 리스트 필터링 대신 MySQL 데이터베이스에서 해당 id를 가진 행을 찾습니다.
