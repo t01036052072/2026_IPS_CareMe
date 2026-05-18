@@ -13,6 +13,7 @@ import {
 } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
+import { sendChatMessage } from "@/api/chat";
 import { router } from "expo-router";
 import * as Crypto from "expo-crypto";
 
@@ -20,7 +21,6 @@ import Jikimi from "../../../assets/ChatBot/Jikimi.svg";
 import Back from "../../../assets/images/LoginScreen/back.png";
 
 const MAIN_COLOR = "#00246D";
-const BASE_URL = "http://172.20.97.245:8000";
 
 type MessageType = {
   id: string;
@@ -62,14 +62,16 @@ export default function ChatScreen() {
 
   useEffect(() => {
     flatListRef.current?.scrollToEnd({ animated: true });
-  }, [message]);
+  }, [messages]);
 
   const sendMessage = async () => {
     if (!message.trim() || loading) return;
 
+    const userText = message;
+
     const userMessage: MessageType = {
       id: Crypto.randomUUID(),
-      text: message,
+      text: userText,
       sender: "user",
     };
 
@@ -78,15 +80,7 @@ export default function ChatScreen() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${BASE_URL}/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message }),
-      });
-
-      const data = await response.json();
+      const data = await sendChatMessage(userText);
 
       const botMessage: MessageType = {
         id: Crypto.randomUUID(),
@@ -194,26 +188,18 @@ export default function ChatScreen() {
       {/* INPUT */}
       <View style={styles.inputOuterContainer}>
         <View style={styles.inputRow}>
-
-
           <View style={styles.inputContainer}>
             <TextInput
               placeholder="메시지 입력"
               placeholderTextColor="#999"
               value={message}
               onChangeText={setMessage}
-
               style={styles.input}
-
               underlineColorAndroid="transparent"
               cursorColor={MAIN_COLOR}
-              selectionColor={MAIN_COLOR}
-              autoCorrect={false}
-              autoCapitalize="none"
             />
           </View>
 
-          {/* 🚀 버튼 (밖) */}
           <TouchableOpacity
             style={styles.sendButton}
             onPress={sendMessage}
@@ -221,7 +207,6 @@ export default function ChatScreen() {
           >
             <Ionicons name="arrow-up" size={22} color="#fff" />
           </TouchableOpacity>
-
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -256,20 +241,18 @@ const styles = StyleSheet.create({
   },
 
   chatContainer: {
-    //paddingHorizontal: 16,
-    //paddingBottom: 20,
     paddingLeft: 16,
-  paddingRight: 0, 
-  paddingTop: 20,
-  paddingBottom: 20,
-  flexGrow: 1,
+    paddingRight: 0,
+    paddingTop: 20,
+    paddingBottom: 20,
+    flexGrow: 1,
   },
 
   messageWrapper: {
     flexDirection: "row",
     marginBottom: 18,
-    //alignItems: "flex-end",
     justifyContent: "flex-end",
+    width: "100%",
   },
 
   botWrapper: {
@@ -278,6 +261,7 @@ const styles = StyleSheet.create({
 
   userWrapper: {
     alignSelf: "flex-end",
+    alignItems: "flex-end",
   },
 
   botIconContainer: {
@@ -298,7 +282,6 @@ const styles = StyleSheet.create({
 
   userBubble: {
     backgroundColor: MAIN_COLOR,
-    paddingHorizontal: 12,
   },
 
   messageText: {
@@ -335,13 +318,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F5F5",
     borderRadius: 999,
     height: 50,
-
     justifyContent: "center",
     paddingHorizontal: 18,
-
-    borderWidth: 0,
-    elevation: 0,
-    shadowOpacity: 0,
   },
 
   input: {
