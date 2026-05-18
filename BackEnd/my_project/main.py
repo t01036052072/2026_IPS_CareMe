@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from my_project.database import Base, engine
-from my_project.routes import document, user
+from my_project.routes import document, mypage, user
 
 from my_project import models  # noqa: F401
 
@@ -28,6 +28,7 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 # 라우터 등록
 app.include_router(user.router)
 app.include_router(document.router)
+app.include_router(mypage.router, prefix="/mypage", tags=["마이페이지"])
 
 @app.get("/")
 def root():

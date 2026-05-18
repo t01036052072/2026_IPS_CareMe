@@ -12,8 +12,9 @@ from typing import Optional, List
 from datetime import datetime, timedelta
 
 # 프로젝트 구조에 맞춘 임포트
-from my_project.models import DocumentTable
+from my_project.models import DocumentTable, UserTable
 from my_project import schemas
+from my_project.routes.user import get_current_user
 
 # [교정 1] 시스템 환경 변수 설정: PaddleOCR 로드 전 최상단에 배치하여 에러를 원천 차단합니다.
 os.environ['PADDLE_USE_ONEDNN'] = '0' 
@@ -51,7 +52,8 @@ async def upload_document(
     file: UploadFile = File(...), 
     doc_type: str = Form(...), 
     upload_date: str = Form(...), 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: UserTable = Depends(get_current_user),
 ):
     global ocr_model
     if ocr_model is None:
@@ -128,7 +130,7 @@ async def upload_document(
         hospital_name=detected_hospital,
         upload_date=upload_date, 
         image_url=f"/static/uploads/{unique_filename}",
-        user_id=1, 
+        user_id=current_user.id,
         ocr_count=len(extracted_texts),
         raw_text=full_raw_text,
         simplified_text=easy_description,
