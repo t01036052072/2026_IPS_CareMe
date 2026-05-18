@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
+import hashlib
 
+import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from my_project.database import get_db
@@ -15,8 +16,8 @@ SECRET_KEY = "health-care-ai-engineering-2026"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+BCRYPT_SHA256_PREFIX = "bcrypt_sha256$"
 
 router = APIRouter()
 
@@ -29,11 +30,21 @@ def create_access_token(data: dict):
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    password_digest = hashlib.sha256(password.encode("utf-8")).hexdigest().encode("ascii")
+    hashed_password = bcrypt.hashpw(password_digest, bcrypt.gensalt()).decode("utf-8")
+    return f"{BCRYPT_SHA256_PREFIX}{hashed_password}"
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        if hashed_password.startswith(BCRYPT_SHA256_PREFIX):
+            stored_hash = hashed_password.removeprefix(BCRYPT_SHA256_PREFIX).encode("utf-8")
+            password_digest = hashlib.sha256(plain_password.encode("utf-8")).hexdigest().encode("ascii")
+            return bcrypt.checkpw(password_digest, stored_hash)
+
+        return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+    except ValueError:
+        return False
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
