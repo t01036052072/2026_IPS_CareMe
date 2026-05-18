@@ -20,7 +20,7 @@ os.environ['PADDLE_USE_ONEDNN'] = '0'
 os.environ['FLAGS_use_onednn'] = '0'
 os.environ['FLAGS_allocator_strategy'] = 'naive_best_fit'
 
-router = APIRouter(prefix="/documents", tags=["Documents"])
+router = APIRouter(prefix="/documents")
 
 # OCR 모델 지연 로딩
 ocr_model = None
