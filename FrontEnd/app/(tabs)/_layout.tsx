@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Tabs } from 'expo-router';
+/*import { Tabs } from 'expo-router';
 
 import CustomTabBar from '../../components/CustomTabBar';
 
@@ -12,6 +12,29 @@ export default function TabLayout() {
       }}
 
       tabBar={() => <CustomTabBar />}
+    />
+  );
+}*/
+
+import { Tabs, useSegments } from 'expo-router';
+import CustomTabBar from '../../components/CustomTabBar';
+
+export default function TabLayout() {
+  const segments = useSegments();
+
+  const hideTabBar = segments[1] === "chatbot";
+
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+      }}
+
+      tabBar={
+        hideTabBar
+          ? () => null
+          : () => <CustomTabBar />
+      }
     />
   );
 }

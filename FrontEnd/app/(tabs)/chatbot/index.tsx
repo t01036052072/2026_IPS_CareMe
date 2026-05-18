@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, use } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -39,7 +39,8 @@ export default function ChatScreen() {
     {
       id: "init",
       sender: "bot",
-      text: "안녕하세요 😊\nAI 상담 챗봇 지키미입니다.\n\n지원 기능은 아래 3가지입니다:\n\n• 약 정보\n• 증상 상담\n• 어플 사용 방법\n\n궁금한 내용을 자유롭게 질문해주세요.",
+      text:
+        "안녕하세요 😊\nAI 상담 챗봇 지키미입니다.\n\n• 약 정보\n• 증상 상담\n• 어플 사용 방법",
     },
   ]);
 
@@ -48,10 +49,10 @@ export default function ChatScreen() {
 
     switch (action) {
       case "go_mypage":
-        router.push("/mypage");
+        router.push("/(tabs)/mypage" as any);
         break;
       case "go_pill":
-        router.push("/pill");
+        router.push("/(tabs)/pill" as any);
         break;
       case "go_home":
         router.push("/");
@@ -59,7 +60,6 @@ export default function ChatScreen() {
     }
   };
 
-  // 메시지 변경될 때마다 자동 스크롤
   useEffect(() => {
     flatListRef.current?.scrollToEnd({ animated: true });
   }, [message]);
@@ -67,11 +67,9 @@ export default function ChatScreen() {
   const sendMessage = async () => {
     if (!message.trim() || loading) return;
 
-    const currentMessage = message;
-
     const userMessage: MessageType = {
       id: Crypto.randomUUID(),
-      text: currentMessage,
+      text: message,
       sender: "user",
     };
 
@@ -85,9 +83,7 @@ export default function ChatScreen() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          message: currentMessage,
-        }),
+        body: JSON.stringify({ message }),
       });
 
       const data = await response.json();
@@ -101,13 +97,14 @@ export default function ChatScreen() {
 
       setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
-      const errorMessage: MessageType = {
-        id: Crypto.randomUUID(),
-        text: "서버 연결에 실패했어요 😢",
-        sender: "bot",
-      };
-
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Crypto.randomUUID(),
+          text: "서버 연결에 실패했어요 😢",
+          sender: "bot",
+        },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -125,7 +122,7 @@ export default function ChatScreen() {
       >
         {isBot && (
           <View style={styles.botIconContainer}>
-            <Jikimi width={38} height={38} />
+            <Jikimi width={47} height={47} />
           </View>
         )}
 
@@ -152,7 +149,7 @@ export default function ChatScreen() {
               onPress={() => handleAction(item.action)}
             >
               <Text style={styles.actionButtonText}>
-                해당 화면으로 이동하기
+                해당 화면으로 이동
               </Text>
             </TouchableOpacity>
           )}
@@ -169,12 +166,12 @@ export default function ChatScreen() {
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Image source={Back} style={{ width: 26, height: 26 }} />
+          <Image source={Back} style={styles.backIcon} />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>케미 상담</Text>
+        <Text style={styles.title}>케미 상담</Text>
 
-        <View style={{ width: 28 }} />
+        <View style={{ width: 40 }} />
       </View>
 
       {/* CHAT */}
@@ -185,9 +182,6 @@ export default function ChatScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.chatContainer}
         showsVerticalScrollIndicator={false}
-        onContentSizeChange={() =>
-          flatListRef.current?.scrollToEnd({ animated: true })
-        }
       />
 
       {/* LOADING */}
@@ -199,26 +193,35 @@ export default function ChatScreen() {
 
       {/* INPUT */}
       <View style={styles.inputOuterContainer}>
-        <View style={styles.inputContainer}>
-          <TextInput
-            placeholder="메시지 입력"
-            placeholderTextColor="#999"
-            value={message}
-            onChangeText={setMessage}
-            style={styles.input}
-            multiline
-            editable={!loading}
-            onSubmitEditing={sendMessage}
-            returnKeyType="send"
-          />
+        <View style={styles.inputRow}>
 
+
+          <View style={styles.inputContainer}>
+            <TextInput
+              placeholder="메시지 입력"
+              placeholderTextColor="#999"
+              value={message}
+              onChangeText={setMessage}
+
+              style={styles.input}
+
+              underlineColorAndroid="transparent"
+              cursorColor={MAIN_COLOR}
+              selectionColor={MAIN_COLOR}
+              autoCorrect={false}
+              autoCapitalize="none"
+            />
+          </View>
+
+          {/* 🚀 버튼 (밖) */}
           <TouchableOpacity
-            style={[styles.sendButton, loading && { opacity: 0.5 }]}
+            style={styles.sendButton}
             onPress={sendMessage}
             disabled={loading}
           >
             <Ionicons name="arrow-up" size={22} color="#fff" />
           </TouchableOpacity>
+
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -232,33 +235,41 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    height: 95,
-    paddingTop: 48,
-    paddingHorizontal: 18,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F1F1",
-    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 24,
+    marginTop: 70,
+    marginBottom: 70,
   },
 
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111",
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: "contain",
+  },
+
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: MAIN_COLOR,
   },
 
   chatContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 20,
+    //paddingHorizontal: 16,
+    //paddingBottom: 20,
+    paddingLeft: 16,
+  paddingRight: 0, 
+  paddingTop: 20,
+  paddingBottom: 20,
+  flexGrow: 1,
   },
 
   messageWrapper: {
     flexDirection: "row",
     marginBottom: 18,
-    alignItems: "flex-end",
+    //alignItems: "flex-end",
+    justifyContent: "flex-end",
   },
 
   botWrapper: {
@@ -275,7 +286,7 @@ const styles = StyleSheet.create({
   },
 
   messageBubble: {
-    maxWidth: "78%",
+    maxWidth: "85%",
     paddingHorizontal: 16,
     paddingVertical: 13,
     borderRadius: 22,
@@ -287,6 +298,7 @@ const styles = StyleSheet.create({
 
   userBubble: {
     backgroundColor: MAIN_COLOR,
+    paddingHorizontal: 12,
   },
 
   messageText: {
@@ -310,24 +322,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingTop: 10,
     paddingBottom: 24,
-    backgroundColor: "#FFFFFF",
+    marginBottom: 20,
+  },
+
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flex: 1,
     backgroundColor: "#F5F5F5",
     borderRadius: 999,
-    minHeight: 58,
-    paddingLeft: 18,
-    paddingRight: 6,
+    height: 50,
+
+    justifyContent: "center",
+    paddingHorizontal: 18,
+
+    borderWidth: 0,
+    elevation: 0,
+    shadowOpacity: 0,
   },
 
   input: {
-    flex: 1,
-    fontSize: 15,
+    fontSize: 18,
     color: "#111",
-    maxHeight: 100,
+    paddingVertical: 0,
   },
 
   sendButton: {
@@ -337,6 +357,7 @@ const styles = StyleSheet.create({
     backgroundColor: MAIN_COLOR,
     justifyContent: "center",
     alignItems: "center",
+    marginLeft: 10,
   },
 
   actionButton: {
