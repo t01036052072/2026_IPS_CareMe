@@ -1,17 +1,24 @@
-from openai import OpenAI
-from dotenv import load_dotenv
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
+load_dotenv(dotenv_path=Path(__file__).resolve().parents[2] / ".env")
 
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY")
-)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
+
 
 def get_ai_response(message: str):
+    if not OPENAI_API_KEY:
+        raise RuntimeError("OPENAI_API_KEY 환경변수가 설정되어 있지 않습니다.")
+
+    client = OpenAI(api_key=OPENAI_API_KEY)
 
     response = client.chat.completions.create(
-        model="gpt-5.4-mini",
+        model=OPENAI_MODEL,
 
         messages=[
             {

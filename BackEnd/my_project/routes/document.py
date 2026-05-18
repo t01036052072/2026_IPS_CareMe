@@ -13,6 +13,9 @@ from datetime import datetime, timedelta
 
 # 프로젝트 구조에 맞춘 임포트
 from my_project.models import DocumentTable, UserTable
+# 프로젝트 구조에 맞춘 모델 임포트입니다.
+# DocumentTable은 진단서 DB 저장/조회에 사용하고, UserTable은 토큰에서 꺼낸 현재 사용자 타입 표시에 사용합니다.
+from my_project.models import DocumentTable, UserTable
 from my_project import schemas
 from my_project.routes.user import get_current_user
 
@@ -22,6 +25,9 @@ os.environ['FLAGS_use_onednn'] = '0'
 os.environ['FLAGS_allocator_strategy'] = 'naive_best_fit'
 
 router = APIRouter(prefix="/documents")
+
+# OCR 모델은 서버 시작 시 바로 로딩하지 않고 최초 업로드 요청 때 한 번만 로딩합니다.
+# PaddleOCR 로딩 비용이 커서, 지연 로딩으로 서버 시작 속도와 메모리 부담을 줄입니다.
 
 # OCR 모델 지연 로딩
 ocr_model = None
@@ -33,6 +39,8 @@ def get_upload_path_from_url(image_url: str) -> Path:
     relative_path = image_url.removeprefix("/static/").lstrip("/")
     return STATIC_DIR / relative_path
 
+# OCR 결과에 포함된 어려운 의학 용어를 사용자에게 쉬운 표현으로 보여주기 위한 변환 함수입니다.
+# 현재는 하드코딩 치환 방식이며, 추후 의학 용어 사전 또는 AI 요약 결과로 확장할 수 있습니다.
 # --- [NLP] 어려운 의학 용어 순화 함수 ---
 def simplify_medical_terms(raw_text: str) -> str:
     simplified = raw_text
@@ -47,6 +55,13 @@ def simplify_medical_terms(raw_text: str) -> str:
     return "분석 결과: " + simplified if simplified else "분석된 내용이 없습니다."
 
 # 1. 문서 업로드 (OCR 및 순화 포함)
+# 진단서 업로드 API
+# - 프론트는 multipart/form-data로 file, doc_type, upload_date를 보냅니다.
+# - Authorization 헤더의 JWT 토큰으로 현재 로그인한 사용자를 확인합니다.
+# - 업로드 이미지는 static/uploads 폴더에 저장하고 PaddleOCR로 텍스트를 추출합니다.
+# - 추출 텍스트에서 병원명 후보를 찾고, 쉬운 설명(simplified_text)을 만든 뒤 documents 테이블에 저장합니다.
+# - user_id는 고정값이 아니라 current_user.id로 저장하므로 사용자별 진단서 관리가 가능합니다.
+# - 통합 서버에서는 /friend/doc/documents/upload 경로로 호출됩니다.
 @router.post("/upload")
 async def upload_document(
     file: UploadFile = File(...), 
@@ -142,6 +157,12 @@ async def upload_document(
     return {"status": "success", "data": {"id": new_doc.id, "hospital": new_doc.hospital_name}}
 
 # 2. 문서 목록 조회
+# 진단서 목록 조회 API
+# - documents 테이블의 진단서 목록을 조회합니다.
+# - months 값을 주면 최근 N개월 데이터만 필터링합니다.
+# - sort=asc 또는 sort=desc로 업로드 날짜 기준 정렬 방향을 선택합니다.
+# - 현재 이 API는 전체 문서 목록 조회용이며, 마이페이지 개인별 문서 조회는 /friend/user/me 또는 /friend/mypage/documents를 사용합니다.
+# - 통합 서버에서는 /friend/doc/documents/list 경로로 호출됩니다.
 @router.get("/list")
 def get_document_list(
     months: Optional[int] = None,
@@ -172,6 +193,11 @@ def get_document_list(
     }
 
 # 3. 문서 상세 조회
+# 진단서 상세 조회 API
+# - document_id에 해당하는 진단서 1건의 상세 정보를 반환합니다.
+# - 병원명, 업로드 날짜, 원문 OCR 텍스트, 쉬운 설명, 이미지 URL 등을 포함합니다.
+# - 문서를 찾지 못하면 404를 반환합니다.
+# - 통합 서버에서는 /friend/doc/documents/{document_id} 경로로 호출됩니다.
 @router.get("/{document_id}", response_model=schemas.DocumentDetail)
 def get_document_detail(document_id: int, db: Session = Depends(get_db)):
     document = db.query(DocumentTable).filter(DocumentTable.id == document_id).first()
@@ -192,6 +218,11 @@ def get_document_detail(document_id: int, db: Session = Depends(get_db)):
     }
 
 # 4. 문서 수정 (재분석 시에도 동일한 안정적 설정 적용)
+# 진단서 이미지 수정 API
+# - 기존 document_id의 이미지 파일을 새 파일로 교체합니다.
+# - 기존 파일이 서버에 남아 있으면 삭제하고, 새 이미지를 uploads 폴더에 저장합니다.
+# - 새 이미지에 대해 OCR을 다시 실행하고 병원명/원문 텍스트/쉬운 설명/ocr_count를 갱신합니다.
+# - 통합 서버에서는 /friend/doc/documents/{document_id} 경로에 PUT으로 호출됩니다.
 @router.put("/{document_id}")
 async def update_document_image(
     document_id: int,
@@ -250,6 +281,10 @@ async def update_document_image(
     return {"status": "success", "data": {"id": document.id, "hospital": document.hospital_name}}
 
 # 5. 문서 삭제
+# 진단서 삭제 API
+# - document_id에 해당하는 DB 레코드와 서버에 저장된 이미지 파일을 함께 삭제합니다.
+# - 문서를 찾지 못하면 404를 반환합니다.
+# - 통합 서버에서는 /friend/doc/documents/{document_id} 경로에 DELETE로 호출됩니다.
 @router.delete("/{document_id}")
 def delete_document(document_id: int, db: Session = Depends(get_db)):
     document = db.query(DocumentTable).filter(DocumentTable.id == document_id).first()
