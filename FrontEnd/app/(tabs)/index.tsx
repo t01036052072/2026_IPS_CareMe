@@ -14,6 +14,7 @@ import CalendarHome from '../../assets/home/calendarHome.svg';
 import DocumentHome from '../../assets/home/documentHome.svg';
 
 
+
 const MAIN_NAVY = '#00246D';
 
 export default function HomeScreen() {
@@ -53,7 +54,7 @@ export default function HomeScreen() {
             resizeMode: 'contain',
           }} />
 
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/mypage' as any)}>
           <Profile width={40} height={40} />
         </TouchableOpacity>
       </View>
