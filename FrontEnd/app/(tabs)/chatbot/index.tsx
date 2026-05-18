@@ -39,14 +39,12 @@ export default function ChatScreen() {
     {
       id: "init",
       sender: "bot",
-      text:
-        "안녕하세요 😊\nAI 상담 챗봇 지키미입니다.\n\n• 약 정보\n• 증상 상담\n• 어플 사용 방법",
+      text: "안녕하세요 😊\nAI 상담 챗봇 지키미입니다.\n\n• 약 정보\n• 증상 상담\n• 어플 사용 방법",
     },
   ]);
 
   const handleAction = (action?: string) => {
     if (!action) return;
-
     switch (action) {
       case "go_mypage":
         router.push("/(tabs)/mypage" as any);
@@ -120,7 +118,7 @@ export default function ChatScreen() {
           </View>
         )}
 
-        <View>
+        <View style={isBot ? {} : styles.userMessageContainer}>
           <View
             style={[
               styles.messageBubble,
@@ -142,9 +140,7 @@ export default function ChatScreen() {
               style={styles.actionButton}
               onPress={() => handleAction(item.action)}
             >
-              <Text style={styles.actionButtonText}>
-                해당 화면으로 이동
-              </Text>
+              <Text style={styles.actionButtonText}>해당 화면으로 이동</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -162,9 +158,7 @@ export default function ChatScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Image source={Back} style={styles.backIcon} />
         </TouchableOpacity>
-
         <Text style={styles.title}>케미 상담</Text>
-
         <View style={{ width: 40 }} />
       </View>
 
@@ -176,6 +170,9 @@ export default function ChatScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.chatContainer}
         showsVerticalScrollIndicator={false}
+        onContentSizeChange={() =>
+          flatListRef.current?.scrollToEnd({ animated: true })
+        }
       />
 
       {/* LOADING */}
@@ -199,7 +196,6 @@ export default function ChatScreen() {
               cursorColor={MAIN_COLOR}
             />
           </View>
-
           <TouchableOpacity
             style={styles.sendButton}
             onPress={sendMessage}
@@ -225,7 +221,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 24,
     marginTop: 70,
-    marginBottom: 70,
+    marginBottom: 12,  // ← 70 → 12
   },
 
   backIcon: {
@@ -242,7 +238,7 @@ const styles = StyleSheet.create({
 
   chatContainer: {
     paddingLeft: 16,
-    paddingRight: 0,
+    paddingRight: 16,
     paddingTop: 20,
     paddingBottom: 20,
     flexGrow: 1,
@@ -251,7 +247,6 @@ const styles = StyleSheet.create({
   messageWrapper: {
     flexDirection: "row",
     marginBottom: 18,
-    justifyContent: "flex-end",
     width: "100%",
   },
 
@@ -261,7 +256,11 @@ const styles = StyleSheet.create({
 
   userWrapper: {
     alignSelf: "flex-end",
-    alignItems: "flex-end",
+    justifyContent: "flex-end",  
+  },
+
+  userMessageContainer: {
+    alignItems: "flex-end",  
   },
 
   botIconContainer: {
@@ -271,6 +270,7 @@ const styles = StyleSheet.create({
 
   messageBubble: {
     maxWidth: "85%",
+    minWidth: "35%",
     paddingHorizontal: 16,
     paddingVertical: 13,
     borderRadius: 22,
@@ -278,10 +278,12 @@ const styles = StyleSheet.create({
 
   botBubble: {
     backgroundColor: "#F1F1F1",
+    alignSelf: "flex-start",  
   },
 
   userBubble: {
     backgroundColor: MAIN_COLOR,
+    alignSelf: "flex-end",   
   },
 
   messageText: {
@@ -299,6 +301,7 @@ const styles = StyleSheet.create({
 
   loadingContainer: {
     paddingBottom: 8,
+    paddingLeft: 16,
   },
 
   inputOuterContainer: {
