@@ -8,6 +8,9 @@ export default function RootLayout() {
   const router = useRouter();
   const navigationState = useRootNavigationState();
   
+/* useEffect(() => {
+  AsyncStorage.clear(); // ← 임시로 추가, 실행 후 바로 삭제
+}, []); */
 
   useEffect(() => {
     if (!navigationState?.key) return;
