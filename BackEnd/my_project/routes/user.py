@@ -26,6 +26,10 @@ PASSLIB_BCRYPT_SHA256_PREFIX = "$bcrypt-sha256$"
 router = APIRouter()
 
 
+# JWT access token을 만드는 공통 함수입니다.
+# payload에는 현재 사용자를 식별하기 위한 값(sub=email)과 만료 시간(exp)이 들어갑니다.
+# 프론트는 로그인/회원가입 응답으로 받은 access_token을 저장했다가
+# 이후 인증이 필요한 API 요청의 Authorization 헤더에 Bearer 토큰으로 보내야 합니다.
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -114,6 +118,9 @@ def serialize_document_for_mypage(document: DocumentTable) -> dict:
     }
 
 
+# Authorization: Bearer <access_token> 헤더에서 JWT를 꺼내 현재 로그인한 사용자를 조회합니다.
+# 토큰이 없거나, 만료되었거나, payload의 sub(email)에 해당하는 사용자가 DB에 없으면 401을 반환합니다.
+# 마이페이지/진단서 업로드처럼 "내 계정 기준"으로 동작해야 하는 라우터들이 이 함수를 재사용합니다.
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -134,6 +141,11 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     return user
 
+# 회원가입 API
+# - 프론트가 이메일, 이름, 비밀번호, 건강 정보, 생활습관 정보를 JSON으로 보내면 users 테이블에 저장합니다.
+# - 비밀번호는 평문으로 저장하지 않고 hash_password()로 암호화해서 저장합니다.
+# - 가입 성공 시 바로 로그인 상태로 진입할 수 있도록 access_token도 함께 내려줍니다.
+# - 통합 서버에서는 /friend/user/signup 경로로 호출됩니다.
 @router.post("/signup")
 def signup(user: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(UserTable).filter(UserTable.email == user.email).first()
@@ -196,6 +208,12 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
         )
 
 
+# 로그인 API
+# - OAuth2PasswordRequestForm 형식이라 프론트는 username=email, password를 form-data로 보내야 합니다.
+# - DB에 저장된 해시 비밀번호와 사용자가 입력한 비밀번호를 verify_password()로 비교합니다.
+# - 검증 성공 시 JWT access_token을 발급합니다.
+# - 예전 해시 형식으로 저장된 계정은 로그인 성공 시 현재 해시 형식으로 자동 갱신합니다.
+# - 통합 서버에서는 /friend/user/login 경로로 호출됩니다.
 @router.post("/login")
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -217,6 +235,12 @@ def login(
     access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
+# 내 정보/마이페이지 조회 API
+# - Authorization 헤더의 토큰으로 현재 사용자를 식별합니다.
+# - profile에는 회원가입 때 입력한 기본 정보와 건강/생활습관 정보가 들어갑니다.
+# - documents에는 현재 사용자 id로 저장된 진단서 업로드 내역이 최신순으로 들어갑니다.
+# - 프론트 마이페이지 화면은 이 API 하나로 사용자 정보와 진단서 목록을 받을 수 있습니다.
+# - 통합 서버에서는 /friend/user/me 경로로 호출됩니다.
 @router.get("/me")
 def read_users_me(
     db: Session = Depends(get_db),
@@ -236,11 +260,20 @@ def read_users_me(
     }
 
 
+# 로그아웃 API
+# - JWT 방식은 서버가 세션을 들고 있지 않기 때문에 서버 DB에서 삭제할 토큰 상태는 없습니다.
+# - 프론트에서 저장해 둔 access_token을 삭제하면 실제 로그아웃 처리가 완료됩니다.
+# - 이 API는 프론트가 로그아웃 성공 메시지를 받기 위한 용도입니다.
+# - 통합 서버에서는 /friend/user/logout 경로로 호출됩니다.
 @router.post("/logout")
 def logout():
     return {"message": "로그아웃 되었습니다."}
 
 
+# 회원탈퇴 API
+# - Authorization 헤더의 토큰으로 현재 사용자를 찾고 users 테이블에서 삭제합니다.
+# - 현재 구현은 사용자 계정 삭제가 중심이며, 연결 데이터 삭제 정책은 별도 라우터/DB 정책에 맞춰 확장할 수 있습니다.
+# - 통합 서버에서는 /friend/user/withdraw 경로로 호출됩니다.
 @router.delete("/withdraw")
 def withdraw(db: Session = Depends(get_db), current_user: UserTable = Depends(get_current_user)):
     db.delete(current_user)
