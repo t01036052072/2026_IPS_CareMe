@@ -15,10 +15,10 @@ SECRET_KEY = "health-care-ai-engineering-2026"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", truncate_error=False)
+pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-router = APIRouter(tags=["인증"])
+router = APIRouter()
 
 
 def create_access_token(data: dict):
@@ -26,6 +26,14 @@ def create_access_token(data: dict):
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
@@ -55,31 +63,24 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(status_code=400, detail="이미 등록된 이메일입니다.")
 
-    # bcrypt 72bytes 제한 검사
-   
-    print("PASSWORD:", user.password)
-    print("TYPE:", type(user.password))
-    print("LEN:", len(user.password))
-    print("BYTES:", len(user.password.encode("utf-8")))
-
-    hashed_password = pwd_context.hash(user.password)
-
-    history_list = []
-    for disease in user.medical_history:
-        status_list = []
-
-        if disease.is_diagnosed:
-            status_list.append("진단")
-
-        if disease.is_medicated:
-            status_list.append("약물치료")
-
-        if status_list:
-            history_list.append(f"{disease.name}({'+'.join(status_list)})")
-
-    medical_history_str = ", ".join(history_list)
-
     try:
+        hashed_password = hash_password(user.password)
+
+        history_list = []
+        for disease in user.medical_history:
+            status_list = []
+
+            if disease.is_diagnosed:
+                status_list.append("진단")
+
+            if disease.is_medicated:
+                status_list.append("약물치료")
+
+            if status_list:
+                history_list.append(f"{disease.name}({'+'.join(status_list)})")
+
+        medical_history_str = ", ".join(history_list)
+
         new_user = UserTable(
             email=user.email,
             name=user.name,
@@ -112,6 +113,24 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
             status_code=500,
             detail=f"회원가입 중 오류 발생: {str(e)}"
         )
+
+
+@router.post("/login")
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
+    user = db.query(UserTable).filter(UserTable.email == form_data.username).first()
+
+    if user is None or not verify_password(form_data.password, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="이메일 또는 비밀번호가 올바르지 않습니다.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token = create_access_token(data={"sub": user.email})
+    return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/me")
 def read_users_me(current_user: UserTable = Depends(get_current_user)):
