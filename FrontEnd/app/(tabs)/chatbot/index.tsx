@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { sendChatMessage } from "@/api/chat";
 import { router } from "expo-router";
 import * as Crypto from "expo-crypto";
+import Markdown from "react-native-markdown-display";
 
 import Jikimi from "../../../assets/ChatBot/Jikimi.svg";
 import Back from "../../../assets/images/LoginScreen/back.png";
@@ -126,14 +127,13 @@ export default function ChatScreen() {
               isBot ? styles.botBubble : styles.userBubble,
             ]}
           >
-            <Text
-              style={[
-                styles.messageText,
-                isBot ? styles.botText : styles.userText,
-              ]}
-            >
-              {item.text}
-            </Text>
+            {isBot ? (
+              <Markdown style={markdownStyles}>{item.text}</Markdown>
+            ) : (
+              <Text style={[styles.messageText, styles.userText]}>
+                {item.text}
+              </Text>
+            )}
           </View>
 
           {item.action && (
@@ -355,5 +355,28 @@ const styles = StyleSheet.create({
     color: MAIN_COLOR,
     fontSize: 13,
     fontWeight: "600",
+  },
+});
+
+const markdownStyles = StyleSheet.create({
+  body: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: "#111",
+  },
+  text: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: "#111",
+  },
+  paragraph: {
+    marginTop: 0,
+    marginBottom: 0,
+  },
+  strong: {
+    fontWeight: "bold",
+  },
+  strong_emphasis: {
+    fontWeight: "bold",
   },
 });
