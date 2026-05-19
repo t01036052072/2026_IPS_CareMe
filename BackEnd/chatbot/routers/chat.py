@@ -2,10 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import asc
 from sqlalchemy.orm import Session
 
-from schemas.chat import ChatRequest
-from services.openai_service import get_ai_response
-from database import get_db
-from models import Chat
+from chatbot.schemas.chat import ChatRequest
+from chatbot.services.openai_service import get_ai_response
+
+from my_project.database import get_db
+from my_project.models import Chat, UserTable
+from my_project.routes.user import get_current_user
 
 router = APIRouter()
 
@@ -14,6 +16,7 @@ router = APIRouter()
 def chat(
     payload: ChatRequest,
     db: Session = Depends(get_db),
+    current_user: UserTable = Depends(get_current_user),
 ):
     message = payload.message.strip()
 
@@ -29,11 +32,13 @@ def chat(
         )
 
     user_msg = Chat(
+        user_id=current_user.id,
         role="user",
         content=message,
     )
 
     assistant_msg = Chat(
+        user_id=current_user.id,
         role="assistant",
         content=ai_reply,
     )
@@ -50,9 +55,11 @@ def chat(
 @router.get("/history")
 def get_chat_history(
     db: Session = Depends(get_db),
+    current_user: UserTable = Depends(get_current_user),
 ):
     messages = (
         db.query(Chat)
+        .filter(Chat.user_id == current_user.id)
         .order_by(asc(Chat.id))
         .all()
     )
@@ -72,8 +79,9 @@ def get_chat_history(
 @router.delete("/history")
 def clear_chat_history(
     db: Session = Depends(get_db),
+    current_user: UserTable = Depends(get_current_user),
 ):
-    db.query(Chat).delete()
+    db.query(Chat).filter(Chat.user_id == current_user.id).delete()
     db.commit()
 
     return {"message": "채팅 기록 삭제 완료"}
