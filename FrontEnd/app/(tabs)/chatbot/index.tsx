@@ -120,7 +120,7 @@ export default function ChatScreen() {
           </View>
         )}
 
-        <View style={isBot ? {} : styles.userMessageContainer}>
+        <View style={isBot ? styles.botMessageContainer : styles.userMessageContainer}>
           <View
             style={[
               styles.messageBubble,
@@ -216,6 +216,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
 
+  botMessageContainer: {
+  flexShrink: 1,
+  maxWidth: "82%",
+},
+
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -271,10 +276,11 @@ const styles = StyleSheet.create({
 
   messageBubble: {
     maxWidth: "85%",
-    minWidth: "35%",
+    //minWidth: "35%",
     paddingHorizontal: 16,
     paddingVertical: 13,
     borderRadius: 22,
+    flexShrink: 1,
   },
 
   botBubble: {
@@ -363,15 +369,18 @@ const markdownStyles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     color: "#111",
+    flexShrink: 1,
   },
   text: {
     fontSize: 15,
     lineHeight: 22,
     color: "#111",
+    flexShrink: 1,
   },
   paragraph: {
     marginTop: 0,
     marginBottom: 0,
+    flexShrink: 1,
   },
   strong: {
     fontWeight: "bold",
