@@ -3,9 +3,9 @@ from sqlalchemy import asc
 from sqlalchemy.orm import Session
 
 from schemas.chat import ChatRequest
-from chatbot.services.openai_service import get_ai_response
-from my_project.database import get_db
-from my_project.models import Chat
+from services.openai_service import get_ai_response
+from database import get_db
+from models import Chat
 
 router = APIRouter()
 
