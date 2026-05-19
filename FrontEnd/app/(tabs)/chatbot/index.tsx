@@ -82,7 +82,8 @@ export default function ChatScreen() {
 
       const botMessage: MessageType = {
         id: Crypto.randomUUID(),
-        text: data.message,
+        //text: data.message,
+        text: data.answer,
         sender: "bot",
         //action: data.action,
       };
