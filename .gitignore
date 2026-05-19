@@ -41,3 +41,5 @@ node_modules/
 .env
 __pycache__/
 serviceAccountKey.json
+
+Data/raw_medical_data_v2.csv

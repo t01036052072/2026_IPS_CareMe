@@ -254,3 +254,4 @@ def delete_document(document_id: int, db: Session = Depends(get_db)):
     db.delete(document)
     db.commit()
     return {"status": "success", "message": f"{document_id}번 문서가 삭제되었습니다."}
+#test
