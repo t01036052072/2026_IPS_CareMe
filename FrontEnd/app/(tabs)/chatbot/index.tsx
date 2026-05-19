@@ -84,7 +84,7 @@ export default function ChatScreen() {
         id: Crypto.randomUUID(),
         text: data.message,
         sender: "bot",
-        action: data.action,
+        //action: data.action,
       };
 
       setMessages((prev) => [...prev, botMessage]);
