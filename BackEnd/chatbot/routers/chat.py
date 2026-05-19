@@ -25,10 +25,9 @@ def chat(
     except Exception as exc:
         raise HTTPException(
             status_code=500,
-            detail=f"챗봇 응답 생성 실패: {exc}"
+            detail=f"챗봇 응답 생성 실패: {exc}",
         )
 
-    # DB 저장
     user_msg = Chat(
         role="user",
         content=message,
@@ -43,7 +42,6 @@ def chat(
     db.add(assistant_msg)
     db.commit()
 
-    # 프론트 응답
     return {
         "answer": ai_reply
     }
@@ -65,7 +63,6 @@ def get_chat_history(
                 "id": msg.id,
                 "role": msg.role,
                 "content": msg.content,
-                "created_at": msg.created_at,
             }
             for msg in messages
         ]
