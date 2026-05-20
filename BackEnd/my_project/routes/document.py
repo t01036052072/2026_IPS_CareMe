@@ -7,7 +7,10 @@ from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, asc
 from my_project.database import get_db
-from paddleocr import PaddleOCR
+try:
+    from paddleocr import PaddleOCR
+except ModuleNotFoundError:
+    PaddleOCR = None
 from typing import Optional, List
 from datetime import datetime, timedelta
 
@@ -33,6 +36,14 @@ router = APIRouter(prefix="/documents")
 ocr_model = None
 STATIC_DIR = Path(__file__).resolve().parents[1] / "static"
 UPLOAD_DIR = STATIC_DIR / "uploads"
+
+
+def ensure_paddleocr_available():
+    if PaddleOCR is None:
+        raise HTTPException(
+            status_code=503,
+            detail="OCR 기능을 사용하려면 paddleocr 패키지를 설치해야 합니다.",
+        )
 
 
 def get_upload_path_from_url(image_url: str) -> Path:
@@ -71,6 +82,7 @@ async def upload_document(
     current_user: UserTable = Depends(get_current_user),
 ):
     global ocr_model
+    ensure_paddleocr_available()
     if ocr_model is None:
         # [교정 2] ocr_test.py에서 성공했던 안정적인 설정값으로 초기화합니다.
         ocr_model = PaddleOCR(
@@ -251,6 +263,7 @@ async def update_document_image(
 
     try:
         global ocr_model
+        ensure_paddleocr_available()
         if ocr_model is None:
             ocr_model = PaddleOCR(lang='korean', use_gpu=False, enable_mkldnn=False, show_log=False)
             

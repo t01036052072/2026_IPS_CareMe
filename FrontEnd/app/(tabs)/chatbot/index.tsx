@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { sendChatMessage } from "@/api/chat";
 import { router } from "expo-router";
 import * as Crypto from "expo-crypto";
+import Markdown from "react-native-markdown-display";
 
 import Jikimi from "../../../assets/ChatBot/Jikimi.svg";
 import Back from "../../../assets/images/LoginScreen/back.png";
@@ -82,9 +83,10 @@ export default function ChatScreen() {
 
       const botMessage: MessageType = {
         id: Crypto.randomUUID(),
-        text: data.message,
+        //text: data.message,
+        text: data.answer,
         sender: "bot",
-        action: data.action,
+        //action: data.action,
       };
 
       setMessages((prev) => [...prev, botMessage]);
@@ -118,21 +120,20 @@ export default function ChatScreen() {
           </View>
         )}
 
-        <View style={isBot ? {} : styles.userMessageContainer}>
+        <View style={isBot ? styles.botMessageContainer : styles.userMessageContainer}>
           <View
             style={[
               styles.messageBubble,
               isBot ? styles.botBubble : styles.userBubble,
             ]}
           >
-            <Text
-              style={[
-                styles.messageText,
-                isBot ? styles.botText : styles.userText,
-              ]}
-            >
-              {item.text}
-            </Text>
+            {isBot ? (
+              <Markdown style={markdownStyles}>{item.text}</Markdown>
+            ) : (
+              <Text style={[styles.messageText, styles.userText]}>
+                {item.text}
+              </Text>
+            )}
           </View>
 
           {item.action && (
@@ -215,6 +216,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
 
+  botMessageContainer: {
+  flexShrink: 1,
+  maxWidth: "82%",
+},
+
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -270,10 +276,11 @@ const styles = StyleSheet.create({
 
   messageBubble: {
     maxWidth: "85%",
-    minWidth: "35%",
+    //minWidth: "35%",
     paddingHorizontal: 16,
     paddingVertical: 13,
     borderRadius: 22,
+    flexShrink: 1,
   },
 
   botBubble: {
@@ -354,5 +361,31 @@ const styles = StyleSheet.create({
     color: MAIN_COLOR,
     fontSize: 13,
     fontWeight: "600",
+  },
+});
+
+const markdownStyles = StyleSheet.create({
+  body: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: "#111",
+    flexShrink: 1,
+  },
+  text: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: "#111",
+    flexShrink: 1,
+  },
+  paragraph: {
+    marginTop: 0,
+    marginBottom: 0,
+    flexShrink: 1,
+  },
+  strong: {
+    fontWeight: "bold",
+  },
+  strong_emphasis: {
+    fontWeight: "bold",
   },
 });
