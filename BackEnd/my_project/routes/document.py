@@ -2,7 +2,11 @@ import os
 import uuid
 import shutil
 import re
+<<<<<<< HEAD
+import requests
+=======
 from pathlib import Path
+>>>>>>> ae7a9dbf485355bfcef48bfc41ac0d764a4a4b50
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, asc
@@ -13,14 +17,23 @@ except ModuleNotFoundError:
     PaddleOCR = None
 from typing import Optional, List
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
 
 # 프로젝트 구조에 맞춘 임포트
+<<<<<<< HEAD
+from database import get_db
+from models import DocumentTable
+import schemas
+from routes.user import get_current_user  # 추가
+from models import UserTable              # 추가
+=======
 from my_project.models import DocumentTable, UserTable
 # 프로젝트 구조에 맞춘 모델 임포트입니다.
 # DocumentTable은 진단서 DB 저장/조회에 사용하고, UserTable은 토큰에서 꺼낸 현재 사용자 타입 표시에 사용합니다.
 from my_project.models import DocumentTable, UserTable
 from my_project import schemas
 from my_project.routes.user import get_current_user
+>>>>>>> ae7a9dbf485355bfcef48bfc41ac0d764a4a4b50
 
 # [교정 1] 시스템 환경 변수 설정: PaddleOCR 로드 전 최상단에 배치하여 에러를 원천 차단합니다.
 os.environ['PADDLE_USE_ONEDNN'] = '0' 
@@ -37,6 +50,15 @@ ocr_model = None
 STATIC_DIR = Path(__file__).resolve().parents[1] / "static"
 UPLOAD_DIR = STATIC_DIR / "uploads"
 
+<<<<<<< HEAD
+# =====================================================================
+# 🔑 OpenAI API Key 설정 (환경 변수 또는 직접 입력)
+# =====================================================================
+load_dotenv()
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
+# --- [LLM] OpenAI 기반 의학 용어 순화 함수 ---
+=======
 
 def ensure_paddleocr_available():
     if PaddleOCR is None:
@@ -53,17 +75,60 @@ def get_upload_path_from_url(image_url: str) -> Path:
 # OCR 결과에 포함된 어려운 의학 용어를 사용자에게 쉬운 표현으로 보여주기 위한 변환 함수입니다.
 # 현재는 하드코딩 치환 방식이며, 추후 의학 용어 사전 또는 AI 요약 결과로 확장할 수 있습니다.
 # --- [NLP] 어려운 의학 용어 순화 함수 ---
+>>>>>>> ae7a9dbf485355bfcef48bfc41ac0d764a4a4b50
 def simplify_medical_terms(raw_text: str) -> str:
-    simplified = raw_text
-    replacements = {
-        "인후염": "목이 부어오르고 아픈 목감기 증상",
-        "비염": "코점막이 부어 콧물이 나는 증상",
-        "위염": "위 점막에 염증이 생겨 속이 쓰린 증상"
+    """
+    OCR로 추출한 진단서 원문을 OpenAI API를 통해
+    초등학생도 이해할 수 있는 쉬운 우리말로 순화합니다.
+    """
+    if not raw_text or not raw_text.strip():
+        return "분석된 내용이 없습니다."
+
+    # API 키가 설정되지 않은 경우 폴백 처리
+    if not OPENAI_API_KEY or not OPENAI_API_KEY.startswith("sk-"):
+        return f"분석 결과: {raw_text} (API 키 미설정으로 원문 반환)"
+
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {OPENAI_API_KEY}"
     }
-    for technical, easy in replacements.items():
-        simplified = simplified.replace(technical, easy)
-    
-    return "분석 결과: " + simplified if simplified else "분석된 내용이 없습니다."
+    payload = {
+        "model": "gpt-4o-mini",
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "너는 환자를 위해 의학 전문 용어를 쉽게 번역해주는 다정한 의사 선생님이야. "
+                    "의학 진단서 문장이 들어오면 어려운 한자어나 영어 코드를 싹 걷어내고, "
+                    "초등학생 눈높이에서 이해할 수 있는 친절하고 따뜻한 한 문장의 쉬운 우리말로만 순화해줘. "
+                    "군더더기 설명이나 다른 안내 글은 절대로 생략하고 오직 결과 문장만 리턴해."
+                )
+            },
+            {
+                "role": "user",
+                "content": f"진단서 원문: {raw_text}"
+            }
+        ],
+        "temperature": 0.2,
+        "max_tokens": 150
+    }
+
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        if response.status_code == 200:
+            result = response.json()['choices'][0]['message']['content'].strip()
+            return "분석 결과: " + result
+        elif response.status_code == 401:
+            print("🚨 [OpenAI 인증 오류] API 키를 확인해주세요.")
+            return f"분석 결과: {raw_text} (인증 오류로 원문 반환)"
+        else:
+            print(f"⚠️ OpenAI 응답 오류 (코드: {response.status_code})")
+            return f"분석 결과: {raw_text} (서버 오류로 원문 반환)"
+    except Exception as e:
+        print(f"❌ OpenAI API 통신 오류: {e}")
+        return f"분석 결과: {raw_text} (통신 오류로 원문 반환)"
+
 
 # 1. 문서 업로드 (OCR 및 순화 포함)
 # 진단서 업로드 API
@@ -110,12 +175,16 @@ async def upload_document(
     
     try:
         # [교정 3] OCR 실행 및 텍스트 추출 로직 개선
+<<<<<<< HEAD
+        ocr_result = ocr_model.ocr(file_path)
+=======
         ocr_result = ocr_model.ocr(str(file_path))
         # ... ocr_result 처리 부분 ...
+>>>>>>> ae7a9dbf485355bfcef48bfc41ac0d764a4a4b50
         if ocr_result:
             for res in ocr_result:
                 if res is None: continue
-                for i, line in enumerate(res): # 줄 번호(i)를 함께 가져옵니다.
+                for i, line in enumerate(res):
                     text = line[1][0].strip()
                     if text: extracted_texts.append(text)
 
@@ -125,17 +194,12 @@ async def upload_document(
             for idx, text in enumerate(extracted_texts):
                 clean_text = text.replace(" ", "")
                 
-                # 1. '의원', '병원' 등의 키워드가 포함된 줄을 찾으면
                 if any(kw in clean_text for kw in keywords):
-                    # 2. '병의원명:' 같은 단순 항목명이면 패스
                     if any(ex in clean_text for ex in exclude_keywords) and len(clean_text) < 8:
                         continue
                     
-                    # 3. 핵심: 만약 현재 줄이 '정형외과의원'처럼 이름의 일부라면, 
-                    #    바로 앞 줄(idx-1)에 '규린' 같은 이름이 있는지 확인해서 합칩니다.
                     if idx > 0:
                         prev_text = extracted_texts[idx-1]
-                        # 앞 줄이 항목명(병의원명:)이 아니고, 너무 길지 않다면 이름으로 간주
                         if not any(ex in prev_text for ex in exclude_keywords) and len(prev_text) < 10:
                             detected_hospital = f"{prev_text} {text}"
                         else:
@@ -150,7 +214,7 @@ async def upload_document(
         print(f"OCR 에러 상세: {e}")
 
     full_raw_text = "\n".join(extracted_texts)
-    easy_description = simplify_medical_terms(full_raw_text)
+    easy_description = simplify_medical_terms(full_raw_text)  # 🔄 LLM 순화 호출
 
     new_doc = DocumentTable(
         doc_type=doc_type, 
@@ -166,7 +230,7 @@ async def upload_document(
     db.add(new_doc)
     db.commit()
     db.refresh(new_doc)
-    return {"status": "success", "data": {"id": new_doc.id, "hospital": new_doc.hospital_name}}
+    return {"status": "success", "data": {"document_id": new_doc.id, "hospital": new_doc.hospital_name}}
 
 # 2. 문서 목록 조회
 # 진단서 목록 조회 API
@@ -179,9 +243,10 @@ async def upload_document(
 def get_document_list(
     months: Optional[int] = None,
     sort: str = "desc",
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: UserTable = Depends(get_current_user),
 ):
-    query = db.query(DocumentTable)
+    query = db.query(DocumentTable).filter(DocumentTable.user_id == current_user.id)
     if months:
         limit_date = (datetime.now() - timedelta(days=30 * months)).strftime("%Y.%m.%d")
         query = query.filter(DocumentTable.upload_date >= limit_date)
@@ -197,9 +262,9 @@ def get_document_list(
         "results": [
             {
                 "id": d.id, 
-                "hospital": d.hospital_name, 
-                "date": d.upload_date,
-                "type": d.doc_type
+                "hospital_name": d.hospital_name, 
+                "upload_date": d.upload_date,
+                "doc_type": d.doc_type
             } for d in documents
         ]
     }
@@ -259,7 +324,7 @@ async def update_document_image(
         shutil.copyfileobj(file.file, buffer)
 
     extracted_texts = []
-    detected_hospital = document.hospital_name # 기본은 기존 값 유지
+    detected_hospital = document.hospital_name
 
     try:
         global ocr_model
@@ -284,9 +349,9 @@ async def update_document_image(
         print(f"재분석 OCR 에러: {e}")
 
     document.image_url = f"/static/uploads/{unique_filename}"
-    document.hospital_name = detected_hospital # 수정 시 병원 이름도 새로 업데이트
+    document.hospital_name = detected_hospital
     document.raw_text = "\n".join(extracted_texts)
-    document.simplified_text = simplify_medical_terms(document.raw_text)
+    document.simplified_text = simplify_medical_terms(document.raw_text)  # 🔄 LLM 순화 호출
     document.ocr_count = len(extracted_texts)
 
     db.commit()
