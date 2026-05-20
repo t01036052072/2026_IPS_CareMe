@@ -29,7 +29,7 @@ export default function PillScreen() {
 
         <TouchableOpacity 
   style={styles.card}
-  onPress={() => router.push('/(tabs)/serchpill' as any)}
+  onPress={() => router.navigate('/(tabs)/serchpill' as any)}
 >
   <Search size={100} color={MAIN_NAVY} />
   <Text style={styles.cardText}>의약품 검색</Text>
