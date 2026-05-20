@@ -278,30 +278,43 @@ export default function DocumentScreen() {
           contentContainerStyle={styles.listContent}
           onScrollBeginDrag={closeDropdowns}
           renderItem={({ item }) => (
-  <TouchableOpacity style={styles.card} onPress={() => handleOpenDetail(item)}>
-    <Text style={styles.cardDate}>{item.date || item.upload_date}</Text>
-    <Text style={styles.cardTitle}>{item.hospital || item.hospital_name || '병원명 없음'}</Text>
-    {item.type && (
-      <View style={styles.docTypeBadge}>
-        <Text style={styles.docTypeText}>
-          {item.type === 'diagnose' ? '진단서' : item.type === 'prescription' ? '처방전' : item.type}
-        </Text>
-      </View>
-    )}
-  </TouchableOpacity>
-)}
+            <TouchableOpacity style={styles.card} onPress={() => handleOpenDetail(item)}>
+              {/* 백엔드 필드명인 upload_date를 우선 사용 */}
+              <Text style={styles.cardDate}>{item.upload_date || item.date}</Text>
+              {/* 백엔드 필드명인 hospital_name을 우선 사용 */}
+              <Text style={styles.cardTitle}>{item.hospital_name || item.hospital || '병원명 없음'}</Text>
+              
+              {/* 백엔드에서 주는 doc_type이 존재할 때만 뱃지 표시 */}
+              {(item.doc_type || item.type) && (
+                <View style={styles.docTypeBadge}>
+                  <Text style={styles.docTypeText}>
+                    {(item.doc_type === 'diagnosis' || item.type === 'diagnose') ? '진단서' : 
+                     (item.doc_type === 'prescription' || item.type === 'prescription') ? '처방전' : 
+                     (item.doc_type || item.type)}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
           ListEmptyComponent={
+            /* 1. 데이터가 없을 때는 이 블록 하나만 깔끔하게 노출 */
             <View style={styles.emptyBox}>
-              <Text style={styles.emptyText}>등록된 문서가 없습니다</Text>
-            </View>
-          }
-          ListFooterComponent={
-            <View style={{ marginTop: 16 }}>
-              <Text style={styles.hint}>상자를 클릭하면{'\n'}자세히 볼 수 있어요 !</Text>
-              <TouchableOpacity style={styles.addBtn} onPress={() => setIsModalVisible(true)}>
+              <Text style={[styles.emptyText, { marginBottom: 30, fontSize: 18 }]}>등록된 문서가 없습니다</Text>
+              <TouchableOpacity style={[styles.addBtn, { width: '100%' }]} onPress={() => setIsModalVisible(true)}>
                 <Text style={styles.addBtnText}>새로운 문서 등록하기</Text>
               </TouchableOpacity>
             </View>
+          }
+          ListFooterComponent={
+            /* 2. 데이터가 있을 때만 하단에 힌트 문구와 추가 등록 버튼이 노출됨 */
+            filteredDocs.length > 0 ? (
+              <View style={{ marginTop: 16 }}>
+                <Text style={styles.hint}>상자를 클릭하면{'\n'}자세히 볼 수 있어요 !</Text>
+                <TouchableOpacity style={styles.addBtn} onPress={() => setIsModalVisible(true)}>
+                  <Text style={styles.addBtnText}>새로운 문서 등록하기</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null /* 데이터가 없으면 하단 컴포넌트는 아무것도 띄우지 않음 */
           }
         />
       )}
