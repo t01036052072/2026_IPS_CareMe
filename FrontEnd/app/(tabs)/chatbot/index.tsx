@@ -80,7 +80,7 @@ export default function ChatScreen() {
 
     try {
       const data = await sendChatMessage(userText);
-
+      console.log("백엔드에서 온 진짜 챗봇 응답:", data.answer);
       const botMessage: MessageType = {
         id: Crypto.randomUUID(),
         //text: data.message,
@@ -218,6 +218,7 @@ const styles = StyleSheet.create({
 
   botMessageContainer: {
   maxWidth: "82%",
+  flexShrink: 1,
 },
 
   header: {
@@ -281,6 +282,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 13,
     borderRadius: 22,     
+    flexShrink: 1,
     
     },
 
