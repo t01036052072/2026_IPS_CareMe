@@ -22,7 +22,7 @@ export default function StartScreen() {
       <View style={styles.buttonSection}>
         <TouchableOpacity 
           style={styles.loginButton}
-          onPress={() => router.push('/(auth)/LoginScreen/LoginScreen')}
+          onPress={() => router.push('/(auth)/LoginScreen/LoginScreen' as any)}
         >
           <Text style={styles.loginButtonText}>로그인하기</Text>
         </TouchableOpacity>
@@ -35,7 +35,7 @@ export default function StartScreen() {
 
         <TouchableOpacity 
           style={styles.signupButton}
-              onPress={() => router.push('/(auth)/calendar/calendar')}
+              onPress={() => router.push('/(auth)/SignUpScreen/SignUpScreen' as any)}
         >
           
           <Text style={styles.signupButtonText}>회원가입하기</Text>

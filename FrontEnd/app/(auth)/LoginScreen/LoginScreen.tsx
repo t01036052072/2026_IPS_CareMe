@@ -1,14 +1,40 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, SafeAreaView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons'; // 뒤로가기 아이콘용
+import { Ionicons } from '@expo/vector-icons'; 
+import { loginAPI } from '@/api/auth';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const main_navy = '#00246D';
+const error_red = '#D32F2F';
 
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleLogin = async () => {
+    setErrorMessage('');
+    try {
+      const data = { email: email, password: password };
+      const result = await loginAPI(data);
+
+      console.log('로그인 응답:', result);
+      console.log('토큰:', result.access_token);
+
+      await AsyncStorage.setItem('access_token', result.access_token);
+
+      const savedToken = await AsyncStorage.getItem('access_token');
+      console.log('저장된 토큰:', savedToken);
+
+      router.replace('/(tabs)');
+
+    } catch (error: any) {
+      console.log('로그인 에러:', error);
+      setErrorMessage('로그인에 실패하였습니다.\n아이디나 비밀번호를 다시 확인해주세요.');
+    }
+  };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -32,7 +58,10 @@ export default function LoginScreen() {
                 style={styles.input}
                 placeholder="아이디를 입력해주세요"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  setErrorMessage(''); 
+                }}
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
@@ -44,21 +73,29 @@ export default function LoginScreen() {
                 style={styles.input}
                 placeholder="비밀번호를 입력해주세요"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setErrorMessage(''); 
+                }}
                 secureTextEntry 
               />
             </View>
 
+            {errorMessage ? (
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            ) : null}
+
             <TouchableOpacity 
               style={[styles.loginButton, { opacity: email && password ? 1 : 0.5 }]}
               disabled={!email || !password}
+              onPress={handleLogin}
             >
               <Text style={styles.loginButtonText}>로그인</Text>
             </TouchableOpacity>
 
             <View style={styles.footer}>
               <Text style={styles.footerText}>아직 회원이 아니신가요? </Text>
-              <TouchableOpacity onPress={() => router.push('/(auth)/SignUpScreen/SignUpScreen1/SignUpScreen1')}>
+              <TouchableOpacity onPress={() => router.push('/(auth)/SignUpScreen/SignUpScreen1/SignUpScreen1' as any)}>
                 <Text style={styles.signupLink}>회원가입</Text>
               </TouchableOpacity>
             </View>
@@ -70,75 +107,27 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  flex: {
-    flex: 1,
-  },
-  header: {
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  flex: { flex: 1 },
+  header: { paddingHorizontal: 16, paddingVertical: 10 },
+  backButton: { padding: 4 },
+  content: { flex: 1, paddingHorizontal: 24, paddingTop: 20 },
+  title: { fontSize: 28, fontWeight: 'bold', color: main_navy, marginBottom: 40 },
+  inputContainer: { marginBottom: 24 },
+  label: { fontSize: 16, fontWeight: '600', color: main_navy, marginBottom: 8 },
+  input: {
+    borderWidth: 1.5,
+    borderColor: main_navy,
+    borderRadius: 12,
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  backButton: {
-    padding: 4,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: main_navy,
-    marginBottom: 40,
-  },
-  inputContainer: {
-    marginBottom: 24,
-  },
-  label: {
     fontSize: 16,
-    fontWeight: '600',
-    color: main_navy,
-    marginBottom: 8,
+    color: '#000',
   },
- input: {
-  borderWidth: 1.5,           // 1. 선 두께 (사방)
-  borderColor: '#main_navy',    // 2. 기본 테두리 색상
-  borderRadius: 12,          // 3. 박스 모서리 곡률
-  paddingVertical: 12,
-  paddingHorizontal: 16,     // 4. 박스 안쪽 좌우 여백 (필수)
-  fontSize: 16,
-  color: '#000',
-},
-
-  loginButton: {
-    backgroundColor: main_navy,
-    paddingVertical: 16,
-    borderRadius: 30,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  loginButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 30,
-  },
-  footerText: {
-    color: '#666',
-    fontSize: 14,
-  },
-  signupLink: {
-    color: main_navy,
-    fontSize: 14,
-    fontWeight: 'bold',
-    textDecorationLine: 'underline',
-  },
+  errorText: { color: error_red, fontSize: 16, marginBottom: 10, marginLeft: 4, fontWeight: '700' },
+  loginButton: { backgroundColor: main_navy, paddingVertical: 16, borderRadius: 30, alignItems: 'center', marginTop: 20 },
+  loginButtonText: { color: '#FFFFFF', fontSize: 18, fontWeight: 'bold' },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 30 },
+  footerText: { color: '#666', fontSize: 16 },
+  signupLink: { color: main_navy, fontSize: 18, fontWeight: 'bold', textDecorationLine: 'underline' },
 });
