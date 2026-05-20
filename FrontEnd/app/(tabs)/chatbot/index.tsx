@@ -40,7 +40,7 @@ export default function ChatScreen() {
     {
       id: "init",
       sender: "bot",
-      text: "안녕하세요 😊\nAI 상담 챗봇 지키미입니다.\n\n• 약 정보\n• 증상 상담\n• 어플 사용 방법",
+      text: "안녕하세요 😊\nAI 상담 챗봇 지키미입니다.\n 케미는 아래의 3가지 기능을 제공해요.\n\n• 약 정보\n• 증상 상담\n• 어플 사용 방법\n\n*주의: 개인정보는 입력하지 마세요.❌",
     },
   ]);
 
