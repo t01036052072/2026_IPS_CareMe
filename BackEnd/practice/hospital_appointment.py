@@ -7,7 +7,9 @@ import re
 
 # database.py에서 DB 세션 연동 함수와 Appointment 테이블 모델 가져오기
 from practice.database import get_db
-from my_project.models import Appointment
+from my_project.models import Appointment, UserTable
+from my_project.routes.user import get_current_user
+
 
 router = APIRouter(prefix="/appointments", tags=["병원 예약"])
 
@@ -55,7 +57,6 @@ def _model_to_detail(appt: Appointment, alarm_date_str: str, alarm_time_str: str
     
     return AppointmentDetail(
         id=appt.id,
-        user_id=int(appt.user_id),
         hospital_name=appt.hospital_name,
         date=date_str,
         time=time_str,
@@ -71,14 +72,14 @@ def _model_to_detail(appt: Appointment, alarm_date_str: str, alarm_time_str: str
 # - 현재는 payload.user_id 기준으로 예약을 저장하며, 추후 토큰 기반 current_user.id 저장으로 확장할 수 있습니다.
 # - 통합 서버에서는 /appointments 경로에 POST로 호출됩니다.
 @router.post("", response_model=AppointmentDetail, status_code=201, summary="병원 예약 등록")
-def create_appointment(payload: AppointmentCreate, db: Session = Depends(get_db)):
+def create_appointment(payload: AppointmentCreate, db: Session = Depends(get_db), current_user: UserTable = Depends(get_current_user) ):
     # 프론트가 보낸 날짜와 시간을 파이썬 datetime 객체로 결합 및 변환
     appt_datetime = datetime.strptime(f"{payload.date} {payload.time}", "%Y-%m-%d %H:%M")
 
     # 사용자가 화면에 입력한 값으로 MySQL 데이터베이스 행 객체 생성
     # database.py의 컬럼명(user_id, title, hospital_name, appointment_time)에 맞춰 넣어줍니다.
     new_appt = Appointment(
-        user_id=str(payload.user_id),
+        user_id=str(payload.current_user.id),
         title=f"{payload.hospital_name} 예약",
         hospital_name=payload.hospital_name,
         appointment_time=appt_datetime
@@ -99,9 +100,10 @@ def create_appointment(payload: AppointmentCreate, db: Session = Depends(get_db)
 # - 응답에는 병원명, 예약 날짜/시간, 알림 날짜/시간이 포함됩니다.
 # - 통합 서버에서는 /appointments 경로에 GET으로 호출됩니다.
 @router.get("", response_model=List[AppointmentDetail], summary="병원 예약 조회")
-def get_appointments(user_id: int, month: Optional[str] = None, db: Session = Depends(get_db)):
+def get_appointments(user_id: int, month: Optional[str] = None, db: Session = Depends(get_db),
+    current_user: UserTable = Depends(get_current_user) ):
     # 💡 덤프 리스트 대신 MySQL에서 해당 유저의 모든 예약을 긁어옵니다.
-    query = db.query(Appointment).filter(Appointment.user_id == str(user_id))
+    query = db.query(Appointment).filter(Appointment.user_id == str(current_user.id))
     rows = query.all()
 
     result = []
