@@ -79,7 +79,7 @@ def create_appointment(payload: AppointmentCreate, db: Session = Depends(get_db)
     # 사용자가 화면에 입력한 값으로 MySQL 데이터베이스 행 객체 생성
     # database.py의 컬럼명(user_id, title, hospital_name, appointment_time)에 맞춰 넣어줍니다.
     new_appt = Appointment(
-        user_id=str(payload.current_user.id),
+        user_id=str(current_user.id),
         title=f"{payload.hospital_name} 예약",
         hospital_name=payload.hospital_name,
         appointment_time=appt_datetime
@@ -100,7 +100,7 @@ def create_appointment(payload: AppointmentCreate, db: Session = Depends(get_db)
 # - 응답에는 병원명, 예약 날짜/시간, 알림 날짜/시간이 포함됩니다.
 # - 통합 서버에서는 /appointments 경로에 GET으로 호출됩니다.
 @router.get("", response_model=List[AppointmentDetail], summary="병원 예약 조회")
-def get_appointments(user_id: int, month: Optional[str] = None, db: Session = Depends(get_db),
+def get_appointments(month: Optional[str] = None, db: Session = Depends(get_db),
     current_user: UserTable = Depends(get_current_user) ):
     # 💡 덤프 리스트 대신 MySQL에서 해당 유저의 모든 예약을 긁어옵니다.
     query = db.query(Appointment).filter(Appointment.user_id == str(current_user.id))

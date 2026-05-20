@@ -2,11 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, SafeAreaView, 
   ScrollView, TextInput, Modal, KeyboardAvoidingView, Platform,
-  Keyboard, TouchableWithoutFeedback 
+  Keyboard, TouchableWithoutFeedback, ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useRouter } from 'expo-router'; 
+import { useRouter } from 'expo-router';
+import {
+  getAppointmentsAPI,
+  createAppointmentAPI,
+  updateAppointmentAPI,
+  deleteAppointmentAPI,
+  AppointmentDetail,
+} from '@/api/appointment';
 
 interface Schedule {
   id: number;
@@ -14,7 +21,8 @@ interface Schedule {
   title: string;
   time: string;
   alarm: string;
-  //수정함
+  alarm_date: string;
+  alarm_time: string;
 }
 
 const main_navy = '#00246D';
@@ -22,16 +30,13 @@ const light_navy = '#F1F4F9';
 const red_point = '#D9534F';
 const input_bg = '#F5F5F5';
 
-const initialSchedules: Schedule[] = [
-  { id: 1, date: '2026-05-12', title: '내과 정기 검진', time: '오전 10시 30분', alarm: '오전 07시 30분' },
-];
-
 export default function HospitalCalendarScreen() {
   const router = useRouter();
   
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [isMonthView, setIsMonthView] = useState(false); 
-  const [schedules, setSchedules] = useState<Schedule[]>(initialSchedules);
+  const [isMonthView, setIsMonthView] = useState(false);
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [showYearMonthPicker, setShowYearMonthPicker] = useState(false);
   const [isAlertVisible, setIsAlertVisible] = useState(false);
@@ -43,23 +48,33 @@ export default function HospitalCalendarScreen() {
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
   const [showAlarmPicker, setShowAlarmPicker] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // ───── 일정 불러오기 ─────
+  const fetchSchedules = async () => {
+    try {
+      setIsLoading(true);
+      const data = await getAppointmentsAPI();
+      const mapped: Schedule[] = data.map(appt => ({
+        id: appt.id,
+        date: appt.date,
+        title: appt.hospital_name,
+        time: formatTimeStr(appt.time),
+        alarm: formatTimeStr(appt.alarm_time),
+        alarm_date: appt.alarm_date,
+        alarm_time: appt.alarm_time,
+      }));
+      setSchedules(mapped);
+    } catch (error) {
+      console.error('일정 불러오기 실패:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchSchedules = async () => {
-      try {
-        // 나중에 이 부분을 진짜 API 함수로 바꿉니다. (예: const data = await getSchedulesAPI(); )
-        console.log("백엔드에서 전체 일정 데이터 불러오기 시도!");
-        
-        // 불러온 데이터를 상태에 덮어씌웁니다.
-        // setSchedules(data); 
-      } catch (error) {
-        console.error('일정 불러오기 실패:', error);
-      }
-    };
-
     fetchSchedules();
   }, []);
-
 
   const dismissAll = () => {
     Keyboard.dismiss();
@@ -68,6 +83,15 @@ export default function HospitalCalendarScreen() {
   };
 
   const formatDate = (date: Date) => date.toISOString().split('T')[0];
+
+  // "HH:MM" → "오전/오후 H시 MM분"
+  const formatTimeStr = (timeStr: string) => {
+    if (!timeStr) return '미설정';
+    const [h, m] = timeStr.split(':').map(Number);
+    const ampm = h >= 12 ? '오후' : '오전';
+    const hour = h % 12 || 12;
+    return `${ampm} ${hour}시 ${m < 10 ? '0' + m : m}분`;
+  };
 
   const formatTime = (date: Date | null, placeholder: string) => {
     if (!date) return placeholder;
@@ -79,10 +103,17 @@ export default function HospitalCalendarScreen() {
     return `${ampm} ${h}시 ${m}분`;
   };
 
+  // Date → "HH:MM"
+  const toTimeStr = (date: Date) => {
+    const h = date.getHours().toString().padStart(2, '0');
+    const m = date.getMinutes().toString().padStart(2, '0');
+    return `${h}:${m}`;
+  };
+
   const changeDate = (offset: number) => {
     const newDate = new Date(selectedDate);
-    if (isMonthView) newDate.setMonth(newDate.getMonth() + offset); 
-    else newDate.setDate(newDate.getDate() + (offset * 7)); 
+    if (isMonthView) newDate.setMonth(newDate.getMonth() + offset);
+    else newDate.setDate(newDate.getDate() + (offset * 7));
     setSelectedDate(newDate);
   };
 
@@ -101,12 +132,13 @@ export default function HospitalCalendarScreen() {
     const month = selectedDate.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const days = Array(firstDay).fill(null); 
+    const days = Array(firstDay).fill(null);
     for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i));
     return days;
   };
 
-  const handleSave = () => {
+  // ───── 등록/수정 저장 ─────
+  const handleSave = async () => {
     if (!hospitalName.trim() || !scheduleTime) {
       setShowSchedulePicker(false);
       setShowAlarmPicker(false);
@@ -114,19 +146,54 @@ export default function HospitalCalendarScreen() {
       setIsAlertVisible(true);
       return;
     }
-    const newEntry: Schedule = {
-      id: editId || Date.now(),
-      date: formatDate(selectedDate),
-      title: hospitalName,
-      time: formatTime(scheduleTime, ""),
-      alarm: formatTime(alarmTime, "미설정"),
-    };
-    if (editId) setSchedules(schedules.map(s => s.id === editId ? newEntry : s));
-    else setSchedules([...schedules, newEntry]);
-    setIsModalVisible(false);
-    setHospitalName('');
-    setScheduleTime(null);
-    setAlarmTime(null);
+
+    setIsSaving(true);
+    try {
+      const dateStr = formatDate(selectedDate);
+      const timeStr = toTimeStr(scheduleTime);
+      const alarmDateStr = alarmTime ? formatDate(selectedDate) : dateStr;
+      const alarmTimeStr = alarmTime ? toTimeStr(alarmTime) : toTimeStr(new Date(scheduleTime.getTime() - 3 * 60 * 60 * 1000));
+
+      const payload = {
+        hospital_name: hospitalName,
+        date: dateStr,
+        time: timeStr,
+        alarm_date: alarmDateStr,
+        alarm_time: alarmTimeStr,
+      };
+
+      if (editId) {
+        await updateAppointmentAPI(editId, payload);
+      } else {
+        await createAppointmentAPI(payload);
+      }
+
+      setIsModalVisible(false);
+      setHospitalName('');
+      setScheduleTime(null);
+      setAlarmTime(null);
+      setEditId(null);
+      fetchSchedules(); // 목록 새로고침
+    } catch (error: any) {
+      console.log('저장 실패:', error.message);
+      setAlertMsg('저장에 실패했습니다.\n다시 시도해주세요.');
+      setIsAlertVisible(true);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ───── 삭제 ─────
+  const handleDelete = async () => {
+    if (!editId) return;
+    try {
+      await deleteAppointmentAPI(editId);
+      setSchedules(schedules.filter(s => s.id !== editId));
+      setIsModalVisible(false);
+      setIsAlertVisible(false);
+    } catch (error: any) {
+      console.log('삭제 실패:', error.message);
+    }
   };
 
   return (
@@ -153,19 +220,21 @@ export default function HospitalCalendarScreen() {
         <TouchableOpacity onPress={() => changeDate(1)}><Ionicons name="chevron-forward" size={28} color={main_navy} /></TouchableOpacity>
       </View>
 
-      <View style={styles.calendarArea}>       
+      <View style={styles.calendarArea}>
         {!isMonthView ? (
           <View style={styles.weekContainer}>
             {getWeekDays().map((item, index) => {
               const isSun = index === 0;
               const isSat = index === 6;
               const isSelected = formatDate(selectedDate) === item.fullStr;
+              const hasSchedule = schedules.some(s => s.date === item.fullStr);
               return (
                 <TouchableOpacity key={item.fullStr} style={[styles.dayBox, isSelected && styles.selectedDayBox]} onPress={() => setSelectedDate(item.date)}>
                   <Text style={[styles.dayText, isSun && { color: red_point }, isSat && { color: main_navy }, isSelected && { color: '#FFF' }]}>
                     {['일','월','화','수','목','금','토'][index]}
                   </Text>
                   <Text style={[styles.dateText, isSun && { color: red_point }, isSat && { color: main_navy }, isSelected && { color: '#FFF' }]}>{item.dayNum}</Text>
+                  {hasSchedule && <View style={[styles.dot, isSelected && { backgroundColor: '#FFF' }]} />}
                 </TouchableOpacity>
               );
             })}
@@ -179,11 +248,13 @@ export default function HospitalCalendarScreen() {
               {getMonthDays().map((d, index) => {
                 const isSelected = d && formatDate(d) === formatDate(selectedDate);
                 const dayOfWeek = index % 7;
+                const hasSchedule = d && schedules.some(s => s.date === formatDate(d));
                 return (
                   <TouchableOpacity key={index} style={[styles.monthDay, isSelected && styles.selectedMonthDay]} onPress={() => d && setSelectedDate(d)}>
                     <Text style={[styles.monthDayText, dayOfWeek === 0 && { color: red_point }, dayOfWeek === 6 && { color: main_navy }, isSelected && { color: '#FFF' }]}>
                       {d ? d.getDate() : ""}
                     </Text>
+                    {hasSchedule && <View style={[styles.dot, isSelected && { backgroundColor: '#FFF' }]} />}
                   </TouchableOpacity>
                 );
               })}
@@ -194,16 +265,32 @@ export default function HospitalCalendarScreen() {
 
       <ScrollView style={styles.listArea} contentContainerStyle={{ padding: 20 }}>
         <Text style={styles.listTitle}>{selectedDate.getMonth()+1}월 {selectedDate.getDate()}일 일정</Text>
-        {schedules.filter(s => s.date === formatDate(selectedDate)).map(item => (
-          <TouchableOpacity key={item.id} style={styles.scheduleCard} onPress={() => { setEditId(item.id); setHospitalName(item.title); setIsModalVisible(true); }}>
-            <View>
-              <Text style={styles.cardTitle}>{item.title}</Text>
-              <Text style={styles.cardInfo}>방문 시간: {item.time}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={24} color="#CCC" />
-          </TouchableOpacity>
-        ))}
-        <TouchableOpacity style={styles.addBtn} onPress={() => { setEditId(null); setHospitalName(''); setScheduleTime(null); setAlarmTime(null); setIsModalVisible(true); }}>
+
+        {isLoading ? (
+          <ActivityIndicator size="large" color={main_navy} style={{ marginTop: 20 }} />
+        ) : (
+          schedules.filter(s => s.date === formatDate(selectedDate)).map(item => (
+            <TouchableOpacity key={item.id} style={styles.scheduleCard} onPress={() => {
+              setEditId(item.id);
+              setHospitalName(item.title);
+              setIsModalVisible(true);
+            }}>
+              <View>
+                <Text style={styles.cardTitle}>{item.title}</Text>
+                <Text style={styles.cardInfo}>방문 시간: {item.time}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={24} color="#CCC" />
+            </TouchableOpacity>
+          ))
+        )}
+
+        <TouchableOpacity style={styles.addBtn} onPress={() => {
+          setEditId(null);
+          setHospitalName('');
+          setScheduleTime(null);
+          setAlarmTime(null);
+          setIsModalVisible(true);
+        }}>
           <Ionicons name="add-circle" size={28} color="#FFF" />
           <Text style={styles.addBtnText}>새로운 병원 일정 등록하기</Text>
         </TouchableOpacity>
@@ -228,7 +315,6 @@ export default function HospitalCalendarScreen() {
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%' }}>
               <TouchableWithoutFeedback onPress={dismissAll}>
                 <View style={styles.modalContent}>
-                  
                   <View style={styles.modalHeader}>
                     <Text style={styles.modalTitle}>{editId ? "병원 일정 확인" : "새로운 병원 일정 등록하기"}</Text>
                     <TouchableOpacity onPress={() => setIsModalVisible(false)}>
@@ -237,13 +323,13 @@ export default function HospitalCalendarScreen() {
                   </View>
 
                   <Text style={styles.inputLabel}>병원명</Text>
-                  <TextInput 
-                    style={styles.inputBox} 
+                  <TextInput
+                    style={styles.inputBox}
                     placeholder="병원명을 입력해주세요"
-                    value={hospitalName} 
+                    value={hospitalName}
                     onChangeText={setHospitalName}
-                    returnKeyType="done" 
-                    onSubmitEditing={dismissAll} 
+                    returnKeyType="done"
+                    onSubmitEditing={dismissAll}
                   />
 
                   <Text style={styles.inputLabel}>방문 시간 등록하기</Text>
@@ -284,32 +370,19 @@ export default function HospitalCalendarScreen() {
                   <View style={styles.modalBtnRow}>
                     {editId ? (
                       <>
-                        <TouchableOpacity
-                          style={styles.deleteBtnCustom}
-                          onPress={() => {
-                            setAlertMsg("정말 삭제하시겠습니까?");
-                            setIsAlertVisible(true);
-                          }}
-                        >
+                        <TouchableOpacity style={styles.deleteBtnCustom} onPress={() => { setAlertMsg("정말 삭제하시겠습니까?"); setIsAlertVisible(true); }}>
                           <Text style={styles.deleteBtnTextCustom}>삭제하기</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.editBtnCustom} onPress={handleSave}>
-                          <Text style={styles.saveBtnText}>수정하기</Text>
+                        <TouchableOpacity style={styles.editBtnCustom} onPress={handleSave} disabled={isSaving}>
+                          {isSaving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>수정하기</Text>}
                         </TouchableOpacity>
                       </>
                     ) : (
-                      <TouchableOpacity
-                        style={[styles.saveBtn, { width: '100%' }]}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          handleSave();
-                        }}
-                      >
-                        <Text style={styles.saveBtnText}>등록하기</Text>
+                      <TouchableOpacity style={[styles.saveBtn, { width: '100%' }]} onPress={handleSave} disabled={isSaving}>
+                        {isSaving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>등록하기</Text>}
                       </TouchableOpacity>
                     )}
                   </View>
-
                 </View>
               </TouchableWithoutFeedback>
             </KeyboardAvoidingView>
@@ -317,40 +390,28 @@ export default function HospitalCalendarScreen() {
         </TouchableWithoutFeedback>
 
         {Platform.OS === 'android' && showSchedulePicker && (
-          <DateTimePicker
-            value={scheduleTime || new Date()} mode="time" display="spinner"
-            onChange={(e, d) => { setShowSchedulePicker(false); if(e.type === 'set' && d) setScheduleTime(d); }}
-          />
+          <DateTimePicker value={scheduleTime || new Date()} mode="time" display="spinner"
+            onChange={(e, d) => { setShowSchedulePicker(false); if(e.type === 'set' && d) setScheduleTime(d); }} />
         )}
         {Platform.OS === 'android' && showAlarmPicker && (
-          <DateTimePicker
-            value={alarmTime || new Date()} mode="time" display="spinner"
-            onChange={(e, d) => { setShowAlarmPicker(false); if(e.type === 'set' && d) setAlarmTime(d); }}
-          />
+          <DateTimePicker value={alarmTime || new Date()} mode="time" display="spinner"
+            onChange={(e, d) => { setShowAlarmPicker(false); if(e.type === 'set' && d) setAlarmTime(d); }} />
         )}
 
         <Modal visible={isAlertVisible} transparent animationType="fade">
           <View style={styles.modalOverlay}>
             <View style={styles.alertBox}>
               <Text style={styles.alertText}>{alertMsg}</Text>
-              <TouchableOpacity
-                style={styles.alertBtn}
-                onPress={() => {
-                  if (alertMsg === "정말 삭제하시겠습니까?") {
-                    setSchedules(schedules.filter(s => s.id !== editId));
-                    setIsModalVisible(false);
-                  }
-                  setIsAlertVisible(false);
-                }}
-              >
+              <TouchableOpacity style={styles.alertBtn} onPress={() => {
+                if (alertMsg === "정말 삭제하시겠습니까?") handleDelete();
+                else setIsAlertVisible(false);
+              }}>
                 <Text style={styles.saveBtnText}>확인</Text>
               </TouchableOpacity>
             </View>
           </View>
         </Modal>
-
       </Modal>
-
     </SafeAreaView>
   );
 }
@@ -372,6 +433,7 @@ const styles = StyleSheet.create({
   selectedDayBox: { backgroundColor: main_navy },
   dayText: { fontSize: 15, fontWeight: 'bold' },
   dateText: { fontSize: 20, fontWeight: 'bold' },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: main_navy, marginTop: 3 },
   monthContainer: { paddingHorizontal: 10 },
   monthGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   monthWeekText: { width: '14.28%', textAlign: 'center', fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
