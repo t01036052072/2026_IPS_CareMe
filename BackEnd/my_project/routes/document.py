@@ -15,6 +15,8 @@ from dotenv import load_dotenv
 from database import get_db
 from models import DocumentTable
 import schemas
+from routes.user import get_current_user  # 추가
+from models import UserTable              # 추가
 
 # [교정 1] 시스템 환경 변수 설정: PaddleOCR 로드 전 최상단에 배치하여 에러를 원천 차단합니다.
 os.environ['PADDLE_USE_ONEDNN'] = '0' 
@@ -175,16 +177,17 @@ async def upload_document(
     db.add(new_doc)
     db.commit()
     db.refresh(new_doc)
-    return {"status": "success", "data": {"id": new_doc.id, "hospital": new_doc.hospital_name}}
+    return {"status": "success", "data": {"document_id": new_doc.id, "hospital": new_doc.hospital_name}}
 
 # 2. 문서 목록 조회
 @router.get("/list")
 def get_document_list(
     months: Optional[int] = None,
     sort: str = "desc",
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: UserTable = Depends(get_current_user),
 ):
-    query = db.query(DocumentTable)
+    query = db.query(DocumentTable).filter(DocumentTable.user_id == current_user.id)
     if months:
         limit_date = (datetime.now() - timedelta(days=30 * months)).strftime("%Y.%m.%d")
         query = query.filter(DocumentTable.upload_date >= limit_date)
@@ -200,9 +203,9 @@ def get_document_list(
         "results": [
             {
                 "id": d.id, 
-                "hospital": d.hospital_name, 
-                "date": d.upload_date,
-                "type": d.doc_type
+                "hospital_name": d.hospital_name, 
+                "upload_date": d.upload_date,
+                "doc_type": d.doc_type
             } for d in documents
         ]
     }
