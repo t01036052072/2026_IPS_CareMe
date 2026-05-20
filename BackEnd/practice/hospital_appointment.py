@@ -40,7 +40,6 @@ class AppointmentCreate(BaseModel):
 
 class AppointmentDetail(BaseModel):
     id:             int
-    user_id:        int
     hospital_name:  str
     date:           str
     time:           str
