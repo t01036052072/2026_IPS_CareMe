@@ -217,7 +217,6 @@ const styles = StyleSheet.create({
   },
 
   botMessageContainer: {
-  flexShrink: 1,
   maxWidth: "82%",
 },
 
@@ -227,7 +226,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 24,
     marginTop: 70,
-    marginBottom: 12,  // ← 70 → 12
+    marginBottom: 12, 
   },
 
   backIcon: {
@@ -262,11 +261,14 @@ const styles = StyleSheet.create({
 
   userWrapper: {
     alignSelf: "flex-end",
-    justifyContent: "flex-end",  
+    justifyContent: "flex-end", 
+      width: "80%",  
+
   },
 
   userMessageContainer: {
     alignItems: "flex-end",  
+    maxWidth: "95%",
   },
 
   botIconContainer: {
@@ -275,13 +277,12 @@ const styles = StyleSheet.create({
   },
 
   messageBubble: {
-    maxWidth: "85%",
-    //minWidth: "35%",
+    maxWidth: "90%",
     paddingHorizontal: 16,
     paddingVertical: 13,
-    borderRadius: 22,
-    flexShrink: 1,
-  },
+    borderRadius: 22,     
+    
+    },
 
   botBubble: {
     backgroundColor: "#F1F1F1",
@@ -291,6 +292,7 @@ const styles = StyleSheet.create({
   userBubble: {
     backgroundColor: MAIN_COLOR,
     alignSelf: "flex-end",   
+    maxWidth: "100%", 
   },
 
   messageText: {
@@ -369,18 +371,15 @@ const markdownStyles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     color: "#111",
-    flexShrink: 1,
   },
   text: {
     fontSize: 15,
     lineHeight: 22,
     color: "#111",
-    flexShrink: 1,
   },
   paragraph: {
     marginTop: 0,
     marginBottom: 0,
-    flexShrink: 1,
   },
   strong: {
     fontWeight: "bold",
@@ -389,3 +388,5 @@ const markdownStyles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
+
+
