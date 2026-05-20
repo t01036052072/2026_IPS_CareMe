@@ -1,24 +1,64 @@
 import { apiClient } from './api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// 1. 📅 전체 병원 일정 조회 (GET)
-export const getAppointmentsAPI = async () => {
+const getToken = async () => await AsyncStorage.getItem('access_token');
+
+export interface AppointmentCreate {
+  hospital_name: string;
+  date: string;       // "YYYY-MM-DD"
+  time: string;       // "HH:MM"
+  alarm_date: string; // "YYYY-MM-DD"
+  alarm_time: string; // "HH:MM"
+}
+
+export interface AppointmentDetail {
+  id: number;
+  user_id: number;
+  hospital_name: string;
+  date: string;
+  time: string;
+  alarm_date: string;
+  alarm_time: string;
+}
+
+// 1. 병원 예약 목록 조회
+export const getAppointmentsAPI = async (month?: string): Promise<AppointmentDetail[]> => {
   try {
-    const response = await apiClient.get('/appointments');
+    const token = await getToken();
+    const params = month ? { month } : {};
+    const response = await apiClient.get('/appointments', {
+      headers: { Authorization: `Bearer ${token}` },
+      params,
+    });
     return response.data;
   } catch (error: any) {
-    if (error.response) throw new Error(error.response.data.detail || '조회 실패');
-    throw new Error('서버와 통신 중 오류가 발생했습니다.');
+    console.log('예약 조회 실패:', error.message);
+    return [];
   }
 };
 
-// 2. 📝 새로운 병원 일정 등록 (POST)
-// (appointmentData 에는 가현님이 모달창에서 입력한 병원명, 시간 등이 들어갑니다!)
-export const createAppointmentAPI = async (appointmentData: any) => {
-  try {
-    const response = await apiClient.post('/appointments', appointmentData);
-    return response.data;
-  } catch (error: any) {
-    if (error.response) throw new Error(error.response.data.detail || '등록 실패');
-    throw new Error('서버와 통신 중 오류가 발생했습니다.');
-  }
+// 2. 병원 예약 등록
+export const createAppointmentAPI = async (data: AppointmentCreate): Promise<AppointmentDetail> => {
+  const token = await getToken();
+  const response = await apiClient.post('/appointments', data, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
+// 3. 병원 예약 수정
+export const updateAppointmentAPI = async (id: number, data: AppointmentCreate): Promise<AppointmentDetail> => {
+  const token = await getToken();
+  const response = await apiClient.put(`/appointments/${id}`, data, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
+// 4. 병원 예약 삭제
+export const deleteAppointmentAPI = async (id: number): Promise<void> => {
+  const token = await getToken();
+  await apiClient.delete(`/appointments/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 };
