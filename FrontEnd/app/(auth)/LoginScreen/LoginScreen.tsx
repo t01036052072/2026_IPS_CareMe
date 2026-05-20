@@ -32,7 +32,7 @@ export default function LoginScreen() {
 
     } catch (error: any) {
       console.log('로그인 에러:', error);
-      setErrorMessage('로그인에 실패하였습니다.\n아이디나 비밀번호를 다시 확인해주세요.');
+      setErrorMessage('로그인에 실패하였습니다.\n이메일이나 비밀번호를 다시 확인해주세요.');
     }
   };
 
@@ -53,7 +53,7 @@ export default function LoginScreen() {
             <Text style={styles.title}>로그인하기</Text>
             
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>아이디</Text>
+              <Text style={styles.label}>이메일</Text>
               <TextInput
                 style={styles.input}
                 placeholder="아이디를 입력해주세요"

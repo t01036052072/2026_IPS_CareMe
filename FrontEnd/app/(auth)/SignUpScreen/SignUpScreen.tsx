@@ -745,7 +745,7 @@ const styles = StyleSheet.create({
   popupTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   popupFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
   cancelBtn: { width: '35%', padding: 15, borderRadius: 30, backgroundColor: red, alignItems: 'center' },
-  confirmBtn: { width: '60%', padding: 15, borderRadius: 30, backgroundColor: main_navy, alignItems: 'center' },
+  confirmBtn: { width: '60%', padding: 15, borderRadius: 30, backgroundColor: red, alignItems: 'center' },
   footerText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
 
   diseaseRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#EEE' },
