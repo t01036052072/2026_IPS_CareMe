@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, SafeAreaView, 
   ScrollView, TextInput, Modal, KeyboardAvoidingView, Platform,
@@ -43,6 +43,23 @@ export default function HospitalCalendarScreen() {
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
   const [showAlarmPicker, setShowAlarmPicker] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchSchedules = async () => {
+      try {
+        // 나중에 이 부분을 진짜 API 함수로 바꿉니다. (예: const data = await getSchedulesAPI(); )
+        console.log("백엔드에서 전체 일정 데이터 불러오기 시도!");
+        
+        // 불러온 데이터를 상태에 덮어씌웁니다.
+        // setSchedules(data); 
+      } catch (error) {
+        console.error('일정 불러오기 실패:', error);
+      }
+    };
+
+    fetchSchedules();
+  }, []);
+
 
   const dismissAll = () => {
     Keyboard.dismiss();
@@ -196,7 +213,7 @@ export default function HospitalCalendarScreen() {
         <Modal transparent visible={true} animationType="fade">
           <View style={styles.modalOverlay}>
             <View style={styles.pickerPopup}>
-              <DateTimePicker value={selectedDate} mode="date" display="spinner" onChange={(e, d) => d && setSelectedDate(d)} />
+              <DateTimePicker value={selectedDate} mode="date" display="spinner" locale="ko-KR" onChange={(e, d) => d && setSelectedDate(d)} />
               <TouchableOpacity style={styles.saveBtn} onPress={() => setShowYearMonthPicker(false)}>
                 <Text style={styles.saveBtnText}>선택 완료</Text>
               </TouchableOpacity>
@@ -239,7 +256,7 @@ export default function HospitalCalendarScreen() {
 
                   {Platform.OS === 'ios' && showSchedulePicker && (
                     <View style={styles.iosPickerBox}>
-                      <DateTimePicker value={scheduleTime || new Date()} mode="time" display="spinner" onChange={(e, d) => d && setScheduleTime(d)} />
+                      <DateTimePicker value={scheduleTime || new Date()} mode="time" display="spinner" locale="ko-KR" onChange={(e, d) => d && setScheduleTime(d)} />
                       <TouchableOpacity style={styles.iosPickerConfirmBtn} onPress={() => setShowSchedulePicker(false)}>
                         <Text style={styles.iosPickerConfirmText}>시간 선택 완료</Text>
                       </TouchableOpacity>

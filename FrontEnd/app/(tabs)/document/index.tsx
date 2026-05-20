@@ -337,7 +337,7 @@ export default function DocumentScreen() {
             </TouchableOpacity>
             {showDatePicker && (
               <View style={styles.datePickerBox}>
-                <DateTimePicker value={selectedDate} mode="date" display="spinner" onChange={(e, d) => d && setSelectedDate(d)} />
+                <DateTimePicker value={selectedDate} mode="date" display="spinner" locale="ko-KR" onChange={(e, d) => d && setSelectedDate(d)} />
                 <TouchableOpacity style={styles.datePickerConfirmBtn} onPress={() => setShowDatePicker(false)}>
                   <Text style={styles.datePickerConfirmText}>선택 완료</Text>
                 </TouchableOpacity>
