@@ -162,6 +162,9 @@ export default function HospitalCalendarScreen() {
         alarm_time: alarmTimeStr,
       };
 
+          console.log('전송 payload:', payload);  // ← 추가
+
+
       if (editId) {
         await updateAppointmentAPI(editId, payload);
       } else {
@@ -175,6 +178,8 @@ export default function HospitalCalendarScreen() {
       setEditId(null);
       fetchSchedules(); // 목록 새로고침
     } catch (error: any) {
+      console.log('저장 실패:', error.message);
+  console.log('422 에러 내용:', error.response?.data);
       console.log('저장 실패:', error.message);
       setAlertMsg('저장에 실패했습니다.\n다시 시도해주세요.');
       setIsAlertVisible(true);

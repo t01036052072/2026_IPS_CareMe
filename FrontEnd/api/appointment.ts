@@ -49,6 +49,7 @@ export const createAppointmentAPI = async (data: AppointmentCreate): Promise<App
 // 3. 병원 예약 수정
 export const updateAppointmentAPI = async (id: number, data: AppointmentCreate): Promise<AppointmentDetail> => {
   const token = await getToken();
+  console.log('예약 등록 데이터:', data); 
   const response = await apiClient.put(`/appointments/${id}`, data, {
     headers: { Authorization: `Bearer ${token}` },
   });
