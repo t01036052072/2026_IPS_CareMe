@@ -157,7 +157,7 @@ async def upload_document(
         shutil.copyfileobj(file.file, buffer)
 
     extracted_texts = []
-    detected_hospital = "알 수 없는 병원" 
+    detected_hospital = hospital_name.strip() if 'hospital_name' in locals() and hospital_name else "알 수 없는 병원"
     
     try:
         # [교정 3] OCR 실행 및 텍스트 추출 로직 개선
