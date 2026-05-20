@@ -54,7 +54,7 @@ def get_ai_response(message: str):
             }
         ],
 
-        max_completion_tokens=150,
+        max_completion_tokens=1000,
         temperature=0.3
     )
 
