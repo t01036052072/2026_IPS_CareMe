@@ -174,6 +174,7 @@ export default function DocumentScreen() {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data',
+            
           },
         });
       };
