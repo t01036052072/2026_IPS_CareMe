@@ -107,7 +107,7 @@ Base.metadata.create_all(bind=engine)
 # -----------------------------
 # AI Hub 연동 전 임시 알약 더미 데이터 자동 삽입 코드
 # -----------------------------
-from sqlalchemy.orm import Session
+"""from sqlalchemy.orm import Session
 from my_project.models import Pill
 
 #이거 좀 어려워서 질문하기...
@@ -150,4 +150,4 @@ def insert_dummy_pills():
         db.close()
 
 # ⚠️ 순서 변경 2: 테이블이 생성된 후에 더미 데이터를 밀어 넣습니다.
-insert_dummy_pills()
+insert_dummy_pills()"""
