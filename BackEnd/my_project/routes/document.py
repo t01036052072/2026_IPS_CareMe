@@ -11,6 +11,7 @@ from my_project.database import get_db
 try:
     from paddleocr import PaddleOCR
 except ModuleNotFoundError:
+
     PaddleOCR = None
 from typing import Optional, List
 from datetime import datetime, timedelta
