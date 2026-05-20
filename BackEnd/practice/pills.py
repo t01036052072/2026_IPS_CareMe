@@ -137,6 +137,7 @@ from sqlalchemy.orm import Session
 
 from my_project.models import Pill
 from practice.database import get_db
+from practice.pill_api import search_pill_by_name
 
 router = APIRouter(prefix="/pills", tags=["pill search"])
 
