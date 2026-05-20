@@ -2,11 +2,8 @@ import os
 import uuid
 import shutil
 import re
-<<<<<<< HEAD
 import requests
-=======
 from pathlib import Path
->>>>>>> ae7a9dbf485355bfcef48bfc41ac0d764a4a4b50
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, asc
@@ -20,22 +17,14 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 # 프로젝트 구조에 맞춘 임포트
-<<<<<<< HEAD
-from database import get_db
-from models import DocumentTable
-import schemas
-from routes.user import get_current_user  # 추가
-from models import UserTable              # 추가
-=======
 from my_project.models import DocumentTable, UserTable
 # 프로젝트 구조에 맞춘 모델 임포트입니다.
 # DocumentTable은 진단서 DB 저장/조회에 사용하고, UserTable은 토큰에서 꺼낸 현재 사용자 타입 표시에 사용합니다.
 from my_project.models import DocumentTable, UserTable
 from my_project import schemas
 from my_project.routes.user import get_current_user
->>>>>>> ae7a9dbf485355bfcef48bfc41ac0d764a4a4b50
 
-# [교정 1] 시스템 환경 변수 설정: PaddleOCR 로드 전 최상단에 배치하여 에러를 원천 차단합니다.
+# [교정 1] 시스템 환경 변수 설정: PaddleOCR 로드 전 최상단에 배치하여 에러를 원천 차단합니다..
 os.environ['PADDLE_USE_ONEDNN'] = '0' 
 os.environ['FLAGS_use_onednn'] = '0'
 os.environ['FLAGS_allocator_strategy'] = 'naive_best_fit'
@@ -50,7 +39,6 @@ ocr_model = None
 STATIC_DIR = Path(__file__).resolve().parents[1] / "static"
 UPLOAD_DIR = STATIC_DIR / "uploads"
 
-<<<<<<< HEAD
 # =====================================================================
 # 🔑 OpenAI API Key 설정 (환경 변수 또는 직접 입력)
 # =====================================================================
@@ -58,7 +46,6 @@ load_dotenv()
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
 # --- [LLM] OpenAI 기반 의학 용어 순화 함수 ---
-=======
 
 def ensure_paddleocr_available():
     if PaddleOCR is None:
@@ -75,7 +62,6 @@ def get_upload_path_from_url(image_url: str) -> Path:
 # OCR 결과에 포함된 어려운 의학 용어를 사용자에게 쉬운 표현으로 보여주기 위한 변환 함수입니다.
 # 현재는 하드코딩 치환 방식이며, 추후 의학 용어 사전 또는 AI 요약 결과로 확장할 수 있습니다.
 # --- [NLP] 어려운 의학 용어 순화 함수 ---
->>>>>>> ae7a9dbf485355bfcef48bfc41ac0d764a4a4b50
 def simplify_medical_terms(raw_text: str) -> str:
     """
     OCR로 추출한 진단서 원문을 OpenAI API를 통해
@@ -175,12 +161,8 @@ async def upload_document(
     
     try:
         # [교정 3] OCR 실행 및 텍스트 추출 로직 개선
-<<<<<<< HEAD
-        ocr_result = ocr_model.ocr(file_path)
-=======
         ocr_result = ocr_model.ocr(str(file_path))
         # ... ocr_result 처리 부분 ...
->>>>>>> ae7a9dbf485355bfcef48bfc41ac0d764a4a4b50
         if ocr_result:
             for res in ocr_result:
                 if res is None: continue
