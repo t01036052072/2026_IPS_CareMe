@@ -2,33 +2,55 @@ import os
 import uuid
 import shutil
 import re
+<<<<<<< HEAD
 import requests
+=======
+from pathlib import Path
+>>>>>>> ae7a9dbf485355bfcef48bfc41ac0d764a4a4b50
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, asc
-from paddleocr import PaddleOCR
+from my_project.database import get_db
+try:
+    from paddleocr import PaddleOCR
+except ModuleNotFoundError:
+    PaddleOCR = None
 from typing import Optional, List
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 # 프로젝트 구조에 맞춘 임포트
+<<<<<<< HEAD
 from database import get_db
 from models import DocumentTable
 import schemas
 from routes.user import get_current_user  # 추가
 from models import UserTable              # 추가
+=======
+from my_project.models import DocumentTable, UserTable
+# 프로젝트 구조에 맞춘 모델 임포트입니다.
+# DocumentTable은 진단서 DB 저장/조회에 사용하고, UserTable은 토큰에서 꺼낸 현재 사용자 타입 표시에 사용합니다.
+from my_project.models import DocumentTable, UserTable
+from my_project import schemas
+from my_project.routes.user import get_current_user
+>>>>>>> ae7a9dbf485355bfcef48bfc41ac0d764a4a4b50
 
 # [교정 1] 시스템 환경 변수 설정: PaddleOCR 로드 전 최상단에 배치하여 에러를 원천 차단합니다.
 os.environ['PADDLE_USE_ONEDNN'] = '0' 
 os.environ['FLAGS_use_onednn'] = '0'
 os.environ['FLAGS_allocator_strategy'] = 'naive_best_fit'
 
-router = APIRouter(prefix="/documents", tags=["Documents"])
+router = APIRouter(prefix="/documents")
+
+# OCR 모델은 서버 시작 시 바로 로딩하지 않고 최초 업로드 요청 때 한 번만 로딩합니다.
+# PaddleOCR 로딩 비용이 커서, 지연 로딩으로 서버 시작 속도와 메모리 부담을 줄입니다.
 
 # OCR 모델 지연 로딩
 ocr_model = None
-UPLOAD_DIR = "./static/uploads"
+STATIC_DIR = Path(__file__).resolve().parents[1] / "static"
+UPLOAD_DIR = STATIC_DIR / "uploads"
 
+<<<<<<< HEAD
 # =====================================================================
 # 🔑 OpenAI API Key 설정 (환경 변수 또는 직접 입력)
 # =====================================================================
@@ -36,6 +58,24 @@ load_dotenv()
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
 # --- [LLM] OpenAI 기반 의학 용어 순화 함수 ---
+=======
+
+def ensure_paddleocr_available():
+    if PaddleOCR is None:
+        raise HTTPException(
+            status_code=503,
+            detail="OCR 기능을 사용하려면 paddleocr 패키지를 설치해야 합니다.",
+        )
+
+
+def get_upload_path_from_url(image_url: str) -> Path:
+    relative_path = image_url.removeprefix("/static/").lstrip("/")
+    return STATIC_DIR / relative_path
+
+# OCR 결과에 포함된 어려운 의학 용어를 사용자에게 쉬운 표현으로 보여주기 위한 변환 함수입니다.
+# 현재는 하드코딩 치환 방식이며, 추후 의학 용어 사전 또는 AI 요약 결과로 확장할 수 있습니다.
+# --- [NLP] 어려운 의학 용어 순화 함수 ---
+>>>>>>> ae7a9dbf485355bfcef48bfc41ac0d764a4a4b50
 def simplify_medical_terms(raw_text: str) -> str:
     """
     OCR로 추출한 진단서 원문을 OpenAI API를 통해
@@ -91,14 +131,23 @@ def simplify_medical_terms(raw_text: str) -> str:
 
 
 # 1. 문서 업로드 (OCR 및 순화 포함)
+# 진단서 업로드 API
+# - 프론트는 multipart/form-data로 file, doc_type, upload_date를 보냅니다.
+# - Authorization 헤더의 JWT 토큰으로 현재 로그인한 사용자를 확인합니다.
+# - 업로드 이미지는 static/uploads 폴더에 저장하고 PaddleOCR로 텍스트를 추출합니다.
+# - 추출 텍스트에서 병원명 후보를 찾고, 쉬운 설명(simplified_text)을 만든 뒤 documents 테이블에 저장합니다.
+# - user_id는 고정값이 아니라 current_user.id로 저장하므로 사용자별 진단서 관리가 가능합니다.
+# - 통합 서버에서는 /friend/doc/documents/upload 경로로 호출됩니다.
 @router.post("/upload")
 async def upload_document(
     file: UploadFile = File(...), 
     doc_type: str = Form(...), 
     upload_date: str = Form(...), 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: UserTable = Depends(get_current_user),
 ):
     global ocr_model
+    ensure_paddleocr_available()
     if ocr_model is None:
         # [교정 2] ocr_test.py에서 성공했던 안정적인 설정값으로 초기화합니다.
         ocr_model = PaddleOCR(
@@ -113,11 +162,10 @@ async def upload_document(
     if extension not in ["jpg", "jpeg", "png"]:
         raise HTTPException(status_code=400, detail="이미지 파일만 업로드 가능합니다.")
 
-    if not os.path.exists(UPLOAD_DIR):
-        os.makedirs(UPLOAD_DIR)
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
     unique_filename = f"{doc_type}_{uuid.uuid4()}.{extension}"
-    file_path = os.path.join(UPLOAD_DIR, unique_filename)
+    file_path = UPLOAD_DIR / unique_filename
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
@@ -127,7 +175,12 @@ async def upload_document(
     
     try:
         # [교정 3] OCR 실행 및 텍스트 추출 로직 개선
+<<<<<<< HEAD
         ocr_result = ocr_model.ocr(file_path)
+=======
+        ocr_result = ocr_model.ocr(str(file_path))
+        # ... ocr_result 처리 부분 ...
+>>>>>>> ae7a9dbf485355bfcef48bfc41ac0d764a4a4b50
         if ocr_result:
             for res in ocr_result:
                 if res is None: continue
@@ -168,7 +221,7 @@ async def upload_document(
         hospital_name=detected_hospital,
         upload_date=upload_date, 
         image_url=f"/static/uploads/{unique_filename}",
-        user_id=1, 
+        user_id=current_user.id,
         ocr_count=len(extracted_texts),
         raw_text=full_raw_text,
         simplified_text=easy_description,
@@ -180,6 +233,12 @@ async def upload_document(
     return {"status": "success", "data": {"document_id": new_doc.id, "hospital": new_doc.hospital_name}}
 
 # 2. 문서 목록 조회
+# 진단서 목록 조회 API
+# - documents 테이블의 진단서 목록을 조회합니다.
+# - months 값을 주면 최근 N개월 데이터만 필터링합니다.
+# - sort=asc 또는 sort=desc로 업로드 날짜 기준 정렬 방향을 선택합니다.
+# - 현재 이 API는 전체 문서 목록 조회용이며, 마이페이지 개인별 문서 조회는 /friend/user/me 또는 /friend/mypage/documents를 사용합니다.
+# - 통합 서버에서는 /friend/doc/documents/list 경로로 호출됩니다.
 @router.get("/list")
 def get_document_list(
     months: Optional[int] = None,
@@ -211,6 +270,11 @@ def get_document_list(
     }
 
 # 3. 문서 상세 조회
+# 진단서 상세 조회 API
+# - document_id에 해당하는 진단서 1건의 상세 정보를 반환합니다.
+# - 병원명, 업로드 날짜, 원문 OCR 텍스트, 쉬운 설명, 이미지 URL 등을 포함합니다.
+# - 문서를 찾지 못하면 404를 반환합니다.
+# - 통합 서버에서는 /friend/doc/documents/{document_id} 경로로 호출됩니다.
 @router.get("/{document_id}", response_model=schemas.DocumentDetail)
 def get_document_detail(document_id: int, db: Session = Depends(get_db)):
     document = db.query(DocumentTable).filter(DocumentTable.id == document_id).first()
@@ -231,6 +295,11 @@ def get_document_detail(document_id: int, db: Session = Depends(get_db)):
     }
 
 # 4. 문서 수정 (재분석 시에도 동일한 안정적 설정 적용)
+# 진단서 이미지 수정 API
+# - 기존 document_id의 이미지 파일을 새 파일로 교체합니다.
+# - 기존 파일이 서버에 남아 있으면 삭제하고, 새 이미지를 uploads 폴더에 저장합니다.
+# - 새 이미지에 대해 OCR을 다시 실행하고 병원명/원문 텍스트/쉬운 설명/ocr_count를 갱신합니다.
+# - 통합 서버에서는 /friend/doc/documents/{document_id} 경로에 PUT으로 호출됩니다.
 @router.put("/{document_id}")
 async def update_document_image(
     document_id: int,
@@ -241,14 +310,15 @@ async def update_document_image(
     if not document:
         raise HTTPException(status_code=404, detail="수정할 문서를 찾을 수 없습니다.")
 
-    old_file_path = f".{document.image_url}"
+    old_file_path = get_upload_path_from_url(document.image_url)
     if os.path.exists(old_file_path):
         try: os.remove(old_file_path)
         except: pass
 
     extension = file.filename.split(".")[-1].lower()
     unique_filename = f"updated_{uuid.uuid4()}.{extension}"
-    new_file_path = os.path.join(UPLOAD_DIR, unique_filename)
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    new_file_path = UPLOAD_DIR / unique_filename
 
     with open(new_file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
@@ -258,10 +328,11 @@ async def update_document_image(
 
     try:
         global ocr_model
+        ensure_paddleocr_available()
         if ocr_model is None:
             ocr_model = PaddleOCR(lang='korean', use_gpu=False, enable_mkldnn=False, show_log=False)
             
-        ocr_result = ocr_model.ocr(new_file_path)
+        ocr_result = ocr_model.ocr(str(new_file_path))
         if ocr_result:
             for res in ocr_result:
                 if res is None: continue
@@ -288,13 +359,17 @@ async def update_document_image(
     return {"status": "success", "data": {"id": document.id, "hospital": document.hospital_name}}
 
 # 5. 문서 삭제
+# 진단서 삭제 API
+# - document_id에 해당하는 DB 레코드와 서버에 저장된 이미지 파일을 함께 삭제합니다.
+# - 문서를 찾지 못하면 404를 반환합니다.
+# - 통합 서버에서는 /friend/doc/documents/{document_id} 경로에 DELETE로 호출됩니다.
 @router.delete("/{document_id}")
 def delete_document(document_id: int, db: Session = Depends(get_db)):
     document = db.query(DocumentTable).filter(DocumentTable.id == document_id).first()
     if not document:
         raise HTTPException(status_code=404, detail="삭제할 문서를 찾을 수 없습니다.")
 
-    file_path = f".{document.image_url}"
+    file_path = get_upload_path_from_url(document.image_url)
     if os.path.exists(file_path):
         os.remove(file_path)
 
