@@ -70,6 +70,10 @@ class Pill(Base):
     pill_name = Column(String(255), index=True)
     enterprise = Column(String(255))
     effect = Column(Text)
+    use_method = Column(Text)
+    warning = Column(Text)
+    interaction = Column(Text)
+    side_effect = Column(Text)
     image_url = Column(Text)
 
     use_method = Column(Text)
