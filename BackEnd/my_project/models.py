@@ -72,6 +72,11 @@ class Pill(Base):
     effect = Column(Text)
     image_url = Column(Text)
 
+    use_method = Column(Text)
+    warning = Column(Text)
+    interaction = Column(Text)
+    side_effect = Column(Text)
+
 
 class Chat(Base):
     __tablename__ = "chat"
