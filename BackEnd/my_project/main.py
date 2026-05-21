@@ -45,7 +45,7 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.include_router(user.router)
 app.include_router(document.router)
 app.include_router(mypage.router, prefix="/mypage", tags=["마이페이지"])
-app.include_router(chatbot_router, prefix="/chatbot/chat", tags=["챗봇"])
+#app.include_router(chatbot_router, prefix="/chatbot/chat", tags=["챗봇"])
 
 @app.get("/")
 def root():
