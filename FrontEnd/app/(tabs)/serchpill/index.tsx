@@ -21,9 +21,11 @@ interface MedicineDetail {
   id: string;
   name: string;
   efficacy?: string;
-  enterprise?: string;
   side_effect?: string;
   image_url?: string;
+  use_method?: string;
+  warning?: string;
+  interaction?: string;
 }
 
 const sortMedicines = (medicines: Medicine[], query: string) => {
@@ -86,11 +88,20 @@ export default function PillSearch() {
       const data = res.data.data;
       setMedicineDetail({
         id: String(data.id),
+
         name: data.pill_name,
+
         efficacy: data.effect,
-        enterprise: data.enterprise,
+
         side_effect: data.side_effect,
-        image_url: undefined,
+
+        image_url: data.master_image_url,
+
+        use_method: data.use_method,
+
+        warning: data.warning,
+
+        interaction: data.interaction,
       });
     } catch (error) {
       console.error('상세 정보 조회 실패:', error);
@@ -162,9 +173,11 @@ export default function PillSearch() {
         id: String(data.id),
         name: data.pill_name,
         efficacy: data.effect,
-        enterprise: data.enterprise,
         side_effect: data.side_effect,
         image_url: data.master_image_url,
+        use_method: data.use_method,
+        warning: data.warning,
+        interaction: data.interaction,
       });
     } catch (error) {
       Alert.alert('오류', '상세 정보를 불러오지 못했습니다.');
@@ -266,17 +279,59 @@ export default function PillSearch() {
               </View>
             ) : (
               <ScrollView contentContainerStyle={styles.detailContent}>
-                <Text style={styles.medicineName}>{medicineDetail?.name}</Text>
 
                 {medicineDetail?.image_url && (
                   <View style={styles.imageBox}>
-                    <Image source={{ uri: medicineDetail.image_url }} style={styles.pillImage} resizeMode="contain" />
+                    <Image
+                      source={{ uri: medicineDetail.image_url }}
+                      style={styles.pillImage}
+                      resizeMode="contain"
+                    />
                   </View>
                 )}
 
-                {medicineDetail?.enterprise && <InfoCard label="제약회사" value={medicineDetail.enterprise} />}
-                {medicineDetail?.efficacy && <InfoCard label="효능·효과" value={medicineDetail.efficacy} />}
-                {medicineDetail?.side_effect && <InfoCard label="부작용" value={medicineDetail.side_effect} />}
+                {medicineDetail?.name && (
+                  <InfoCard
+                    label="제품명"
+                    value={medicineDetail.name}
+                  />
+                )}
+
+                {medicineDetail?.efficacy && (
+                  <InfoCard
+                    label="효능·효과"
+                    value={medicineDetail.efficacy}
+                  />
+                )}
+
+                {medicineDetail?.use_method && (
+                  <InfoCard
+                    label="복용법"
+                    value={medicineDetail.use_method}
+                  />
+                )}
+
+                {medicineDetail?.warning && (
+                  <InfoCard
+                    label="경고사항"
+                    value={medicineDetail.warning}
+                  />
+                )}
+
+                {medicineDetail?.interaction && (
+                  <InfoCard
+                    label="상호작용"
+                    value={medicineDetail.interaction}
+                  />
+                )}
+
+                {medicineDetail?.side_effect && (
+                  <InfoCard
+                    label="부작용"
+                    value={medicineDetail.side_effect}
+                  />
+                )}
+
               </ScrollView>
             )}
           </SafeAreaView>
