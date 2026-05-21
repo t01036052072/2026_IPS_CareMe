@@ -29,7 +29,6 @@ def get_side_effect(pill: Pill):
         getattr(pill, "side_effect", None)
         or getattr(pill, "side_effects", None)
         or getattr(pill, "adverse_effect", None)
-        or getattr(pill, "warning", None)
         or getattr(pill, "caution", None)
     )
 
@@ -161,6 +160,9 @@ def serialize_pill_detail(pill: Pill) -> dict:
         "pill_name": pill.pill_name,
         "enterprise": pill.enterprise,
         "effect": pill.effect,
+        "use_method": pill.use_method,
+        "warning": pill.warning,
+        "interaction": pill.interaction,
         "master_image_url": pill.image_url,
         "side_effect": get_side_effect(pill),
     }
@@ -228,6 +230,15 @@ async def search_pills(name: str, db: Session = Depends(get_db)):
 
         if hasattr(pill, "effect"):
             pill.effect = item.get("effect")
+
+        if hasattr(pill, "use_method"):
+            pill.use_method = item.get("use_method")
+
+        if hasattr(pill, "warning"):
+            pill.warning = item.get("warning")
+
+        if hasattr(pill, "interaction"):
+            pill.interaction = item.get("interaction")
 
         if hasattr(pill, "side_effect"):
             pill.side_effect = item.get("side_effect")
