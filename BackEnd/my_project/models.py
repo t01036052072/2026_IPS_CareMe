@@ -72,6 +72,7 @@ class Pill(Base):
     effect = Column(Text)
     use_method = Column(Text)
     warning = Column(Text)
+    precaution = Column(Text)
     interaction = Column(Text)
     side_effect = Column(Text)
     image_url = Column(Text)
