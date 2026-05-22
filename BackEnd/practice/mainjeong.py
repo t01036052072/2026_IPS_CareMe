@@ -15,7 +15,7 @@ from my_project import models
 from practice import notifications 
 from practice.pills import router as pill_router
 from practice.pill_alarm import router as pill_alarm_router
-from practice.hospital_appointment import router as appointment_router
+from BackEnd.practice.calender import router as appointment_router
 from chatbot.routers.chat import router as chatbot_router
 
 # 친구(my_project) 기능 및 데이터 구조 가져오기
