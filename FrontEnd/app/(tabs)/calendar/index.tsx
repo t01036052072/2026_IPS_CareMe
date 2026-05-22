@@ -13,7 +13,7 @@ import {
   updateAppointmentAPI,
   deleteAppointmentAPI,
   AppointmentDetail,
-} from '@/api/appointment';
+} from '@/api/calender';
 
 interface Schedule {
   id: number;
