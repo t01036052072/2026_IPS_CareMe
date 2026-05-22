@@ -11,6 +11,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '@/api/api';
 
+
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
 
@@ -86,6 +87,8 @@ export default function DocumentScreen() {
       setIsLoading(true);
       const token = await getToken();
           console.log('문서 조회 시작');  
+          console.log('=== 토큰 확인 ===', token);
+
 
       const response = await apiClient.get('/friend/doc/documents/list', {
         headers: { Authorization: `Bearer ${token}` },
