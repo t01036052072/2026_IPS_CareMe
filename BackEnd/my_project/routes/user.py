@@ -19,7 +19,7 @@ SECRET_KEY = "health-care-ai-engineering-2026"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/friend/user/login")
 BCRYPT_SHA256_PREFIX = "bcrypt_sha256$"
 PASSLIB_BCRYPT_SHA256_PREFIX = "$bcrypt-sha256$"
 
