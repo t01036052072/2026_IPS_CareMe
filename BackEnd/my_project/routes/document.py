@@ -138,8 +138,7 @@ async def upload_document(
     if ocr_model is None:
         # [교정 2] ocr_test.py에서 성공했던 안정적인 설정값으로 초기화합니다.
         ocr_model = PaddleOCR(
-            lang='korean',
-            show_log=False
+            lang='korean'
         )
 
     extension = file.filename.split(".")[-1].lower()
@@ -310,7 +309,7 @@ async def update_document_image(
         global ocr_model
         ensure_paddleocr_available()
         if ocr_model is None:
-            ocr_model = PaddleOCR(lang='korean', show_log=False)
+            ocr_model = PaddleOCR(lang='korean')
             
         ocr_result = ocr_model.ocr(str(new_file_path))
         if ocr_result:
