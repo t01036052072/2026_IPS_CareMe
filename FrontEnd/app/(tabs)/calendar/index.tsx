@@ -19,7 +19,8 @@ interface Schedule {
   id: number;
   date: string;
   title: string;
-  time: string;
+  time: string;       // 표시용 "오전 11시 20분"
+  raw_time: string;   // 원본 "11:20"
   alarm: string;
   alarm_date: string;
   alarm_time: string;
@@ -60,6 +61,7 @@ export default function HospitalCalendarScreen() {
         date: appt.date,
         title: appt.hospital_name,
         time: formatTimeStr(appt.time),
+        raw_time: appt.time,           // 원본 "HH:MM" 저장
         alarm: formatTimeStr(appt.alarm_time),
         alarm_date: appt.alarm_date,
         alarm_time: appt.alarm_time,
@@ -82,7 +84,13 @@ export default function HospitalCalendarScreen() {
     setShowAlarmPicker(false);
   };
 
-  const formatDate = (date: Date) => date.toISOString().split('T')[0];
+  // 날짜 하루 밀림 방지 - 로컬 시간 기준으로 변환
+  const formatDate = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
 
   // "HH:MM" → "오전/오후 H시 MM분"
   const formatTimeStr = (timeStr: string) => {
@@ -108,6 +116,14 @@ export default function HospitalCalendarScreen() {
     const h = date.getHours().toString().padStart(2, '0');
     const m = date.getMinutes().toString().padStart(2, '0');
     return `${h}:${m}`;
+  };
+
+  // "HH:MM" 문자열 → Date 객체
+  const timeStrToDate = (timeStr: string): Date => {
+    const [h, m] = timeStr.split(':').map(Number);
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    return d;
   };
 
   const changeDate = (offset: number) => {
@@ -151,8 +167,10 @@ export default function HospitalCalendarScreen() {
     try {
       const dateStr = formatDate(selectedDate);
       const timeStr = toTimeStr(scheduleTime);
-      const alarmDateStr = alarmTime ? formatDate(selectedDate) : dateStr;
-      const alarmTimeStr = alarmTime ? toTimeStr(alarmTime) : toTimeStr(new Date(scheduleTime.getTime() - 3 * 60 * 60 * 1000));
+      const alarmDateStr = dateStr;
+      const alarmTimeStr = alarmTime
+        ? toTimeStr(alarmTime)
+        : toTimeStr(new Date(scheduleTime.getTime() - 3 * 60 * 60 * 1000));
 
       const payload = {
         hospital_name: hospitalName,
@@ -162,8 +180,7 @@ export default function HospitalCalendarScreen() {
         alarm_time: alarmTimeStr,
       };
 
-          console.log('전송 payload:', payload);  // ← 추가
-
+      console.log('전송 payload:', payload);
 
       if (editId) {
         await updateAppointmentAPI(editId, payload);
@@ -176,11 +193,10 @@ export default function HospitalCalendarScreen() {
       setScheduleTime(null);
       setAlarmTime(null);
       setEditId(null);
-      fetchSchedules(); // 목록 새로고침
+      fetchSchedules();
     } catch (error: any) {
       console.log('저장 실패:', error.message);
-  console.log('422 에러 내용:', error.response?.data);
-      console.log('저장 실패:', error.message);
+      console.log('422 에러 내용:', error.response?.data);
       setAlertMsg('저장에 실패했습니다.\n다시 시도해주세요.');
       setIsAlertVisible(true);
     } finally {
@@ -193,11 +209,13 @@ export default function HospitalCalendarScreen() {
     if (!editId) return;
     try {
       await deleteAppointmentAPI(editId);
-      setSchedules(schedules.filter(s => s.id !== editId));
       setIsModalVisible(false);
       setIsAlertVisible(false);
+      setEditId(null);
+      fetchSchedules();
     } catch (error: any) {
       console.log('삭제 실패:', error.message);
+      setIsAlertVisible(false);
     }
   };
 
@@ -278,11 +296,14 @@ export default function HospitalCalendarScreen() {
             <TouchableOpacity key={item.id} style={styles.scheduleCard} onPress={() => {
               setEditId(item.id);
               setHospitalName(item.title);
+              setScheduleTime(timeStrToDate(item.raw_time));   // 방문 시간 세팅
+              setAlarmTime(timeStrToDate(item.alarm_time));    // 알람 시간 세팅
               setIsModalVisible(true);
             }}>
               <View>
                 <Text style={styles.cardTitle}>{item.title}</Text>
                 <Text style={styles.cardInfo}>방문 시간: {item.time}</Text>
+                <Text style={styles.cardInfo}>알람 시간: {item.alarm}</Text>
               </View>
               <Ionicons name="chevron-forward" size={24} color="#CCC" />
             </TouchableOpacity>
@@ -365,7 +386,7 @@ export default function HospitalCalendarScreen() {
 
                   {Platform.OS === 'ios' && showAlarmPicker && (
                     <View style={styles.iosPickerBox}>
-                      <DateTimePicker value={alarmTime || new Date()} mode="time" display="spinner" onChange={(e, d) => d && setAlarmTime(d)} />
+                      <DateTimePicker value={alarmTime || new Date()} mode="time" display="spinner" locale="ko-KR" onChange={(e, d) => d && setAlarmTime(d)} />
                       <TouchableOpacity style={styles.iosPickerConfirmBtn} onPress={() => setShowAlarmPicker(false)}>
                         <Text style={styles.iosPickerConfirmText}>알람 설정 완료</Text>
                       </TouchableOpacity>
