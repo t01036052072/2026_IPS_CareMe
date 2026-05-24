@@ -139,9 +139,6 @@ async def upload_document(
         # [교정 2] ocr_test.py에서 성공했던 안정적인 설정값으로 초기화합니다.
         ocr_model = PaddleOCR(
             lang='korean',
-            use_gpu=False,        # GPU 사용 안 함 (에러 방지)
-            enable_mkldnn=False,  # oneDNN 가속 해제 (가장 중요!)
-            cpu_threads=1,        # CPU 스레드 제한으로 안정성 확보
             show_log=False
         )
 
@@ -313,7 +310,7 @@ async def update_document_image(
         global ocr_model
         ensure_paddleocr_available()
         if ocr_model is None:
-            ocr_model = PaddleOCR(lang='korean', use_gpu=False, enable_mkldnn=False, show_log=False)
+            ocr_model = PaddleOCR(lang='korean', show_log=False)
             
         ocr_result = ocr_model.ocr(str(new_file_path))
         if ocr_result:
