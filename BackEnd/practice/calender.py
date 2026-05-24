@@ -80,8 +80,10 @@ def create_appointment(payload: AppointmentCreate, db: Session = Depends(get_db)
         user_id=str(current_user.id),
         title=f"{payload.hospital_name} 예약",
         hospital_name=payload.hospital_name,
-        appointment_time=appt_datetime
-    )
+        appointment_time=appt_datetime,
+        alarm_date=payload.alarm_date,  
+        alarm_time=payload.alarm_time, 
+        )
 
     # 💡 핵심: AWS RDS MySQL에 예약 정보를 실시간으로 자동 저장하는 구간
     db.add(new_appt)
@@ -106,12 +108,10 @@ def get_appointments(month: Optional[str] = None, db: Session = Depends(get_db),
 
     result = []
     for appt in rows:
-        # 가상 데이터 연동을 위한 임시 알람 값 설정 (Detail 스키마 규격 충족용)
-        alarm_date_str = appt.appointment_time.strftime("%Y-%m-%d")
-        alarm_time_str = appt.appointment_time.strftime("%H:%M")
-        
+        alarm_date_str = appt.alarm_date if appt.alarm_date else appt.appointment_time.strftime("%Y-%m-%d")
+        alarm_time_str = appt.alarm_time if appt.alarm_time else appt.appointment_time.strftime("%H:%M")
         result.append(_model_to_detail(appt, alarm_date_str, alarm_time_str))
-        
+
     return result
 
 
@@ -133,6 +133,8 @@ def update_appointment(appointment_id: int, payload: AppointmentCreate, db: Sess
     appt.hospital_name = payload.hospital_name
     appt.title = f"{payload.hospital_name} 예약"
     appt.appointment_time = appt_datetime
+    appt.alarm_date = payload.alarm_date  # ← 추가
+    appt.alarm_time = payload.alarm_time  # ← 추가
 
     db.commit()
     db.refresh(appt)
