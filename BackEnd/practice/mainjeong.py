@@ -14,7 +14,7 @@ from my_project import models
 # 내 기능들 가져오기
 from practice import notifications 
 from practice.pills import router as pill_router
-from practice.pill_alarm import router as pill_alarm_router
+from BackEnd.practice.medications import router as pill_alarm_router
 from BackEnd.practice.calender import router as appointment_router
 from chatbot.routers.chat import router as chatbot_router
 
