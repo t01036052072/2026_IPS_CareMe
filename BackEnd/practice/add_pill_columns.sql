@@ -1,0 +1,6 @@
+ALTER TABLE pills ADD COLUMN effect TEXT;
+ALTER TABLE pills ADD COLUMN use_method TEXT;
+ALTER TABLE pills ADD COLUMN warning TEXT;
+ALTER TABLE pills ADD COLUMN interaction TEXT;
+ALTER TABLE pills ADD COLUMN side_effect TEXT;
+ALTER TABLE pills ADD COLUMN image_url TEXT;

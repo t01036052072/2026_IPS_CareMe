@@ -29,7 +29,6 @@ def get_side_effect(pill: Pill):
         getattr(pill, "side_effect", None)
         or getattr(pill, "side_effects", None)
         or getattr(pill, "adverse_effect", None)
-        or getattr(pill, "warning", None)
         or getattr(pill, "caution", None)
     )
 
