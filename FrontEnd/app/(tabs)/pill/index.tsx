@@ -35,10 +35,14 @@ export default function PillScreen() {
   <Text style={styles.cardText}>의약품 검색</Text>
 </TouchableOpacity>
 
-        <TouchableOpacity style={styles.card}>
-          <PillTime width={100} height={100} />
-          <Text style={styles.cardText}>복약 일정</Text>
-        </TouchableOpacity>
+        <TouchableOpacity 
+  style={styles.card}
+  onPress={() => router.navigate('/(tabs)/pillschedule' as any)}  // ← 추가
+>
+  <PillTime width={100} height={100} />
+  <Text style={styles.cardText}>복약 일정</Text>
+</TouchableOpacity>
+
       </View>
 
     </View>

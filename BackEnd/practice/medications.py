@@ -3,6 +3,9 @@ from pydantic import BaseModel, field_validator
 from typing import List, Optional, Literal
 from datetime import date, timedelta, datetime
 from sqlalchemy.orm import Session
+from my_project.models import Medication, UserTable
+from my_project.routes.user import get_current_user
+
 import re
 
 # database.py에서 DB 세션 연동 함수와 Medication 테이블 모델 가져오기
@@ -15,7 +18,6 @@ router = APIRouter(prefix="/medications", tags=["복약 일정"])
 
 # ── Pydantic 스키마 ───────────────────────────────────────
 class MedicationCreate(BaseModel):
-    user_id:       int  # 유저 식별
     name:          str  # 약 이름
     period:        Literal["오전", "오후"]   # 오전/오후 외 값 자동 에러
     time:          str  # 시간 ("HH:MM" 예: "08:30")
@@ -106,10 +108,8 @@ def _model_to_detail(med: Medication, period: str, duration_days: int, start_dat
 # - 현재는 요청 파라미터의 user_id 기준으로 조회하며, 추후 토큰 기반 current_user.id 조회로 확장할 수 있습니다.
 # - 통합 서버에서는 /medications 경로에 GET으로 호출됩니다.
 @router.get("", response_model=List[MedicationSummary], summary="복약 일정 조회")
-def get_medications(user_id: int, show_detail: bool = False, db: Session = Depends(get_db)):
-    # 💡 덤프 리스트 대신 MySQL에서 사용자가 등록한 데이터를 실시간 조회합니다.
-    rows = db.query(Medication).filter(Medication.user_id == str(user_id)).all()
-    
+def get_medications(show_detail: bool = False, db: Session = Depends(get_db), current_user: UserTable = Depends(get_current_user)):
+    rows = db.query(Medication).filter(Medication.user_id == str(current_user.id)).all()
     # 시간 순서대로 정렬
     rows_sorted = sorted(rows, key=lambda m: m.time)
     
@@ -140,7 +140,7 @@ def create_medication(payload: MedicationCreate, db: Session = Depends(get_db)):
 
     # 사용자가 프론트엔드 화면에서 보낸 데이터로 MySQL 객체 생성
     new_med = Medication(
-        user_id=str(payload.user_id),
+        user_id=str(current_user_id),
         medication_name=payload.name,  
         dose=f"{payload.count}알",      
         time=time_24h                  
