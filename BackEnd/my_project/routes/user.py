@@ -19,14 +19,14 @@ SECRET_KEY = "health-care-ai-engineering-2026"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/friend/user/login") #로그인 경로 수정
 BCRYPT_SHA256_PREFIX = "bcrypt_sha256$"
 PASSLIB_BCRYPT_SHA256_PREFIX = "$bcrypt-sha256$"
 
 router = APIRouter()
 
 
-# JWT access token을 만드는 공통 함수입니다.
+# JWT access token을 만드는 공통 함수입니다
 # payload에는 현재 사용자를 식별하기 위한 값(sub=email)과 만료 시간(exp)이 들어갑니다.
 # 프론트는 로그인/회원가입 응답으로 받은 access_token을 저장했다가
 # 이후 인증이 필요한 API 요청의 Authorization 헤더에 Bearer 토큰으로 보내야 합니다.
