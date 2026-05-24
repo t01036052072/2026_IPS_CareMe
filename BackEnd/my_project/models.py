@@ -66,16 +66,23 @@ class Pill(Base):
     __tablename__ = "pills"
 
     id = Column(Integer, primary_key=True, index=True)
+
     pill_code = Column(String(100), unique=True)
     pill_name = Column(String(255), index=True)
-    enterprise = Column(String(255))
+
     effect = Column(Text)
-    image_url = Column(Text)
 
     use_method = Column(Text)
+
     warning = Column(Text)
+
+    precaution = Column(Text)
+
     interaction = Column(Text)
+
     side_effect = Column(Text)
+
+    image_url = Column(Text)
 
 
 class Chat(Base):

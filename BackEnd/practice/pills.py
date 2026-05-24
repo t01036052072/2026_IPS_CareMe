@@ -267,7 +267,6 @@ from sqlalchemy.orm import Session
 
 from my_project.models import Pill
 from practice.database import get_db
-from practice.services.pill_api import search_pill_by_name
 
 router = APIRouter(prefix="/pills", tags=["pill search"])
 
@@ -283,10 +282,9 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 def serialize_pill_detail(pill: Pill) -> dict:
     return {
         "id": pill.id,
-        "pill_name": pill.pill_name,
 
-        # 제조사
-        "enterprise": getattr(pill, "enterprise", None),
+        # 제품명
+        "pill_name": pill.pill_name,
 
         # 이미지
         "master_image_url": getattr(pill, "image_url", None),
@@ -337,7 +335,7 @@ def analyze_pill_image(file_path: str, db: Session) -> int:
 
 
 # =========================
-# 약 검색
+# 약 검색 (DB 검색)
 # =========================
 @router.get("/search")
 async def search_pills(
@@ -353,96 +351,28 @@ async def search_pills(
             detail="Search keyword is required.",
         )
 
-    # 공공데이터 API 호출
-    try:
-        api_results = search_pill_by_name(keyword)
+    pills = (
+        db.query(Pill)
+        .filter(Pill.pill_name.contains(keyword))
+        .all()
+    )
 
-    except Exception as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Public data API request failed: {exc}",
-        )
-
-    if not api_results:
+    if not pills:
         raise HTTPException(
             status_code=404,
             detail="No matching pill was found.",
         )
 
-    saved_pills = []
-
-    for item in api_results:
-
-        pill_code = item.get("pill_code")
-        pill_name = item.get("pill_name")
-
-        if not pill_name:
-            continue
-
-        pill = None
-
-        # 기존 데이터 조회
-        if pill_code:
-            pill = (
-                db.query(Pill)
-                .filter(Pill.pill_code == pill_code)
-                .first()
-            )
-
-        # 없으면 새로 생성
-        if not pill:
-            pill = Pill(
-                pill_code=pill_code,
-                pill_name=pill_name,
-            )
-
-            db.add(pill)
-
-        # =========================
-        # 데이터 저장
-        # =========================
-        pill.pill_name = pill_name
-        pill.enterprise = item.get("enterprise")
-        pill.image_url = item.get("image_url")
-
-        # 효능효과
-        if hasattr(pill, "effect"):
-            pill.effect = item.get("effect")
-
-        # 복용법
-        if hasattr(pill, "use_method"):
-            pill.use_method = item.get("use_method")
-
-        # 경고
-        if hasattr(pill, "warning"):
-            pill.warning = item.get("warning")
-
-        # 상호작용
-        if hasattr(pill, "interaction"):
-            pill.interaction = item.get("interaction")
-
-        # 부작용
-        if hasattr(pill, "side_effect"):
-            pill.side_effect = item.get("side_effect")
-
-        saved_pills.append(pill)
-
-    db.commit()
-
-    for pill in saved_pills:
-        db.refresh(pill)
-
     return {
         "status": "success",
-        "flow": "public_api_search",
-        "count": len(saved_pills),
+        "count": len(pills),
 
         "results": [
             {
                 "id": pill.id,
                 "pill_name": pill.pill_name,
             }
-            for pill in saved_pills
+            for pill in pills
         ],
     }
 
