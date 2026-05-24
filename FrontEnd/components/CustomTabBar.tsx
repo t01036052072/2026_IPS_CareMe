@@ -9,7 +9,8 @@ import {
   MessageCircleMore,
 } from 'lucide-react-native';
 
-import HealthTab from '../assets/CustomTabBar/HealthTab.svg';
+import HealthTabGray from '../assets/CustomTabBar/HealthTabGray.svg';
+import HealthTabNavy from '../assets/CustomTabBar/HealthTabNavy.svg';
 
 const MAIN_NAVY = '#00246D';
 const GRAY = '#777';
@@ -18,6 +19,9 @@ const WHITE = '#fff';
 export default function CustomTabBar() {
   const router = useRouter();
   const pathname = usePathname();
+
+  const isHealthcare = pathname.includes('healthcare');
+
 
   const tabs = [
     // 약 아이콘
@@ -31,8 +35,15 @@ export default function CustomTabBar() {
     },
 
     // 건강 아이콘
-    { name: '건강 관리', path: '/healthcare',
-      icon: <HealthTab width={24} height={24} />
+    {
+      name: '건강 관리',
+      path: '/healthcare',
+
+      icon: isHealthcare ? (
+        <HealthTabNavy width={24} height={24} />
+      ) : (
+        <HealthTabGray width={24} height={24} />
+      ),
     },
 
     // 홈 아이콘
