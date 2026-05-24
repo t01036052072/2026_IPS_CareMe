@@ -8,6 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { apiClient } from '@/api/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
@@ -55,6 +57,10 @@ export default function PillSearch() {
   const [capturedImageUri, setCapturedImageUri] = useState<string | null>(null);
   const [isPhotoLoading, setIsPhotoLoading] = useState(false);
 
+  // 복약일정 등록 확인 모달
+  const [isRegisterConfirmVisible, setIsRegisterConfirmVisible] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+
   // ───── 텍스트 검색 ─────
   const handleTextSearch = async () => {
     if (!searchText.trim()) return;
@@ -88,19 +94,12 @@ export default function PillSearch() {
       const data = res.data.data;
       setMedicineDetail({
         id: String(data.id),
-
         name: data.pill_name,
-
         efficacy: data.effect,
-
         side_effect: data.side_effect,
-
         image_url: data.master_image_url,
-
         use_method: data.use_method,
-
         warning: data.warning,
-
         interaction: data.interaction,
       });
     } catch (error) {
@@ -186,6 +185,45 @@ export default function PillSearch() {
       setIsDetailLoading(false);
     }
   };
+
+  // ───── 복약일정 등록 ─────
+const handleRegisterMedication = async () => {
+  if (!medicineDetail) return;
+  setIsRegistering(true);
+  try {
+    const token = await AsyncStorage.getItem('access_token');
+    const now = new Date();
+    const toLocalDate = (d: Date) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
+    await apiClient.post('/medications', {
+      name: medicineDetail.name,
+      period: '오전',
+      time: '08:00',
+      count: 1,
+      duration_days: 7,
+      start_date: toLocalDate(now),
+    }, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    setIsRegisterConfirmVisible(false);
+    setIsDetailVisible(false);
+    Alert.alert('등록 완료', `${medicineDetail.name}이(가) 복약일정에 추가됐어요!`, [
+      { text: '복약일정 보기', onPress: () => router.push('/(tabs)/pillschedule' as any) },
+      { text: '확인', style: 'cancel' },
+    ]);
+  } catch (error: any) {
+    console.log('복약일정 등록 실패:', error.message);
+    Alert.alert('오류', '등록에 실패했습니다.');
+  } finally {
+    setIsRegistering(false);
+  }
+};
 
   return (
     <SafeAreaView style={styles.container}>
@@ -279,69 +317,68 @@ export default function PillSearch() {
               </View>
             ) : (
               <ScrollView contentContainerStyle={styles.detailContent}>
-
                 {medicineDetail?.image_url && (
                   <View style={styles.imageBox}>
-                    <Image
-                      source={{ uri: medicineDetail.image_url }}
-                      style={styles.pillImage}
-                      resizeMode="contain"
-                    />
+                    <Image source={{ uri: medicineDetail.image_url }} style={styles.pillImage} resizeMode="contain" />
                   </View>
                 )}
+                {medicineDetail?.name && <InfoCard label="제품명" value={medicineDetail.name} />}
+                {medicineDetail?.efficacy && <InfoCard label="효능·효과" value={medicineDetail.efficacy} />}
+                {medicineDetail?.use_method && <InfoCard label="복용법" value={medicineDetail.use_method} />}
+                {medicineDetail?.warning && <InfoCard label="경고사항" value={medicineDetail.warning} />}
+                {medicineDetail?.interaction && <InfoCard label="상호작용" value={medicineDetail.interaction} />}
+                {medicineDetail?.side_effect && <InfoCard label="부작용" value={medicineDetail.side_effect} />}
 
-                {medicineDetail?.name && (
-                  <InfoCard
-                    label="제품명"
-                    value={medicineDetail.name}
-                  />
-                )}
-
-                {medicineDetail?.efficacy && (
-                  <InfoCard
-                    label="효능·효과"
-                    value={medicineDetail.efficacy}
-                  />
-                )}
-
-                {medicineDetail?.use_method && (
-                  <InfoCard
-                    label="복용법"
-                    value={medicineDetail.use_method}
-                  />
-                )}
-
-                {medicineDetail?.warning && (
-                  <InfoCard
-                    label="경고사항"
-                    value={medicineDetail.warning}
-                  />
-                )}
-
-                {medicineDetail?.interaction && (
-                  <InfoCard
-                    label="상호작용"
-                    value={medicineDetail.interaction}
-                  />
-                )}
-
-                {medicineDetail?.side_effect && (
-                  <InfoCard
-                    label="부작용"
-                    value={medicineDetail.side_effect}
-                  />
-                )}
-
+                {/* ───── 복약일정 등록 버튼 ───── */}
+                <TouchableOpacity
+                  style={styles.registerBtn}
+                  onPress={() => setIsRegisterConfirmVisible(true)}
+                >
+                  <Ionicons name="add-circle-outline" size={24} color="#FFF" />
+                  <Text style={styles.registerBtnText}>복약일정에 등록하기</Text>
+                </TouchableOpacity>
               </ScrollView>
             )}
           </SafeAreaView>
         </View>
+
+        {/* ───── 복약일정 등록 확인 모달 ───── */}
+        <Modal visible={isRegisterConfirmVisible} transparent animationType="fade">
+          <View style={styles.confirmOverlay}>
+            <View style={styles.confirmBox}>
+              <Text style={styles.confirmTitle}>복약일정에 추가하기</Text>
+              <Text style={styles.confirmDesc}>
+                <Text style={{ fontWeight: 'bold', color: main_navy }}>{medicineDetail?.name}</Text>
+                {'\n'}복약일정에 추가하시겠습니까?
+              </Text>
+              <Text style={styles.confirmHint}>* 기본값: 오전 08:00, 1정, 7일{'\n'}복약일정에서 수정할 수 있어요</Text>
+              <View style={styles.confirmBtns}>
+                <TouchableOpacity
+                  style={styles.confirmNoBtn}
+                  onPress={() => setIsRegisterConfirmVisible(false)}
+                >
+                  <Text style={styles.confirmNoBtnText}>취소</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.confirmYesBtn}
+                  onPress={handleRegisterMedication}
+                  disabled={isRegistering}
+                >
+                  {isRegistering
+                    ? <ActivityIndicator color="#FFF" />
+                    : <Text style={styles.confirmYesBtnText}>네, 추가할게요</Text>
+                  }
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </Modal>
 
       {/* ───── 사진 확인 모달 ───── */}
       <Modal visible={isConfirmVisible} transparent animationType="slide">
-        <View style={styles.confirmOverlay}>
-          <View style={styles.confirmBox}>
+        <View style={styles.photoConfirmOverlay}>
+          <View style={styles.photoConfirmBox}>
             <View style={styles.modalHeader}>
               <TouchableOpacity onPress={() => setIsConfirmVisible(false)}>
                 <Ionicons name="close" size={28} color="#333" />
@@ -349,18 +386,15 @@ export default function PillSearch() {
               <Text style={styles.modalTitle}>사진 분석 결과</Text>
               <View style={{ width: 28 }} />
             </View>
-
             {capturedImageUri && (
               <View style={styles.imageBox}>
                 <Image source={{ uri: capturedImageUri }} style={styles.pillImage} resizeMode="contain" />
               </View>
             )}
-
             <Text style={styles.medicineName}>{selectedMedicine?.name}</Text>
-
-            <View style={styles.confirmQuestion}>
+            <View style={styles.photoConfirmQuestion}>
               <Text style={styles.confirmQuestionText}>이 약이 맞습니까?</Text>
-              <View style={styles.confirmBtns}>
+              <View style={styles.photoBtns}>
                 <TouchableOpacity style={styles.confirmYesBtn} onPress={handleConfirmYes}>
                   <Text style={styles.confirmYesBtnText}>예</Text>
                 </TouchableOpacity>
@@ -372,7 +406,6 @@ export default function PillSearch() {
           </View>
         </View>
       </Modal>
-
     </SafeAreaView>
   );
 }
@@ -410,23 +443,35 @@ const styles = StyleSheet.create({
   modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#EEE' },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: main_navy },
   detailContent: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 20 },
-  medicineName: { fontSize: 24, fontWeight: 'bold', color: '#111', marginBottom: 20 },
+  medicineName: { fontSize: 24, fontWeight: 'bold', color: '#111', marginBottom: 20, textAlign: 'center' },
   imageBox: { width: '100%', aspectRatio: 1.4, borderWidth: 1, borderColor: '#EEE', borderRadius: 16, overflow: 'hidden', marginBottom: 20, justifyContent: 'center', alignItems: 'center' },
   pillImage: { width: '100%', height: '100%' },
   infoCard: { backgroundColor: light_navy, borderRadius: 14, padding: 18, marginBottom: 12 },
   infoLabel: { fontSize: 14, fontWeight: 'bold', color: main_navy, marginBottom: 6 },
   infoValue: { fontSize: 16, color: '#333', lineHeight: 24 },
 
+  // 복약일정 등록 버튼
+  registerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: main_navy, paddingVertical: 18, borderRadius: 15, marginTop: 20 },
+  registerBtnText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+
+  // 복약일정 등록 확인 모달
+  confirmOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  confirmBox: { backgroundColor: '#FFF', borderRadius: 24, padding: 28, width: '85%', alignItems: 'center', gap: 12 },
+  confirmTitle: { fontSize: 20, fontWeight: 'bold', color: main_navy },
+  confirmDesc: { fontSize: 16, textAlign: 'center', color: '#333', lineHeight: 26 },
+  confirmHint: { fontSize: 13, color: '#888', textAlign: 'center', lineHeight: 20 },
+  confirmBtns: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  confirmYesBtn: { flex: 1, backgroundColor: main_navy, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
+  confirmYesBtnText: { fontSize: 16, fontWeight: 'bold', color: '#FFF' },
+  confirmNoBtn: { flex: 1, borderWidth: 1.5, borderColor: '#DDD', paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
+  confirmNoBtnText: { fontSize: 16, fontWeight: 'bold', color: '#888' },
+
   // 사진 확인 모달
-  confirmOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  confirmBox: { backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 },
-  confirmQuestion: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1.5, borderColor: '#DDD', borderRadius: 12, paddingVertical: 16, paddingHorizontal: 20, marginTop: 16 },
+  photoConfirmOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  photoConfirmBox: { backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 },
+  photoConfirmQuestion: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1.5, borderColor: '#DDD', borderRadius: 12, paddingVertical: 16, paddingHorizontal: 20, marginTop: 16 },
   confirmQuestionText: { fontSize: 18, fontWeight: '600', color: '#111' },
-  confirmBtns: { flexDirection: 'row', gap: 20 },
-  confirmYesBtn: { paddingHorizontal: 20, paddingVertical: 8, backgroundColor: main_navy, borderRadius: 10 },
-  confirmYesBtnText: { fontSize: 18, fontWeight: 'bold', color: '#FFF' },
-  confirmNoBtn: { paddingHorizontal: 20, paddingVertical: 8, borderWidth: 1.5, borderColor: '#D32F2F', borderRadius: 10 },
-  confirmNoBtnText: { fontSize: 18, fontWeight: 'bold', color: '#D32F2F' },
+  photoBtns: { flexDirection: 'row', gap: 12 },
 
   loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
   loadingText: { fontSize: 18, color: main_navy, fontWeight: 'bold' },
