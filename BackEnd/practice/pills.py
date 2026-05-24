@@ -320,7 +320,7 @@ def serialize_pill_check(pill: Pill) -> dict:
 # =========================
 # 사진 분석 임시 함수
 # =========================
-def analyze_pill_image(file_path: str, db: Session) -> int:
+"""def analyze_pill_image(file_path: str, db: Session) -> int:
 
     pill = db.query(Pill).order_by(Pill.id.asc()).first()
 
@@ -330,7 +330,7 @@ def analyze_pill_image(file_path: str, db: Session) -> int:
             detail="No pill data is available.",
         )
 
-    return pill.id
+    return pill.id"""
 
 
 # =========================
@@ -379,7 +379,7 @@ async def search_pills(
 # =========================
 # 사진 분석
 # =========================
-@router.post("/analyze")
+"""@router.post("/analyze")
 async def analyze_pill_photo(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
@@ -423,6 +423,7 @@ async def analyze_pill_photo(
         "detected_id": detected_id,
     }
 
+"""
 
 # =========================
 # 사진 검색 확인
