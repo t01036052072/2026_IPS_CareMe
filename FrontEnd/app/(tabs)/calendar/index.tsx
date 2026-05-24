@@ -56,6 +56,7 @@ export default function HospitalCalendarScreen() {
     try {
       setIsLoading(true);
       const data = await getAppointmentsAPI();
+      console.log('API 응답:', JSON.stringify(data)); 
       const mapped: Schedule[] = data.map(appt => ({
         id: appt.id,
         date: appt.date,
@@ -155,6 +156,9 @@ export default function HospitalCalendarScreen() {
 
   // ───── 등록/수정 저장 ─────
   const handleSave = async () => {
+    console.log('=== handleSave 호출 ===');
+  console.log('editId:', editId);
+  console.log('hospitalName:', hospitalName);
     if (!hospitalName.trim() || !scheduleTime) {
       setShowSchedulePicker(false);
       setShowAlarmPicker(false);
@@ -182,7 +186,7 @@ export default function HospitalCalendarScreen() {
 
       console.log('전송 payload:', payload);
 
-      if (editId) {
+      if (editId !== null && editId !== undefined) {
         await updateAppointmentAPI(editId, payload);
       } else {
         await createAppointmentAPI(payload);
