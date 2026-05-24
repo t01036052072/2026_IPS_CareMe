@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import os
 
 # .env 파일 로드
-load_dotenv()
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 
 # 환경변수 가져오기
 DB_USER = os.getenv("DB_USER")
