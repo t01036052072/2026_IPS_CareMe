@@ -60,6 +60,8 @@ class Appointment(Base):
     title = Column(String(255))
     hospital_name = Column(String(255))
     appointment_time = Column(DateTime)
+    alarm_date = Column(String(10), nullable=True)
+    alarm_time = Column(String(5), nullable=True)
 
 
 class Pill(Base):
