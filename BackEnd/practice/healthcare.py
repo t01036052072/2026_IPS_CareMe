@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from typing import List
 import json
 import os
+import re
 
 from dotenv import load_dotenv
 
@@ -64,12 +65,29 @@ def calculate_bmi(height: float, weight: float):
 def extract_disease_list(medical_history):
     if not medical_history:
         return []
-    try:
-        if isinstance(medical_history, str):
+
+    if isinstance(medical_history, str):
+        medical_history = medical_history.strip()
+        if not medical_history:
+            return []
+
+        try:
             medical_history = json.loads(medical_history)
+        except json.JSONDecodeError:
+            disease_list = []
+            for item in medical_history.split(","):
+                disease_name = re.sub(r"\([^)]*\)", "", item).strip()
+                if disease_name:
+                    disease_list.append(disease_name)
+            return disease_list
+
+    try:
         disease_list = []
         for item in medical_history:
-            disease_name = item.get("name")
+            if isinstance(item, dict):
+                disease_name = item.get("name")
+            else:
+                disease_name = str(item)
             if disease_name:
                 disease_list.append(disease_name)
         return disease_list
