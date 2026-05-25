@@ -37,7 +37,20 @@ export default function HealthcareScreen() {
   const [isLoadingDiseases, setIsLoadingDiseases] = useState(true);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
+  useEffect(() => {
+  const checkProfile = async () => {
+    const token = await getToken();
+    const res = await apiClient.get('/friend/mypage/profile', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    console.log('프로필 응답:', JSON.stringify(res.data));
+  };
+  checkProfile();
+}, []);
+
   // ───── 질환 목록 조회 ─────
+
+
   const fetchDiseases = useCallback(async () => {
     try {
       const token = await getToken();
