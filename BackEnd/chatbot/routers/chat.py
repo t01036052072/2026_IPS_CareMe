@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from chatbot.schemas.chat import ChatRequest
 from chatbot.services.openai_service import get_ai_response
+from chatbot.services.app_navigation import find_app_command
 
 from my_project.database import get_db
 from my_project.models import Chat, UserTable
@@ -22,9 +23,18 @@ def chat(
 
     if not message:
         raise HTTPException(status_code=400, detail="메시지를 입력해주세요.")
+    
+    app_result = find_app_command(message)
+
+    if app_result:
+        return {
+            "answer": app_result["reply"],
+            "route": app_result["route"]
+        }
 
     try:
         ai_reply = get_ai_response(message)
+        
     except Exception as exc:
         raise HTTPException(
             status_code=500,
