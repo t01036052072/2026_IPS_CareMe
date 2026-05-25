@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 from my_project.database import get_db
 from my_project.models import UserTable
-from my_project.routes.user import get_current_user
+
 
 load_dotenv()
 
@@ -162,12 +162,12 @@ def generate_ai_healthcare(user, disease_name):
 # =========================
 # 질환 버튼 목록 조회 API
 # =========================
-@router.get("/diseases")
+@router.get("/diseases/{user_id}")
 def get_healthcare_diseases(
+    user_id: int,
     db: Session = Depends(get_db),
-    current_user: UserTable = Depends(get_current_user)
 ):
-    user = db.query(UserTable).filter(UserTable.id == current_user.id).first()
+    user = db.query(UserTable).filter(UserTable.id == user_id).first()
 
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
@@ -185,12 +185,15 @@ def get_healthcare_diseases(
 # =========================
 # 건강관리 생성 API
 # =========================
+class HealthcareGenerateRequest(BaseModel):
+    user_id: int
+
 @router.post("/generate", response_model=HealthcareResponse)
 async def generate_healthcare(
+    request: HealthcareGenerateRequest,
     db: Session = Depends(get_db),
-    current_user: UserTable = Depends(get_current_user)
 ):
-    user = db.query(UserTable).filter(UserTable.id == current_user.id).first()
+    user = db.query(UserTable).filter(UserTable.id == request.user_id).first()
 
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
