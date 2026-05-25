@@ -2,13 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from openai import OpenAI
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
 import json
 import os
 
+from dotenv import load_dotenv
+
 from my_project.database import get_db
 from my_project.models import UserTable
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -43,8 +44,6 @@ class HealthcareItem(BaseModel):
     exercise: List[str]
     diet: List[str]
     lifestyle: List[str]
-    health_score: int
-    risk_level: str
 
 
 class HealthcareResponse(BaseModel):
@@ -116,54 +115,103 @@ def build_healthcare_prompt(
 ):
 
     return f"""
-사용자의 건강 정보를 기반으로
-질환별 건강관리 추천을 생성해줘.
+당신은 사용자의 질환별 건강관리 정보를 생성하는 AI입니다.
 
-반드시 아래 JSON 형식만 반환해.
+반드시 사용자가 앱 화면에서 바로 읽을 수 있는 형태로 작성하세요.
+
+응답은 반드시 JSON 형식만 반환하세요.
+설명, 코드블록, 마크다운 절대 금지.
+
+반드시 아래 구조를 유지하세요.
 
 {{
   "disease_name": "",
   "summary": "",
   "exercise": [],
   "diet": [],
-  "lifestyle": [],
-  "health_score": 0,
-  "risk_level": ""
+  "lifestyle": []
 }}
 
-조건:
-- 운동/식습관/생활습관은 각각 최대 3개
-- 의료적 진단 금지
-- 일반 건강관리 목적만 제공
-- 한국어로 작성
+작성 규칙:
 
-사용자 건강 정보:
+1. disease_name
+- 질환명을 작성
+- 예시:
+  - 고혈압
+  - 중이염
+
+2. summary
+- 사용자의 건강 상태를 자연스럽게 설명
+- 질환 특징 + 관리 필요 내용을 포함
+- 2~3문장 정도로 작성
+- 너무 의학적이지 않게 작성
+- 존댓말 사용
+
+예시:
+"환자분은 현재 혈압 관리가 필요한 상태입니다.
+혈압 조절을 위해 나트륨 섭취를 줄이고
+규칙적인 운동을 권장합니다."
+
+3. exercise
+- 운동 추천 최대 3개
+- 짧고 간결하게 작성
+- 리스트 형태
+
+예시:
+[
+  "빠르게 걷기",
+  "가벼운 근력 운동",
+  "스트레칭"
+]
+
+4. diet
+- 식습관 추천 최대 4개
+- 한 줄씩 짧게 작성
+- 리스트 형태
+
+예시:
+[
+  "나트륨 함량이 낮은 채소, 과일 충분히 섭취",
+  "가공 식품, 국물 음식 줄이기",
+  "지방 많은 음식 줄이기"
+]
+
+5. lifestyle
+- 생활습관 추천 최대 4개
+- 리스트 형태
+
+예시:
+[
+  "체중 관리",
+  "스트레스 관리",
+  "하루 6~8시간 충분히 수면",
+  "금연, 절주"
+]
+
+중요 규칙:
+- 반드시 한국어로 작성
+- 반드시 JSON만 반환
+- 운동/식습관/생활습관은 리스트 배열 형태 유지
+- 의료 진단 금지
+- 병원 방문 권유 금지
+- 일반 건강관리 목적만 제공
+- 너무 긴 문장 금지
+- 앱 UI에 바로 표시 가능한 형태로 작성
+- 항목명(exercise, diet, lifestyle)은 영어 그대로 유지
+
+사용자 정보:
 - 나이: {user.age}
 - 성별: {user.gender}
 - 키: {user.height}
 - 몸무게: {user.weight}
 - BMI: {bmi}
-
-- 일반 담배 흡연:
-{user.smoked_regular}
-
-- 궐련형 전자담배:
-{user.used_heated_tobacco}
-
-- 액상형 전자담배:
-{user.used_vaping}
-
-- 음주 빈도:
-{user.drinking_frequency}
-
-- 가족력 여부:
-{user.has_family_history}
-
-- 현재 치료 여부:
-{user.is_under_treatment}
-
-- B형 간염 보유 여부:
-{user.is_b_hepatitis_carrier}
+- 일반 담배 흡연: {user.smoked_regular}
+- 궐련형 전자담배: {user.used_heated_tobacco}
+- 액상형 전자담배: {user.used_vaping}
+- 음주 빈도: {user.drinking_frequency}
+- 가족력 여부: {user.has_family_history}
+- 현재 치료 여부: {user.is_under_treatment}
+- B형 간염 보유 여부: {user.is_b_hepatitis_carrier}
 
 질환명:
 {disease_name}
@@ -193,6 +241,10 @@ def generate_ai_healthcare(
         response = (
             client.chat.completions.create(
                 model="gpt-5-mini",
+
+                response_format={
+                    "type": "json_object"
+                },
 
                 messages=[
                     {
@@ -269,10 +321,15 @@ def get_healthcare_diseases(
         user.medical_history
     )
 
-    return {
-        "status": "success",
+    disease_buttons = [
+        {
+            "disease_id": 0,
+            "disease_name": "전체"
+        }
+    ]
 
-        "diseases": [
+    disease_buttons.extend(
+        [
             {
                 "disease_id": index + 1,
                 "disease_name": disease
@@ -281,6 +338,11 @@ def get_healthcare_diseases(
             for index, disease
             in enumerate(diseases)
         ]
+    )
+
+    return {
+        "status": "success",
+        "diseases": disease_buttons
     }
 
 # =========================
@@ -338,8 +400,6 @@ async def generate_healthcare(
 
     return {
         "status": "success",
-
         "count": len(result),
-
         "data": result,
     }
