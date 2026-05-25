@@ -25,6 +25,8 @@ def chat(
         raise HTTPException(status_code=400, detail="메시지를 입력해주세요.")
     
     app_result = find_app_command(message)
+    print("입력:", message)
+    print("결과:", app_result)
 
     if app_result:
         return {
