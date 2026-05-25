@@ -155,14 +155,12 @@ export default function PillScheduleScreen() {
     <SafeAreaView style={styles.container}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={32} color={main_navy} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>복약 일정</Text>
-        <TouchableOpacity onPress={() => openRegisterModal()}>
-          <Ionicons name="add" size={32} color={main_navy} />
-        </TouchableOpacity>
-      </View>
+  <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+    <Ionicons name="chevron-back" size={32} color={main_navy} />
+  </TouchableOpacity>
+  <Text style={styles.headerTitle}>복약 일정</Text>
+  <View style={{ width: 32 }} /> 
+</View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {isLoading ? (
@@ -191,8 +189,24 @@ export default function PillScheduleScreen() {
               ))
             ) : (
               <View style={styles.emptyBox}>
-                <Text style={styles.emptyText}>등록된 복약 일정이 없습니다</Text>
-              </View>
+  <Text style={styles.emptyText}>등록된 복약 일정이 없습니다</Text>
+  <Text style={[styles.emptyText, { fontSize: 18, marginTop: 8, color:main_navy }]}>
+    등록할 약을 검색하러 갈까요?
+  </Text>
+  <TouchableOpacity
+    style={styles.goSearchBtn}
+    onPress={() =>
+      Alert.alert('약 검색', '약 검색 화면으로 이동하시겠습니까?', [
+        { text: '아니오', style: 'cancel' },
+        { text: '예', onPress: () => router.push('/(tabs)/serchpill' as any) },
+      ])
+    }
+  >
+    <Ionicons name="search" size={20} color="#FFF" />
+    <Text style={styles.goSearchBtnText}>약 검색하기</Text>
+  </TouchableOpacity>
+</View>
+
             )}
 
             {/* 알림 미등록 약 */}
@@ -376,7 +390,7 @@ const styles = StyleSheet.create({
   registerBadgeText: { color: '#FFF', fontSize: 13, fontWeight: 'bold' },
 
   emptyBox: { alignItems: 'center', paddingTop: 60 },
-  emptyText: { fontSize: 16, color: '#888' },
+  emptyText: { fontSize: 20, color: '#888' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 },
@@ -414,4 +428,6 @@ const styles = StyleSheet.create({
 
   deleteBtn: { borderWidth: 2, borderColor: red_point, paddingVertical: 14, borderRadius: 14, alignItems: 'center' },
   deleteBtnText: { color: red_point, fontSize: 16, fontWeight: 'bold' },
+  goSearchBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: main_navy, paddingVertical: 14, paddingHorizontal: 24, borderRadius: 14, marginTop: 20 },
+goSearchBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
 });
