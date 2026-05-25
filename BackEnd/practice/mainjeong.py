@@ -14,8 +14,9 @@ from my_project import models
 # 내 기능들 가져오기
 from practice import notifications 
 from practice.pills import router as pill_router
-from BackEnd.practice.medications import router as pill_alarm_router
-from BackEnd.practice.calender import router as appointment_router
+from practice.medications import router as pill_alarm_router
+from practice.calender import router as appointment_router
+from pill_model_project.router import router as pill_photo_router
 from chatbot.routers.chat import router as chatbot_router
 
 # 친구(my_project) 기능 및 데이터 구조 가져오기
@@ -104,6 +105,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 # --- 2. 라우터 등록 (기능 합치기) ---
 # 내 기능
 app.include_router(pill_router)
+app.include_router(pill_photo_router)
 app.include_router(pill_alarm_router)
 app.include_router(appointment_router)
 

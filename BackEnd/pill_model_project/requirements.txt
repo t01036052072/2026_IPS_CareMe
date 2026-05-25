@@ -1,0 +1,9 @@
+torch
+torchvision
+pillow
+matplotlib
+tqdm
+pytesseract
+python-dotenv
+sqlalchemy
+pymysql
