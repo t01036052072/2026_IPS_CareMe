@@ -81,18 +81,30 @@ def extract_disease_list(
     if not medical_history:
         return []
 
-    disease_list = []
+    try:
 
-    for item in medical_history:
-
-        disease_name = item.get("name")
-
-        if disease_name:
-            disease_list.append(
-                disease_name
+        # 문자열이면 JSON 변환
+        if isinstance(medical_history, str):
+            medical_history = json.loads(
+                medical_history
             )
 
-    return disease_list
+        disease_list = []
+
+        for item in medical_history:
+
+            disease_name = item.get("name")
+
+            if disease_name:
+                disease_list.append(
+                    disease_name
+                )
+
+        return disease_list
+
+    except Exception:
+
+        return []
 
 # =========================
 # OpenAI Prompt 생성
