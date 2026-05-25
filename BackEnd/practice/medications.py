@@ -134,13 +134,17 @@ def get_medications(show_detail: bool = False, db: Session = Depends(get_db), cu
 # - Medication 테이블에는 medication_name, dose, time, user_id 중심으로 저장됩니다.
 # - 통합 서버에서는 /medications 경로에 POST로 호출됩니다.
 @router.post("", response_model=MedicationDetail, status_code=201, summary="복약 일정 등록")
-def create_medication(payload: MedicationCreate, db: Session = Depends(get_db)):
+def create_medication(
+    payload: MedicationCreate,
+    db: Session = Depends(get_db),
+    current_user: UserTable = Depends(get_current_user),
+):
     # 24시간 형식 시간 변환
     time_24h = _to_24h(payload.period, payload.time)
 
     # 사용자가 프론트엔드 화면에서 보낸 데이터로 MySQL 객체 생성
     new_med = Medication(
-        user_id=str(current_user_id),
+        user_id=str(current_user.id),
         medication_name=payload.name,  
         dose=f"{payload.count}알",      
         time=time_24h                  

@@ -4,6 +4,13 @@ import shutil
 import re
 import requests
 from pathlib import Path
+
+# PaddleOCR/Paddle must see these before importing paddleocr.
+os.environ.setdefault("PADDLE_USE_ONEDNN", "0")
+os.environ.setdefault("FLAGS_use_onednn", "0")
+os.environ.setdefault("FLAGS_allocator_strategy", "naive_best_fit")
+os.environ.setdefault("FLAGS_enable_pir_api", "0")
+
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, asc
@@ -138,7 +145,10 @@ async def upload_document(
     if ocr_model is None:
         # [교정 2] ocr_test.py에서 성공했던 안정적인 설정값으로 초기화합니다.
         ocr_model = PaddleOCR(
-            lang='korean'
+            lang='korean',
+            use_doc_orientation_classify=False,
+            use_doc_unwarping=False,
+            use_textline_orientation=False,
         )
 
     extension = file.filename.split(".")[-1].lower()
@@ -309,7 +319,12 @@ async def update_document_image(
         global ocr_model
         ensure_paddleocr_available()
         if ocr_model is None:
-            ocr_model = PaddleOCR(lang='korean')
+            ocr_model = PaddleOCR(
+                lang='korean',
+                use_doc_orientation_classify=False,
+                use_doc_unwarping=False,
+                use_textline_orientation=False,
+            )
             
         ocr_result = ocr_model.ocr(str(new_file_path))
         if ocr_result:
