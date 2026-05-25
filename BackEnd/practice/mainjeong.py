@@ -18,6 +18,7 @@ from practice.medications import router as pill_alarm_router
 from practice.calender import router as appointment_router
 from pill_model_project.router import router as pill_photo_router
 from chatbot.routers.chat import router as chatbot_router
+from practice.healthcare import router as healthcare_router
 
 # 친구(my_project) 기능 및 데이터 구조 가져오기
 from my_project.schemas import UserCreate, LoginRequest
@@ -114,6 +115,7 @@ app.include_router(friend_user_router, prefix="/friend/user", tags=["회원가�
 app.include_router(friend_doc_router, prefix="/friend/doc", tags=["진단서 기능"])
 app.include_router(friend_mypage_router, prefix="/friend/mypage", tags=["마이페이지"])
 app.include_router(chatbot_router, prefix="/chat", tags=["챗봇"])
+app.include_router(healthcare_router, tags=["건강관리 추천"])
 
 # 앱 시작 시 실제 MySQL에 테이블 생성
 Base.metadata.create_all(bind=engine)
