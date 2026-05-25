@@ -109,13 +109,13 @@ app.include_router(pill_router)
 app.include_router(pill_photo_router)
 app.include_router(pill_alarm_router)
 app.include_router(appointment_router)
+app.include_router(healthcare_router)
 
 # 친구 기능 (경로가 겹치지 않게 /friend를 붙였습니다)
 app.include_router(friend_user_router, prefix="/friend/user", tags=["회원가입 기능"])
 app.include_router(friend_doc_router, prefix="/friend/doc", tags=["진단서 기능"])
 app.include_router(friend_mypage_router, prefix="/friend/mypage", tags=["마이페이지"])
 app.include_router(chatbot_router, prefix="/chat", tags=["챗봇"])
-app.include_router(healthcare_router, tags=["건강관리 추천"])
 
 # 앱 시작 시 실제 MySQL에 테이블 생성
 Base.metadata.create_all(bind=engine)
