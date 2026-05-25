@@ -1,5 +1,0 @@
-torch
-torchvision
-pillow
-matplotlib
-tqdm
