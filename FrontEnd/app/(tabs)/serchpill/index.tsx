@@ -113,26 +113,46 @@ export default function PillSearch() {
 
   // ───── 사진 분석 ─────
   const handleImageAnalyze = async (uri: string) => {
-    setIsPhotoLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', { uri, type: 'image/jpeg', name: 'pill.jpg' } as any);
-      const analyzeRes = await apiClient.post('/pills/analyze', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      const detectedId = analyzeRes.data.detected_id;
-      const checkRes = await apiClient.get(`/pills/check/${detectedId}`);
-      const data = checkRes.data.data;
-      setSelectedMedicine({ id: String(data.id), name: data.pill_name });
-      setCapturedImageUri(uri);
-      setIsConfirmVisible(true);
-    } catch (error) {
-      console.error('사진 분석 실패:', error);
-      Alert.alert('분석 실패', '사진 분석에 실패했습니다.');
-    } finally {
-      setIsPhotoLoading(false);
+  setIsPhotoLoading(true);
+  try {
+    const formData = new FormData();
+    formData.append('file', { uri, name: 'pill.jpg', type: 'image/jpeg' } as any);
+    
+    const res = await apiClient.post('/pill-photo/analyze', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
+    const prediction = res.data.prediction;
+
+    // 정확도 낮으면 경고
+    if (prediction.low_confidence) {
+      Alert.alert('정확도가 낮습니다', '다시 촬영해 주세요.', [
+        { text: '다시 촬영', onPress: handlePhotoSearch },
+        { text: '취소', style: 'cancel' },
+      ]);
+      return;
     }
-  };
+
+    // 분석 결과 저장
+    setSelectedMedicine({ id: prediction.label, name: prediction.pill_name });
+    setMedicineDetail({
+      id: prediction.label,
+      name: prediction.pill_name,
+      efficacy: prediction.detail?.effect,
+      use_method: prediction.detail?.use_method,
+      warning: prediction.detail?.warning,
+      side_effect: prediction.detail?.side_effect,
+    });
+    setCapturedImageUri(uri);
+    setIsConfirmVisible(true);
+
+  } catch (error) {
+    console.error('사진 분석 실패:', error);
+    Alert.alert('분석 실패', '사진 분석에 실패했습니다.');
+  } finally {
+    setIsPhotoLoading(false);
+  }
+};
 
   // ───── 사진 검색 버튼 ─────
   const handlePhotoSearch = async () => {
@@ -160,31 +180,10 @@ export default function PillSearch() {
   };
 
   // ───── 사진 확인 모달 - 예 버튼 ─────
-  const handleConfirmYes = async () => {
-    if (!selectedMedicine) return;
-    setIsConfirmVisible(false);
-    setIsDetailLoading(true);
-    setIsDetailVisible(true);
-    try {
-      const res = await apiClient.get(`/pills/detail/${selectedMedicine.id}`);
-      const data = res.data.data;
-      setMedicineDetail({
-        id: String(data.id),
-        name: data.pill_name,
-        efficacy: data.effect,
-        side_effect: data.side_effect,
-        image_url: data.master_image_url,
-        use_method: data.use_method,
-        warning: data.warning,
-        interaction: data.interaction,
-      });
-    } catch (error) {
-      Alert.alert('오류', '상세 정보를 불러오지 못했습니다.');
-      setIsDetailVisible(false);
-    } finally {
-      setIsDetailLoading(false);
-    }
-  };
+  const handleConfirmYes = () => {
+  setIsConfirmVisible(false);
+  setIsDetailVisible(true);  // 이미 medicineDetail에 데이터 있음
+};
 
   // ───── 복약일정 등록 ─────
 const handleRegisterMedication = async () => {
