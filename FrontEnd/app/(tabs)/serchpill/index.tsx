@@ -485,13 +485,9 @@ const styles = StyleSheet.create({
 
   loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
   loadingText: { fontSize: 18, color: main_navy, fontWeight: 'bold' },
-<<<<<<< HEAD
   selectBtn: { backgroundColor: main_navy, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 10 },
 selectBtnText: { color: '#FFF', fontSize: 15, fontWeight: 'bold' },
 
 scrollHintBox: { alignItems: 'center', paddingVertical: 20, gap: 6 },
 scrollHint: { textAlign: 'center', color: main_navy, fontSize: 18, fontWeight: '600', lineHeight: 28 },
 })
-=======
-});
->>>>>>> a82666532023d860343f080b6f66516b390169b6
