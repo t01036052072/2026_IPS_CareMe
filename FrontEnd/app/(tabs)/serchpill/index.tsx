@@ -421,8 +421,8 @@ export default function PillSearch() {
                 </View>
                 <Text style={styles.customAlertTitle}>복약일정에 추가하기</Text>
                 <View style={{ alignItems: 'center' }}>
-                  <Text style={{ fontWeight: 'bold', color: main_navy, textAlign: 'center' }}>{medicineDetail?.name}</Text>
-                  <Text style={{ color: '#555', textAlign: 'center' }}>복약일정에 추가하시겠습니까?{'\n'}</Text>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold', color: main_navy, textAlign: 'center' }}>{medicineDetail?.name}</Text>
+                  <Text style={{ fontSize: 18, color: '#555', textAlign: 'center' }}>복약일정에 추가하시겠습니까?{'\n'}</Text>
                 </View>
 
                 <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#333', alignSelf: 'flex-start' }}>복용 시간</Text>
