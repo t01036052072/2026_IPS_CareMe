@@ -32,6 +32,11 @@ interface MedicineDetail {
   interaction?: string;
 }
 
+interface PhotoCandidate {
+  label: string;
+  pill_name: string;
+}
+
 const sortMedicines = (medicines: Medicine[], query: string) => {
   const q = query.toLowerCase();
   const startsWith = medicines.filter(m => m.name.toLowerCase().startsWith(q)).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
@@ -56,6 +61,8 @@ export default function PillSearch() {
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
   const [capturedImageUri, setCapturedImageUri] = useState<string | null>(null);
   const [isPhotoLoading, setIsPhotoLoading] = useState(false);
+  const [photoCandidates, setPhotoCandidates] = useState<PhotoCandidate[]>([]);
+  const [photoCandidateIndex, setPhotoCandidateIndex] = useState(0);
 
   const [isRegisterConfirmVisible, setIsRegisterConfirmVisible] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -126,16 +133,35 @@ export default function PillSearch() {
     }
   };
 
-  const handleImageAnalyze = async (uri: string) => {
+  const handleImageAnalyze = async (asset: ImagePicker.ImagePickerAsset) => {
     setIsPhotoLoading(true);
     try {
+      const uri = asset.uri;
+      const fileName = asset.fileName || uri.split('/').pop() || 'pill.jpg';
+      const extension = fileName.split('.').pop()?.toLowerCase();
+      const mimeType = asset.mimeType || (extension === 'png' ? 'image/png' : 'image/jpeg');
+
+      if (extension === 'heic' || extension === 'heif' || mimeType.includes('heic') || mimeType.includes('heif')) {
+        showAlert('遺꾩꽍 ?ㅽ뙣', 'HEIC ?대?吏???꾩옱 遺꾩꽍???대젮?듬땲??JPG ?먮뒗 PNG濡?蹂?섑븳 ?? 다시 시도해주세요.', 'error');
+        return;
+      }
+
       const formData = new FormData();
-      formData.append('file', { uri, type: 'image/jpeg', name: 'pill.jpg' } as any);
-      const analyzeRes = await apiClient.post('/pill-photo/analyze', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      formData.append('file', { uri, type: mimeType, name: fileName } as any);
+      const analyzeRes = await apiClient.post('/pill-photo/analyze', formData);
       const prediction = analyzeRes.data.prediction;
-      setSelectedMedicine({ id: String(prediction.label), name: prediction.pill_name });
+      const candidates: PhotoCandidate[] = [
+        { label: String(prediction.label), pill_name: prediction.pill_name },
+        ...((prediction.top_candidates || []) as any[])
+          .filter(candidate => String(candidate.label) !== String(prediction.label))
+          .map(candidate => ({
+            label: String(candidate.label),
+            pill_name: candidate.pill_name,
+          })),
+      ];
+      setPhotoCandidates(candidates);
+      setPhotoCandidateIndex(0);
+      setSelectedMedicine({ id: candidates[0].label, name: candidates[0].pill_name });
       setCapturedImageUri(uri);
       setIsConfirmVisible(true);
     } catch (error) {
@@ -155,7 +181,7 @@ export default function PillSearch() {
         result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
       }
       if (!result.canceled && result.assets[0].uri) {
-        await handleImageAnalyze(result.assets[0].uri);
+        await handleImageAnalyze(result.assets[0]);
       }
     };
     if (Platform.OS === 'ios') {
@@ -188,6 +214,20 @@ export default function PillSearch() {
     } finally {
       setIsDetailLoading(false);
     }
+  };
+
+  const handleConfirmNo = () => {
+    const nextIndex = photoCandidateIndex + 1;
+    const nextCandidate = photoCandidates[nextIndex];
+
+    if (nextCandidate) {
+      setPhotoCandidateIndex(nextIndex);
+      setSelectedMedicine({ id: nextCandidate.label, name: nextCandidate.pill_name });
+      return;
+    }
+
+    setIsConfirmVisible(false);
+    showAlert('遺꾩꽍 ?꾨즺', '異붽? ?꾨낫瑜?李얠? 紐삵뻽?듬땲??사진을 다시 찍거나 직접 검색해주세요.', 'error');
   };
 
   const toTimeStr = (date: Date) => {
@@ -441,7 +481,7 @@ export default function PillSearch() {
                 <TouchableOpacity style={styles.confirmYesBtn} onPress={handleConfirmYes}>
                   <Text style={styles.confirmYesBtnText}>예</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.confirmNoBtn} onPress={() => setIsConfirmVisible(false)}>
+                <TouchableOpacity style={styles.confirmNoBtn} onPress={handleConfirmNo}>
                   <Text style={styles.confirmNoBtnText}>아니오</Text>
                 </TouchableOpacity>
               </View>
