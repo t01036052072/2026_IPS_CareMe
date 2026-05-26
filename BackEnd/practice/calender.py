@@ -16,7 +16,7 @@ router = APIRouter(prefix="/appointments", tags=["병원 예약"])
 
 # ── Pydantic 스키마 ───────────────────────────────────────
 class AppointmentCreate(BaseModel):
-    user_id:        Optional[int] = None    # 로그인 토큰 사용 전 임시 호환 필드
+
     hospital_name:  str    # 병원 이름
     date:           str    # 예약 날짜 "YYYY-MM-DD" 예: "2026-05-04"
     time:           str    # 예약 시간 "HH:MM" 예: "14:00"
