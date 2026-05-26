@@ -4,9 +4,12 @@ import {
   ScrollView, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '@/api/api';
+
+import Back from "../../../assets/images/LoginScreen/back.svg";
 
 const main_navy = '#00246D';
 const light_navy = '#EEF3FB';
@@ -95,7 +98,7 @@ useEffect(() => {
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={32} color={main_navy} />
+          <Back width={24} height={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>건강 관리</Text>
         <View style={{ width: 32 }} />
@@ -208,6 +211,10 @@ useEffect(() => {
 }
 
 const styles = StyleSheet.create({
+  backImage: {
+    width: 24,
+    height: 24,
+  },
   container: { flex: 1, backgroundColor: '#FFF' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 },
   backBtn: { padding: 4 },

@@ -2,8 +2,11 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'react-native';
 
 import PillTime from '../../../assets/pill/pilltime.svg';
+import Back from '../../../assets/images/LoginScreen/back.svg';
+
 import { getMedicationsAPI, MedicationSummary } from '@/api/pillschedule';
 
 const MAIN_NAVY = '#00246D';
@@ -32,7 +35,7 @@ export default function PillScreen() {
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={32} color={MAIN_NAVY} />
+          <Back width={24} height={24} />
         </TouchableOpacity>
         <Text style={styles.title}>복약 관리</Text>
         <View style={{ width: 32 }} />
@@ -119,6 +122,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFF',
   },
+
+  backImage: {
+    width: 24,
+    height: 24,
+  },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
