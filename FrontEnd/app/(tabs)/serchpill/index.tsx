@@ -546,6 +546,7 @@ const styles = StyleSheet.create({
   confirmYesBtnText: { fontSize: 18, fontWeight: 'bold', color: '#FFF' },
   confirmNoBtn: { paddingHorizontal: 20, paddingVertical: 10, borderWidth: 1.5, borderColor: red_point, borderRadius: 10 },
   confirmNoBtnText: { fontSize: 18, fontWeight: 'bold', color: red_point },
+  alertBtnRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 4 },
 
   customAlertOverlay: { backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
 customAlertBox: { backgroundColor: '#FFF', borderRadius: 24, padding: 28, width: '82%', alignItems: 'center', gap: 12, overflow: 'visible', paddingVertical: 40 },
