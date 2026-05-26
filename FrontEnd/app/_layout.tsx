@@ -2,6 +2,8 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { useRootNavigationState } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Alert } from "react-native";
+import { setupLocalNotifications } from "@/utils/localNotifications";
 
 export default function RootLayout() {
   const segments = useSegments();
@@ -36,6 +38,22 @@ export default function RootLayout() {
 
     checkAndRoute();
   }, [segments, navigationState?.key]);
+
+  useEffect(() => {
+    setupLocalNotifications()
+      .then((granted) => {
+        console.log("local notification permission from root:", granted);
+        if (!granted) {
+          Alert.alert(
+            "알림 권한이 꺼져 있어요",
+            "복약 및 병원 일정 알림을 받으려면 기기 설정에서 알림 권한을 허용해주세요.",
+          );
+        }
+      })
+      .catch((error) => {
+        console.log("local notification permission error:", error);
+      });
+  }, []);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

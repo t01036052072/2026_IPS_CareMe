@@ -15,7 +15,7 @@ import {
   deleteAppointmentAPI,
   AppointmentDetail,
 } from '@/api/calender';
-import { scheduleAppointmentNotification } from '@/utils/localNotifications';
+import { scheduleAppointmentNotification, setupLocalNotifications } from '@/utils/localNotifications';
 import Back from '../../../assets/images/LoginScreen/back.svg';
 
 interface Schedule {
@@ -80,6 +80,9 @@ export default function HospitalCalendarScreen() {
 
   useEffect(() => {
     fetchSchedules();
+    setupLocalNotifications().then(granted => {
+      console.log('local notification permission:', granted);
+    });
   }, []);
 
   const dismissAll = () => {
