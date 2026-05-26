@@ -74,7 +74,7 @@ export default function PillSearch() {
   const [alertType, setAlertType] = useState<'success' | 'error'>('success');
   const [showPillscheduleBtn, setShowPillscheduleBtn] = useState(false);
 
-  const [regPeriod, setRegPeriod] = useState<'오전' | '오후'>('오전');
+  // 💡 regPeriod 상태 삭제 (서버 전송 시 실시간 계산)
   const [regTime, setRegTime] = useState<Date>(new Date());
   const [regCount, setRegCount] = useState(1);
   const [regDays, setRegDays] = useState(7);
@@ -143,7 +143,7 @@ export default function PillSearch() {
       const mimeType = asset.mimeType || (extension === 'png' ? 'image/png' : 'image/jpeg');
 
       if (extension === 'heic' || extension === 'heif' || mimeType.includes('heic') || mimeType.includes('heif')) {
-        showAlert('遺꾩꽍 ?ㅽ뙣', 'HEIC ?대?吏???꾩옱 遺꾩꽍???대젮?듬땲??JPG ?먮뒗 PNG濡?蹂?섑븳 ?? 다시 시도해주세요.', 'error');
+        showAlert('분석 실패', 'HEIC 이미지는 현재 분석하기 어렵습니다. JPG 또는 PNG로 변환한 뒤 다시 시도해주세요.', 'error');
         return;
       }
 
@@ -230,15 +230,17 @@ export default function PillSearch() {
     }
 
     setIsConfirmVisible(false);
-    showAlert('遺꾩꽍 ?꾨즺', '異붽? ?꾨낫瑜?李얠? 紐삵뻽?듬땲??사진을 다시 찍거나 직접 검색해주세요.', 'error');
+    showAlert('분석 완료', '추가 후보를 찾지 못했습니다. 사진을 다시 찍거나 직접 검색해주세요.', 'error');
   };
 
+ // 💡 서버 전송용 12시간제 포맷팅 함수 (period와 세트)
   const toTimeStr = (date: Date) => {
-    const h = date.getHours() % 12 || 12;
+    const h = date.getHours() % 12 || 12; // 다시 12시간제로 복구!
     const m = date.getMinutes().toString().padStart(2, '0');
     return `${h.toString().padStart(2, '0')}:${m}`;
   };
 
+  // 💡 화면 표시용 12시간제 포맷팅 함수
   const formatTime = (date: Date) => {
     const h = date.getHours();
     const m = date.getMinutes().toString().padStart(2, '0');
@@ -247,10 +249,7 @@ export default function PillSearch() {
     return `${ampm} ${hour}:${m}`;
   };
 
-  // 🌟 지연 시간(setTimeout) 다 없앴습니다. 가짜 모달이라 충돌이 안 납니다!
   const handleRegisterMedication = async () => {
-      console.log('등록 데이터:', { regPeriod, regCount, regDays, regTime });  // ← 추가
-
     if (!medicineDetail) return;
     setIsRegistering(true);
     
@@ -264,9 +263,20 @@ export default function PillSearch() {
         return `${y}-${m}-${day}`;
       };
 
+      // 💡 서버로 보내기 직전, Date 객체에서 오전/오후를 확실하게 계산
+      const calculatedPeriod = regTime.getHours() >= 12 ? '오후' : '오전';
+      
+      console.log('최종 등록 데이터:', { 
+        name: medicineDetail.name,
+        period: calculatedPeriod, 
+        time: toTimeStr(regTime),
+        count: regCount, 
+        days: regDays 
+      });
+
       await apiClient.post('/medications', {
         name: medicineDetail.name,
-        period: regPeriod,
+        period: calculatedPeriod,
         time: toTimeStr(regTime),
         count: regCount,
         duration_days: regDays,
@@ -277,11 +287,10 @@ export default function PillSearch() {
   
       setIsRegisterConfirmVisible(false);
       setIsDetailVisible(false);
-      
-      // 즉각적으로 완료 팝업 띄우기
       showAlert('등록 완료!', `추가된 약은 복약일정에서 확인 가능해요.`, 'success', true);
       
     } catch (error: any) {
+      console.error('등록 에러:', error.response?.data || error);
       setIsRegisterConfirmVisible(false);
       setIsDetailVisible(false);
       showAlert('오류', '등록에 실패했습니다.\n다시 시도해주세요.', 'error');
@@ -346,8 +355,8 @@ export default function PillSearch() {
             style={{ flex: 2 }}
             renderItem={({ item }) => (
               <TouchableOpacity style={styles.resultItem} onPress={() => handleSelectMedicine(item)}>
-              <Ionicons name="ellipse" size={20} color={main_navy} style={{ marginRight: 14 }} />                
-              <Text style={styles.resultName}>{item.name}</Text>
+                <Ionicons name="ellipse" size={20} color={main_navy} style={{ marginRight: 14 }} />                
+                <Text style={styles.resultName}>{item.name}</Text>
                 <View style={styles.selectBtn}>
                   <Text style={styles.selectBtnText}>선택</Text>
                 </View>
@@ -357,8 +366,6 @@ export default function PillSearch() {
               <View style={styles.emptyBox}>
                 <Text style={styles.emptyText}>검색 결과가 없습니다</Text>
               </View>
-
-              
             }
           />
           
@@ -368,11 +375,8 @@ export default function PillSearch() {
               <Text style={styles.scrollHint}>아래로 내리면 더 많은 결과가 있어요</Text>
             </View>
           )}
-
         </View>
       )}
-
-      
 
       {/* ───── 1. 상세 화면 모달 (유일한 찐 Modal) ───── */}
       <Modal visible={isDetailVisible} transparent animationType="slide">
@@ -433,7 +437,13 @@ export default function PillSearch() {
                 </TouchableOpacity>
                 {showRegTimePicker && Platform.OS === 'ios' && (
                   <View style={styles.pickerBox}>
-                    <DateTimePicker value={regTime} mode="time" display="spinner" locale="ko-KR" onChange={(e, d) => d && setRegTime(d)} />
+                    <DateTimePicker 
+                      value={regTime} 
+                      mode="time" 
+                      display="spinner" 
+                      locale="ko-KR" 
+                      onChange={(e, d) => d && setRegTime(d)} 
+                    />
                     <TouchableOpacity style={styles.pickerConfirmBtn} onPress={() => setShowRegTimePicker(false)}>
                       <Text style={styles.pickerConfirmText}>선택 완료</Text>
                     </TouchableOpacity>
@@ -507,9 +517,7 @@ export default function PillSearch() {
         </View>
       </Modal>
 
-      {/* 🌟 3. 커스텀 완료/오류 알림 (가짜 모달 - View로 교체) 🌟
-          Modal 태그를 떼버리고, 화면 최상단에 덮어버리는 뷰(View)로 바꿔서
-          모달 충돌 버그를 완벽하게 회피합니다. 무조건 뜹니다! */}
+      {/* 🌟 3. 커스텀 완료/오류 알림 (가짜 모달 - View로 교체) 🌟 */}
       {isAlertVisible && (
         <View style={[StyleSheet.absoluteFill, styles.customAlertOverlay, { zIndex: 99999, elevation: 99999 }]}>
           <View style={styles.customAlertBox}>
@@ -562,17 +570,13 @@ const styles = StyleSheet.create({
   },
   scrollHintBox: { alignItems: 'center', paddingVertical: 12, gap: 6 },
   scrollHint: { textAlign: 'center', color: main_navy, fontSize: 18, fontWeight: '600', lineHeight: 28 },
-
   container: { flex: 1, backgroundColor: '#FFF' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: main_navy },
-
   searchBox: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: '#DDD', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, marginHorizontal: 20, marginBottom: 20 },
   searchInput: { flex: 1, fontSize: 16, color: '#000' },
-
   photoSearchBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 20 },
   photoSearchText: { fontSize: 18, fontWeight: 'bold', color: main_navy },
-
   resultContainer: { flex: 1.8 },
   resultCount: { fontSize: 16, fontWeight: 'bold', color: main_navy, paddingHorizontal: 20, marginBottom: 8 },
   resultItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 20, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
@@ -581,7 +585,6 @@ const styles = StyleSheet.create({
   selectBtnText: { color: '#FFF', fontSize: 17, fontWeight: 'bold' },
   emptyBox: { alignItems: 'center', paddingTop: 60 },
   emptyText: { fontSize: 16, color: '#888' },
-
   modalOverlay: { flex: 1, backgroundColor: '#FFF' },
   modalContainer: { flex: 1 },
   modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#EEE' },
@@ -593,10 +596,8 @@ const styles = StyleSheet.create({
   infoCard: { backgroundColor: light_navy, borderRadius: 14, padding: 18, marginBottom: 12 },
   infoLabel: { fontSize: 14, fontWeight: 'bold', color: main_navy, marginBottom: 6 },
   infoValue: { fontSize: 16, color: '#333', lineHeight: 24 },
-
   registerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: main_navy, paddingVertical: 18, borderRadius: 15, marginTop: 20 },
   registerBtnText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
-
   photoConfirmOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   photoConfirmBox: { backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 },
   photoConfirmQuestion: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1.5, borderColor: '#DDD', borderRadius: 12, paddingVertical: 16, paddingHorizontal: 20, marginTop: 16 },
@@ -607,18 +608,15 @@ const styles = StyleSheet.create({
   confirmNoBtn: { paddingHorizontal: 20, paddingVertical: 10, borderWidth: 1.5, borderColor: red_point, borderRadius: 10 },
   confirmNoBtnText: { fontSize: 18, fontWeight: 'bold', color: red_point },
   alertBtnRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 4 },
-
   customAlertOverlay: { backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-customAlertBox: { backgroundColor: '#FFF', borderRadius: 24, padding: 28, width: '82%', alignItems: 'center', gap: 12, overflow: 'visible', paddingVertical: 40 },
+  customAlertBox: { backgroundColor: '#FFF', borderRadius: 24, padding: 28, width: '82%', alignItems: 'center', gap: 12, overflow: 'visible', paddingVertical: 40 },
   alertIconBox: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
   customAlertTitle: { fontSize: 22, fontWeight: 'bold', color: '#111', textAlign: 'center' },
   customAlertMessage: { fontSize: 17, color: '#555', textAlign: 'center', lineHeight: 28 },
   alertBtn: { flex: 1, backgroundColor: main_navy, paddingVertical: 14, borderRadius: 14, alignItems: 'center', justifyContent: 'center', minHeight: 49 },
   alertBtnText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
-
   loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
   loadingText: { fontSize: 18, color: main_navy, fontWeight: 'bold' },
-
   selectBox: { backgroundColor: light_navy, borderRadius: 12, padding: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
   selectText: { fontSize: 16, color: '#111' },
   pickerBox: { backgroundColor: '#FFF', borderWidth: 1, borderColor: '#EEE', borderRadius: 12, marginTop: 8, alignItems: 'center', padding: 10, width: '100%', height: 200, overflow: 'hidden' },
