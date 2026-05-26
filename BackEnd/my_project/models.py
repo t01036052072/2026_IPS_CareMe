@@ -1,5 +1,5 @@
 # my_project/models.py
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Float, Text, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Float, Text, Date, DateTime
 from sqlalchemy.sql import func
 from my_project.database import Base
 
@@ -50,6 +50,10 @@ class Medication(Base):
     medication_name = Column(String(255), index=True)
     dose = Column(String(100))
     time = Column(String(50))
+    period = Column(String(10))
+    count = Column(Integer, default=1)
+    duration_days = Column(Integer, default=7)
+    start_date = Column(Date)
 
 
 class Appointment(Base):

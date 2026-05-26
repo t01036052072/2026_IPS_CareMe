@@ -73,6 +73,24 @@ def ensure_user_profile_columns():
                 conn.execute(text(f"ALTER TABLE users ADD COLUMN {column_name} {column_type}"))
                 print(f"[DB] users.{column_name} 컬럼을 추가했습니다.")
 
+
+def ensure_medication_schedule_columns():
+    required_columns = {
+        "period": "VARCHAR(10) NULL",
+        "count": "INT DEFAULT 1",
+        "duration_days": "INT DEFAULT 7",
+        "start_date": "DATE NULL",
+    }
+
+    with engine.begin() as conn:
+        existing_columns = {
+            row[0] for row in conn.execute(text("DESCRIBE medications")).fetchall()
+        }
+        for column_name, column_type in required_columns.items():
+            if column_name not in existing_columns:
+                conn.execute(text(f"ALTER TABLE medications ADD COLUMN `{column_name}` {column_type}"))
+                print(f"[DB] medications.{column_name} 컬럼을 추가했습니다.")
+
 # --- 1. 앱 객체 생성 ---
 app = FastAPI(title="CareMe Medication Service")
 
@@ -122,6 +140,7 @@ app.include_router(chatbot_router, prefix="/chat", tags=["챗봇"])
 # 앱 시작 시 실제 MySQL에 테이블 생성
 Base.metadata.create_all(bind=engine)
 ensure_user_profile_columns()
+ensure_medication_schedule_columns()
 
 
 # --- 3. 설정 및 초기화 --- 
