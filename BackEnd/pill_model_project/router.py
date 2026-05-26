@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import traceback
 from datetime import datetime
 from pathlib import Path
 
@@ -92,6 +93,8 @@ async def analyze_pill_photo(file: UploadFile = File(...)):
             detail=f"Pill AI model file is missing: {exc}",
         ) from exc
     except Exception as exc:
+        print("[PillPhoto] analysis failed")
+        traceback.print_exc()
         raise HTTPException(
             status_code=500,
             detail=f"Pill image analysis failed: {exc}",
