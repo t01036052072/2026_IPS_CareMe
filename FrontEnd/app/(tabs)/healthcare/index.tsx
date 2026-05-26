@@ -48,7 +48,7 @@ export default function HealthcareScreen() {
       headers: { Authorization: `Bearer ${token}` },
       
     });
-    console.log('응답:', JSON.stringify(res.data));
+    console.log('응답 데이터:', JSON.stringify(res.data.data?.map((i: any) => i.disease_name)));
     const data = res.data.data || [];
     setHealthcareData(data);
     const mapped = data.map((item: HealthcareItem, index: number) => ({
