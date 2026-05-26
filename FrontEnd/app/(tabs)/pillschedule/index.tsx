@@ -13,10 +13,7 @@ import {
   deleteMedicationAPI,
   MedicationSummary,
 } from '@/api/pillschedule';
-import { useFocusEffect } from 'expo-router';
-
-import Back from "../../../assets/images/LoginScreen/back.svg";
-import { scheduleMedicationNotifications } from '@/utils/localNotifications';
+import { scheduleMedicationNotifications, setupLocalNotifications } from '@/utils/localNotifications';
 
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
@@ -131,6 +128,12 @@ export default function PillScheduleScreen() {
   }, [fetchMedications])
 );
 
+
+  useEffect(() => {
+    setupLocalNotifications().then(granted => {
+      console.log('local notification permission:', granted);
+    });
+  }, []);
 
   const toTimeStr = (date: Date) => {
     const h = String(date.getHours()).padStart(2, '0');
