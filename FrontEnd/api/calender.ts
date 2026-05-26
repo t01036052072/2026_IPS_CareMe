@@ -42,7 +42,6 @@ export const createAppointmentAPI = async (data: AppointmentCreate): Promise<App
   const token = await getToken();
   try {
     const response = await apiClient.post('/appointments', {
-      user_id: 0,
       hospital_name: data.hospital_name,
       date: data.date,
       time: data.time,

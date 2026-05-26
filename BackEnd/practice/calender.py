@@ -16,7 +16,7 @@ router = APIRouter(prefix="/appointments", tags=["병원 예약"])
 
 # ── Pydantic 스키마 ───────────────────────────────────────
 class AppointmentCreate(BaseModel):
-    user_id:        int    # 사용자 고유 번호
+
     hospital_name:  str    # 병원 이름
     date:           str    # 예약 날짜 "YYYY-MM-DD" 예: "2026-05-04"
     time:           str    # 예약 시간 "HH:MM" 예: "14:00"
@@ -123,7 +123,7 @@ def get_appointments(month: Optional[str] = None, db: Session = Depends(get_db),
 # - 예약을 찾지 못하면 404를 반환합니다.
 # - 통합 서버에서는 /appointments/{appointment_id} 경로에 PUT으로 호출됩니다.
 @router.put("/{appointment_id}", response_model=AppointmentDetail, summary="병원 예약 수정")
-def update_appointment(appointment_id: int, payload: AppointmentCreate, db: Session = Depends(get_db)):
+def update_appointment(appointment_id: int, payload: AppointmentCreate, db: Session = Depends(get_db), current_user: UserTable = Depends(get_current_user)):
     # MySQL에서 수정할 데이터를 찾습니다.
     appt = db.query(Appointment).filter(Appointment.id == appointment_id).first()
     if not appt:
