@@ -10,6 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { apiClient } from '@/api/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import Back from "../../../assets/images/LoginScreen/back.svg";
 
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
@@ -292,8 +293,8 @@ export default function PillSearch() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/pill' as any)}>
-          <Ionicons name="chevron-back" size={28} color={main_navy} />
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Back width={24} height={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>의약품 검색</Text>
         <View style={{ width: 28 }} />
@@ -556,6 +557,9 @@ function InfoCard({ label, value }: { label: string; value: string }) {
 }
 const styles = StyleSheet.create({
 
+  backBtn: {
+    padding: 4,
+  },
   scrollHintBox: { alignItems: 'center', paddingVertical: 12, gap: 6 },
   scrollHint: { textAlign: 'center', color: main_navy, fontSize: 18, fontWeight: '600', lineHeight: 28 },
 
@@ -572,9 +576,9 @@ const styles = StyleSheet.create({
   resultContainer: { flex: 1.8 },
   resultCount: { fontSize: 16, fontWeight: 'bold', color: main_navy, paddingHorizontal: 20, marginBottom: 8 },
   resultItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 20, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
-resultName: { flex: 1, fontSize: 20, color: '#111', marginRight: 10 },
-selectBtn: { backgroundColor: main_navy, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12 },
-selectBtnText: { color: '#FFF', fontSize: 17, fontWeight: 'bold' },
+  resultName: { flex: 1, fontSize: 20, color: '#111', marginRight: 10 },
+  selectBtn: { backgroundColor: main_navy, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12 },
+  selectBtnText: { color: '#FFF', fontSize: 17, fontWeight: 'bold' },
   emptyBox: { alignItems: 'center', paddingTop: 60 },
   emptyText: { fontSize: 16, color: '#888' },
 
