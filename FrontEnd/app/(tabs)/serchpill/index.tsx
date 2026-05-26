@@ -131,13 +131,11 @@ export default function PillSearch() {
     try {
       const formData = new FormData();
       formData.append('file', { uri, type: 'image/jpeg', name: 'pill.jpg' } as any);
-      const analyzeRes = await apiClient.post('/pills/analyze', formData, {
+      const analyzeRes = await apiClient.post('/pill-photo/analyze', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      const detectedId = analyzeRes.data.detected_id;
-      const checkRes = await apiClient.get(`/pills/check/${detectedId}`);
-      const data = checkRes.data.data;
-      setSelectedMedicine({ id: String(data.id), name: data.pill_name });
+      const prediction = analyzeRes.data.prediction;
+      setSelectedMedicine({ id: String(prediction.label), name: prediction.pill_name });
       setCapturedImageUri(uri);
       setIsConfirmVisible(true);
     } catch (error) {
@@ -174,17 +172,15 @@ export default function PillSearch() {
     setIsDetailLoading(true);
     setIsDetailVisible(true);
     try {
-      const res = await apiClient.get(`/pills/detail/${selectedMedicine.id}`);
+      const res = await apiClient.get(`/pill-photo/detail/${selectedMedicine.id}`);
       const data = res.data.data;
       setMedicineDetail({
-        id: String(data.id),
+        id: String(data.ai_label),
         name: data.pill_name,
         efficacy: data.effect,
         side_effect: data.side_effect,
-        image_url: data.master_image_url,
         use_method: data.use_method,
         warning: data.warning,
-        interaction: data.interaction,
       });
     } catch (error) {
       setIsDetailVisible(false);
