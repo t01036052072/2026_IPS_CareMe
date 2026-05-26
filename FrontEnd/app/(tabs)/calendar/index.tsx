@@ -346,7 +346,7 @@ export default function HospitalCalendarScreen() {
               <TouchableWithoutFeedback onPress={dismissAll}>
                 <View style={styles.modalContent}>
                   <View style={styles.modalHeader}>
-                    <Text style={styles.modalTitle}>{editId ? "병원 일정 확인" : "새로운 병원 일정 등록하기"}</Text>
+                    <Text style={styles.modalTitle}>{editId ? "병원 일정 수정하기" : "새로운 병원 일정 등록하기"}</Text>
                     <TouchableOpacity onPress={() => setIsModalVisible(false)}>
                       <Ionicons name="close" size={32} color="#333" />
                     </TouchableOpacity>
