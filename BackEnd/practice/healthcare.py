@@ -77,24 +77,26 @@ def extract_disease_list(medical_history):
             medical_history = json.loads(medical_history)
         except json.JSONDecodeError:
             disease_list = []
+            seen = set()
             for item in medical_history.split(","):
                 disease_name = re.sub(r"\([^)]*\)", "", item).strip()
-                if disease_name and disease_name not in seen:  # ← 수정
+                if disease_name and disease_name not in seen:
                     disease_list.append(disease_name)
-                    seen.add(disease_name)  # ← 추가
-            return disease_list
+                    seen.add(disease_name)
+            return disease_list  # ← json 파싱 실패했을 때만 여기서 return
 
+    # json 파싱 성공하면 여기로 내려옴
     try:
         disease_list = []
-        seen = set()  # ← 추가
+        seen = set()
         for item in medical_history:
             if isinstance(item, dict):
                 disease_name = item.get("name")
             else:
                 disease_name = str(item)
-            if disease_name and disease_name not in seen:  # ← 수정
+            if disease_name and disease_name not in seen:
                 disease_list.append(disease_name)
-                seen.add(disease_name)  # ← 추가
+                seen.add(disease_name)
         return disease_list
     except Exception:
         return []

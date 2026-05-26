@@ -309,7 +309,9 @@ export default function HospitalCalendarScreen() {
                 <Text style={styles.cardInfo}>방문 시간: {item.time}</Text>
                 <Text style={styles.cardInfo}>알람 시간: {item.alarm}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={24} color="#CCC" />
+              <View style={styles.editBtn}>
+              <Text style={styles.editBtnText}>수정하기</Text>
+              </View>
             </TouchableOpacity>
           ))
         )}
@@ -499,4 +501,6 @@ const styles = StyleSheet.create({
   iosPickerConfirmBtn: { backgroundColor: main_navy, paddingVertical: 12, paddingHorizontal: 30, borderRadius: 10, marginTop: 10 },
   iosPickerConfirmText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
   alertBtn: { backgroundColor: red_point, paddingVertical: 12, paddingHorizontal: 40, borderRadius: 15 },
+  editBtn: { backgroundColor: main_navy, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 10 },
+editBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
 });
