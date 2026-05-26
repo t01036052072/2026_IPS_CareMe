@@ -11,6 +11,8 @@ from dotenv import load_dotenv
 
 from my_project.database import get_db
 from my_project.models import UserTable
+from my_project.routes.user import get_current_user
+
 
 
 load_dotenv()
@@ -77,19 +79,22 @@ def extract_disease_list(medical_history):
             disease_list = []
             for item in medical_history.split(","):
                 disease_name = re.sub(r"\([^)]*\)", "", item).strip()
-                if disease_name:
+                if disease_name and disease_name not in seen:  # ← 수정
                     disease_list.append(disease_name)
+                    seen.add(disease_name)  # ← 추가
             return disease_list
 
     try:
         disease_list = []
+        seen = set()  # ← 추가
         for item in medical_history:
             if isinstance(item, dict):
                 disease_name = item.get("name")
             else:
                 disease_name = str(item)
-            if disease_name:
+            if disease_name and disease_name not in seen:  # ← 수정
                 disease_list.append(disease_name)
+                seen.add(disease_name)  # ← 추가
         return disease_list
     except Exception:
         return []
@@ -129,6 +134,8 @@ def build_healthcare_prompt(user, disease_name, bmi):
 - 반드시 JSON만 반환
 - 의료 진단 금지, 병원 방문 권유 금지
 - 항목명(exercise, diet, lifestyle)은 영어 그대로 유지
+- 각 질환명은 사용자 정보의 질환명을 그대로 사용할 것 
+- 질환명을 임의로 변경하거나 유사어로 바꾸지 말 것     
 
 사용자 정보:
 - 나이: {user.age}
@@ -176,41 +183,19 @@ def generate_ai_healthcare(user, disease_name):
 
     return result
 
-# =========================
-# 질환 버튼 목록 조회 API
-# =========================
-@router.get("/diseases/{user_id}")
-def get_healthcare_diseases(
-    user_id: int,
-    db: Session = Depends(get_db),
-):
-    user = db.query(UserTable).filter(UserTable.id == user_id).first()
 
-    if not user:
-        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
-
-    diseases = extract_disease_list(user.medical_history)
-
-    disease_buttons = []
-    disease_buttons.extend([
-        {"disease_id": index + 1, "disease_name": disease}
-        for index, disease in enumerate(diseases)
-    ])
-
-    return {"status": "success", "diseases": disease_buttons}
 
 # =========================
 # 건강관리 생성 API
 # =========================
-class HealthcareGenerateRequest(BaseModel):
-    user_id: int
+
 
 @router.post("/generate", response_model=HealthcareResponse)
 async def generate_healthcare(
-    request: HealthcareGenerateRequest,
     db: Session = Depends(get_db),
+    current_user: UserTable = Depends(get_current_user)
 ):
-    user = db.query(UserTable).filter(UserTable.id == request.user_id).first()
+    user = db.query(UserTable).filter(UserTable.id == current_user.id).first()
 
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")

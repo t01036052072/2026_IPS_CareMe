@@ -31,48 +31,43 @@ export default function HealthcareScreen() {
   const router = useRouter();
   const [diseases, setDiseases] = useState<DiseaseButton[]>([]);
   const [healthcareData, setHealthcareData] = useState<HealthcareItem[]>([]);
-  const [selectedDisease, setSelectedDisease] = useState<string>('전체');
-  const [isLoadingDiseases, setIsLoadingDiseases] = useState(true);
+  const [selectedDisease, setSelectedDisease] = useState<string>('');
   const [isLoadingData, setIsLoadingData] = useState(true);
   const scrollRef = useRef<ScrollView>(null);
   // 각 섹션의 Y 위치 저장
   const sectionYPositions = useRef<{ [key: string]: number }>({});
 
-  // ───── 질환 목록 조회 ─────
-  const fetchDiseases = useCallback(async () => {
-    try {
-      const token = await getToken();
-      const res = await apiClient.get('/healthcare/diseases', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setDiseases(res.data.diseases || []);
-    } catch (error: any) {
-      console.log('질환 목록 조회 실패:', error.message);
-    } finally {
-      setIsLoadingDiseases(false);
-    }
-  }, []);
 
-  // ───── 건강관리 데이터 생성 ─────
-  const fetchHealthcareData = useCallback(async () => {
-    try {
-      setIsLoadingData(true);
-      const token = await getToken();
-      const res = await apiClient.post('/healthcare/generate', {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setHealthcareData(res.data.data || []);
-    } catch (error: any) {
-      console.log('건강관리 데이터 조회 실패:', error.message);
-    } finally {
-      setIsLoadingData(false);
-    }
-  }, []);
+ const fetchHealthcareData = useCallback(async () => {
+  try {
+    setIsLoadingData(true);
+    const token = await getToken();
+    const res = await apiClient.post('/healthcare/generate', {}, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = res.data.data || [];
+    setHealthcareData(data);
+    const mapped = data.map((item: HealthcareItem, index: number) => ({
+      disease_id: index + 1,
+      disease_name: item.disease_name,
+    }));
+    setDiseases(mapped);
+    setSelectedDisease(mapped[0]?.disease_name || '');
+  } catch (error: any) {
+    console.log('건강관리 데이터 조회 실패:', error.message);
+  } finally {
+    setIsLoadingData(false);
+  }
+}, []);
 
-  useEffect(() => {
-    fetchDiseases();
-    fetchHealthcareData();
-  }, []);
+  const hasFetched = useRef(false);
+
+useEffect(() => {
+  if (hasFetched.current) return;
+  hasFetched.current = true;
+  fetchHealthcareData();
+}, []);
+
 
   // 버튼 누르면 해당 섹션으로 스크롤
   const handleDiseaseSelect = (diseaseName: string) => {
@@ -100,118 +95,108 @@ export default function HealthcareScreen() {
         <View style={{ width: 32 }} />
       </View>
 
-      {/* 질환 필터 버튼 */}
-      {isLoadingDiseases ? (
-        <ActivityIndicator size="small" color={main_navy} style={{ margin: 16 }} />
-      ) : (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterRow}
-        >
-          {diseases.map(d => (
-            <TouchableOpacity
-              key={d.disease_id}
-              style={[styles.filterBtn, selectedDisease === d.disease_name && styles.filterBtnActive]}
-              onPress={() => handleDiseaseSelect(d.disease_name)}
-            >
-              <Text style={[styles.filterBtnText, selectedDisease === d.disease_name && styles.filterBtnTextActive]}>
-                {d.disease_name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
+    
 
-      {/* 건강관리 데이터 */}
-      {isLoadingData ? (
-        <View style={styles.loadingBox}>
-          <ActivityIndicator size="large" color={main_navy} />
-          <Text style={styles.loadingText}>AI가 건강관리 정보를{'\n'}생성 중입니다...</Text>
+     {isLoadingData ? (
+  <View style={styles.loadingBox}>
+    <ActivityIndicator size="large" color={main_navy} />
+    <Text style={styles.loadingText}>건강관리 정보를 생성 중입니다...{'\n'}잠시만 기다려주세요.</Text>
+  </View>
+) : (
+  <>
+    {/* 필터 버튼 */}
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.filterRow}
+    >
+      {diseases.map(d => (
+        <TouchableOpacity
+          key={d.disease_id}
+          style={[styles.filterBtn, selectedDisease === d.disease_name && styles.filterBtnActive]}
+          onPress={() => handleDiseaseSelect(d.disease_name)}
+        >
+          <Text style={[styles.filterBtnText, selectedDisease === d.disease_name && styles.filterBtnTextActive]}>
+            {d.disease_name}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+
+    {/* 데이터 */}
+    <ScrollView
+      ref={scrollRef}
+      contentContainerStyle={styles.scrollContent}
+      onScroll={(e) => {
+        const scrollY = e.nativeEvent.contentOffset.y;
+        let currentDisease = diseases[0]?.disease_name || '';
+        for (const [name, y] of Object.entries(sectionYPositions.current)) {
+          if (scrollY >= y - 50) currentDisease = name;
+        }
+        setSelectedDisease(prev => prev === currentDisease ? prev : currentDisease);
+      }}
+      scrollEventThrottle={100}
+    >
+      {healthcareData.length === 0 ? (
+        <View style={styles.emptyBox}>
+          <Text style={styles.emptyText}>건강관리 정보가 없습니다</Text>
         </View>
       ) : (
-        <ScrollView
-          ref={scrollRef}
-          contentContainerStyle={styles.scrollContent}
-          // 스크롤 위치에 따라 현재 질환 버튼 활성화
-          onScroll={(e) => {
-            const scrollY = e.nativeEvent.contentOffset.y;
-            // 현재 보이는 섹션 찾기
-            let currentDisease = '전체';
-            for (const [name, y] of Object.entries(sectionYPositions.current)) {
-              if (scrollY >= y - 50) {
-                currentDisease = name;
-              }
-            }
-            setSelectedDisease(currentDisease);
-          }}
-          scrollEventThrottle={100}
-        >
-          {healthcareData.length === 0 ? (
-            <View style={styles.emptyBox}>
-              <Text style={styles.emptyText}>건강관리 정보가 없습니다</Text>
+        healthcareData.map((item, index) => (
+          <View
+            key={index}
+            style={styles.diseaseSection}
+            onLayout={(e) => {
+              sectionYPositions.current[item.disease_name] = e.nativeEvent.layout.y;
+            }}
+          >
+            <Text style={styles.diseaseName}>{item.disease_name}</Text>
+            <View style={styles.summaryBox}>
+              <Text style={styles.summaryText}>{item.summary}</Text>
             </View>
-          ) : (
-            healthcareData.map((item, index) => (
-              <View
-                key={index}
-                style={styles.diseaseSection}
-                // 각 섹션의 Y 위치 저장
-                onLayout={(e) => {
-                  sectionYPositions.current[item.disease_name] = e.nativeEvent.layout.y;
-                }}
-              >
-                <Text style={styles.diseaseName}>{item.disease_name}</Text>
-
-                <View style={styles.summaryBox}>
-                  <Text style={styles.summaryText}>{item.summary}</Text>
-                </View>
-
-                <View style={styles.categoryBox}>
-                  <View style={styles.categoryHeader}>
-                    <Ionicons name="walk" size={28} color={main_navy} />
-                    <Text style={styles.categoryTitle}>운동</Text>
-                  </View>
-                  {item.exercise.map((ex, i) => (
-                    <View key={i} style={styles.itemRow}>
-                      <View style={styles.bullet} />
-                      <Text style={styles.itemText}>{ex}</Text>
-                    </View>
-                  ))}
-                </View>
-
-                <View style={styles.categoryBox}>
-                  <View style={styles.categoryHeader}>
-                    <Ionicons name="restaurant" size={28} color={main_navy} />
-                    <Text style={styles.categoryTitle}>식습관</Text>
-                  </View>
-                  {item.diet.map((d, i) => (
-                    <View key={i} style={styles.itemRow}>
-                      <View style={styles.bullet} />
-                      <Text style={styles.itemText}>{d}</Text>
-                    </View>
-                  ))}
-                </View>
-
-                <View style={styles.categoryBox}>
-                  <View style={styles.categoryHeader}>
-                    <Ionicons name="leaf" size={28} color={main_navy} />
-                    <Text style={styles.categoryTitle}>생활습관</Text>
-                  </View>
-                  {item.lifestyle.map((l, i) => (
-                    <View key={i} style={styles.itemRow}>
-                      <View style={styles.bullet} />
-                      <Text style={styles.itemText}>{l}</Text>
-                    </View>
-                  ))}
-                </View>
-
-                {index < healthcareData.length - 1 && <View style={styles.divider} />}
+            <View style={styles.categoryBox}>
+              <View style={styles.categoryHeader}>
+                <Ionicons name="walk" size={28} color={main_navy} />
+                <Text style={styles.categoryTitle}>운동</Text>
               </View>
-            ))
-          )}
-        </ScrollView>
+              {item.exercise.map((ex, i) => (
+                <View key={i} style={styles.itemRow}>
+                  <View style={styles.bullet} />
+                  <Text style={styles.itemText}>{ex}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={styles.categoryBox}>
+              <View style={styles.categoryHeader}>
+                <Ionicons name="restaurant" size={28} color={main_navy} />
+                <Text style={styles.categoryTitle}>식습관</Text>
+              </View>
+              {item.diet.map((d, i) => (
+                <View key={i} style={styles.itemRow}>
+                  <View style={styles.bullet} />
+                  <Text style={styles.itemText}>{d}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={styles.categoryBox}>
+              <View style={styles.categoryHeader}>
+                <Ionicons name="leaf" size={28} color={main_navy} />
+                <Text style={styles.categoryTitle}>생활습관</Text>
+              </View>
+              {item.lifestyle.map((l, i) => (
+                <View key={i} style={styles.itemRow}>
+                  <View style={styles.bullet} />
+                  <Text style={styles.itemText}>{l}</Text>
+                </View>
+              ))}
+            </View>
+            {index < healthcareData.length - 1 && <View style={styles.divider} />}
+          </View>
+        ))
       )}
+    </ScrollView>
+  </>
+)}
     </SafeAreaView>
   );
 }
@@ -228,7 +213,7 @@ const styles = StyleSheet.create({
   filterBtnText: { fontSize: 20, fontWeight: '600', color: '#555' },
   filterBtnTextActive: { color: '#FFF' },
 
-  loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 20, paddingTop: 300 },
+  loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 20},
   loadingText: { fontSize: 18, color: main_navy, fontWeight: '600', textAlign: 'center', lineHeight: 30 },
 
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
