@@ -39,12 +39,16 @@ export default function HealthcareScreen() {
 
 
  const fetchHealthcareData = useCallback(async () => {
+        console.log('=== 건강관리 데이터 조회 시작 ===');
+
   try {
     setIsLoadingData(true);
     const token = await getToken();
     const res = await apiClient.post('/healthcare/generate', {}, {
       headers: { Authorization: `Bearer ${token}` },
+      
     });
+    console.log('응답:', JSON.stringify(res.data));
     const data = res.data.data || [];
     setHealthcareData(data);
     const mapped = data.map((item: HealthcareItem, index: number) => ({
@@ -55,6 +59,8 @@ export default function HealthcareScreen() {
     setSelectedDisease(mapped[0]?.disease_name || '');
   } catch (error: any) {
     console.log('건강관리 데이터 조회 실패:', error.message);
+    console.log('에러 상세:', error.response?.data);  // ← 이거 있나요?
+  console.log('상태코드:', error.response?.status); // ← 추가
   } finally {
     setIsLoadingData(false);
   }
