@@ -13,6 +13,7 @@ import {
   deleteMedicationAPI,
   MedicationSummary,
 } from '@/api/pillschedule';
+import Back from "../../../assets/images/LoginScreen/back.svg";
 
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
@@ -206,9 +207,12 @@ export default function PillScheduleScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={32} color={main_navy} />
-        </TouchableOpacity>
+        <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backBtn}
+          >
+            <Back width={24} height={24} />
+          </TouchableOpacity>
         <Text style={styles.headerTitle}>복약 일정</Text>
         <View style={{ width: 32 }} />
       </View>
