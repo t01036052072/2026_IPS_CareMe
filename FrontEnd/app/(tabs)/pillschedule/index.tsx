@@ -122,9 +122,12 @@ export default function PillScheduleScreen() {
     }
   }, []);
 
-  useEffect(() => {
+  useFocusEffect(
+  useCallback(() => {
     fetchMedications();
-  }, [fetchMedications]);
+  }, [fetchMedications])
+);
+
 
   useEffect(() => {
     setupLocalNotifications().then(granted => {
@@ -133,9 +136,10 @@ export default function PillScheduleScreen() {
   }, []);
 
   const toTimeStr = (date: Date) => {
-    const h = date.getHours() % 12 || 12;
-    const m = date.getMinutes().toString().padStart(2, '0');
-    return `${h.toString().padStart(2, '0')}:${m}`;
+    const h = String(date.getHours()).padStart(2, '0');
+  const m = String(date.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+  
   };
 
   const formatTime = (date: Date) => {
@@ -222,9 +226,12 @@ export default function PillScheduleScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={32} color={main_navy} />
-        </TouchableOpacity>
+        <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backBtn}
+          >
+            <Back width={24} height={24} />
+          </TouchableOpacity>
         <Text style={styles.headerTitle}>복약 일정</Text>
         <View style={{ width: 32 }} />
       </View>
