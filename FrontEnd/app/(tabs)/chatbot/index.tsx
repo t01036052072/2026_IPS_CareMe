@@ -19,7 +19,7 @@ import * as Crypto from "expo-crypto";
 import Markdown from "react-native-markdown-display";
 
 import Jikimi from "../../../assets/ChatBot/Jikimi.svg";
-import Back from "../../../assets/images/LoginScreen/back.png";
+import Back from "../../../assets/images/LoginScreen/back.svg";
 
 const MAIN_COLOR = "#00246D";
 
@@ -156,8 +156,8 @@ export default function ChatScreen() {
     >
       {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Image source={Back} style={styles.backIcon} />
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Back width={24} height={24} />
         </TouchableOpacity>
         <Text style={styles.title}>케미 상담</Text>
         <View style={{ width: 40 }} />
@@ -366,6 +366,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
+
+  backBtn: {
+    padding: 4,
+  },
 });
 
 const markdownStyles = StyleSheet.create({
@@ -389,6 +393,7 @@ const markdownStyles = StyleSheet.create({
   strong_emphasis: {
     fontWeight: "bold",
   },
+
 });
 
 
