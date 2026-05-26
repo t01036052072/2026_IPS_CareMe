@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
+from PIL import UnidentifiedImageError
 
 from .doctor_now_details import get_doctor_now_detail
 from .inference import predict_pill_image
@@ -16,6 +17,7 @@ router = APIRouter(prefix="/pill-photo", tags=["pill photo search"])
 
 UPLOAD_DIR = "./uploads"
 ALLOWED_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png"}
+UNSUPPORTED_IMAGE_EXTENSIONS = {"heic", "heif"}
 PILL_MODEL_DIR = Path(__file__).resolve().parent
 PILL_MODEL_PATH = PILL_MODEL_DIR / "checkpoints" / "final_model.pth"
 PILL_MODEL_DATA_DIR = Path(os.getenv("PILL_MODEL_DATA_DIR", str(PILL_MODEL_DIR)))
@@ -67,6 +69,12 @@ async def analyze_pill_photo(file: UploadFile = File(...)):
     filename = file.filename or ""
     extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
 
+    if extension in UNSUPPORTED_IMAGE_EXTENSIONS or (file.content_type or "").lower() in {"image/heic", "image/heif"}:
+        raise HTTPException(
+            status_code=400,
+            detail="HEIC/HEIF images are not supported. Please upload a JPG or PNG image.",
+        )
+
     if extension not in ALLOWED_IMAGE_EXTENSIONS:
         raise HTTPException(
             status_code=400,
@@ -91,6 +99,11 @@ async def analyze_pill_photo(file: UploadFile = File(...)):
         raise HTTPException(
             status_code=503,
             detail=f"Pill AI model file is missing: {exc}",
+        ) from exc
+    except UnidentifiedImageError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="Uploaded file is not a readable JPG/PNG image. Please upload a JPG or PNG image.",
         ) from exc
     except Exception as exc:
         print("[PillPhoto] analysis failed")
