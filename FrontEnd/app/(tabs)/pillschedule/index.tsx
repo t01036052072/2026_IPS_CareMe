@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, SafeAreaView,
-  FlatList, ScrollView, ActivityIndicator,
+  ScrollView, ActivityIndicator,
   Platform, TouchableWithoutFeedback,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,14 +19,57 @@ const light_navy = '#F1F4F9';
 const red_point = '#D9534F';
 const green = '#2ECC71';
 
+const toLocalDateStr = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+const getDateDisplayStr = (date: Date) => {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+  const weekday = weekdays[date.getDay()];
+  const today = toLocalDateStr(new Date());
+  const selected = toLocalDateStr(date);
+  const suffix = today === selected ? ' (오늘)' : '';
+  return `${year}년 ${month}월 ${day}일 (${weekday})${suffix}`;
+};
+
+const timeToMinutes = (timeLabel: string) => {
+  if (!timeLabel) return 9999;
+  const isPM = timeLabel.includes('오후');
+  const match = timeLabel.match(/(\d+):(\d+)/);
+  if (!match) return 9999;
+  let h = parseInt(match[1]);
+  const m = parseInt(match[2]);
+  if (isPM && h !== 12) h += 12;
+  if (!isPM && h === 12) h = 0;
+  return h * 60 + m;
+};
+
+// 날짜 필터링
+const filterByDate = (medications: MedicationSummary[], date: Date) => {
+  const dateStr = toLocalDateStr(date);
+  return medications.filter(med => {
+    if (!med.detail) return false;
+    const start = med.detail.start_date;
+    const end = med.detail.end_date;
+    return dateStr >= start && dateStr <= end;
+  });
+};
+
 export default function PillScheduleScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
 
   const [medications, setMedications] = useState<MedicationSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-  // 등록 모달 상태
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalPillName, setModalPillName] = useState('');
   const [period, setPeriod] = useState<'오전' | '오후'>('오전');
@@ -36,14 +79,12 @@ export default function PillScheduleScreen() {
   const [durationDays, setDurationDays] = useState(7);
   const [isSaving, setIsSaving] = useState(false);
 
-  // ✅ 커스텀 알림 상태 완벽 연동
   const [isAlertVisible, setIsAlertVisible] = useState(false);
   const [alertTitle, setAlertTitle] = useState('');
   const [alertMessage, setAlertMessage] = useState('');
   const [alertType, setAlertType] = useState<'success' | 'error' | 'confirm'>('success');
   const [alertOnConfirm, setAlertOnConfirm] = useState<(() => void) | null>(null);
 
-  // 🌟 리액트 state에 함수를 안전하게 저장하는 꿀팁 적용
   const showAlert = (title: string, message: string, type: 'success' | 'error' | 'confirm' = 'success', onConfirm?: () => void) => {
     setAlertTitle(title);
     setAlertMessage(message);
@@ -52,14 +93,10 @@ export default function PillScheduleScreen() {
     setIsAlertVisible(true);
   };
 
-  // 상세 모달 상태
   const [isDetailVisible, setIsDetailVisible] = useState(false);
   const [selectedMed, setSelectedMed] = useState<MedicationSummary | null>(null);
-
-  // 알림 미등록 약 (검색에서 넘어온 약)
   const [unregisteredPills, setUnregisteredPills] = useState<{ id: string; name: string }[]>([]);
 
-  // 검색에서 약 이름 넘어왔을 때 처리
   useEffect(() => {
     if (params.pillName && params.pillId) {
       const newPill = { id: String(params.pillId), name: String(params.pillName) };
@@ -87,13 +124,6 @@ export default function PillScheduleScreen() {
     fetchMedications();
   }, [fetchMedications]);
 
-  const toLocalDate = (date: Date) => {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  };
-
   const toTimeStr = (date: Date) => {
     const h = date.getHours() % 12 || 12;
     const m = date.getMinutes().toString().padStart(2, '0');
@@ -117,12 +147,12 @@ export default function PillScheduleScreen() {
     setIsModalVisible(true);
   };
 
-  // ✅ 커스텀 알림 팝업 적용된 등록 함수
   const handleSave = async () => {
     if (!modalPillName.trim()) {
       showAlert('알림', '약 이름을 입력해주세요.', 'error');
       return;
     }
+    console.log('저장 데이터:', { count, durationDays });
     setIsSaving(true);
     try {
       await createMedicationAPI({
@@ -131,14 +161,11 @@ export default function PillScheduleScreen() {
         time: toTimeStr(scheduleTime),
         count,
         duration_days: durationDays,
-        start_date: toLocalDate(new Date()),
+        start_date: toLocalDateStr(new Date()),
       });
-
       setUnregisteredPills(prev => prev.filter(p => p.name !== modalPillName));
       setIsModalVisible(false);
-      fetchMedications();
-      
-      // ✨ 성공 팝업
+      await fetchMedications();
       showAlert('등록 완료!', '복약 일정이 정상적으로 등록되었어요.', 'success');
     } catch (error: any) {
       console.log('등록 실패:', error.message);
@@ -148,15 +175,12 @@ export default function PillScheduleScreen() {
     }
   };
 
-  // ✅ 커스텀 알림 팝업 적용된 삭제 함수
   const handleDelete = async (id: number) => {
     try {
       await deleteMedicationAPI(id);
       setIsDetailVisible(false);
       setSelectedMed(null);
-      fetchMedications();
-      
-      // ✨ 삭제 성공 팝업
+      await fetchMedications();
       showAlert('삭제 완료', '복약 일정이 삭제되었습니다.', 'success');
     } catch (error: any) {
       console.log('삭제 실패:', error.message);
@@ -164,32 +188,62 @@ export default function PillScheduleScreen() {
     }
   };
 
-  const grouped = medications.reduce((acc, med) => {
+  // 날짜 필터링된 데이터
+  const filteredMedications = filterByDate(medications, selectedDate);
+
+  const grouped = filteredMedications.reduce((acc, med) => {
     const label = med.time_label || '미설정';
     if (!acc[label]) acc[label] = [];
     acc[label].push(med);
     return acc;
   }, {} as Record<string, MedicationSummary[]>);
 
+  const sortedGroupEntries = Object.entries(grouped).sort(
+    ([a], [b]) => timeToMinutes(a) - timeToMinutes(b)
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={32} color={main_navy} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>복약 일정</Text>
-        <View style={{ width: 32 }} /> 
+        <View style={{ width: 32 }} />
       </View>
+
+      {/* ✅ 날짜 선택 */}
+      <TouchableOpacity style={styles.dateBox} onPress={() => setShowDatePicker(true)}>
+        <Ionicons name="calendar-outline" size={24} color={main_navy} />
+        <Text style={styles.dateText}>{getDateDisplayStr(selectedDate)}</Text>
+        <View style={styles.dateChangeBtn}>
+          <Text style={styles.dateChangeBtnText}>날짜 변경</Text>
+        </View>
+      </TouchableOpacity>
+
+      {/* ✅ 달력 피커 */}
+      {showDatePicker && Platform.OS === 'ios' && (
+        <View style={styles.datePickerBox}>
+          <DateTimePicker
+            value={selectedDate}
+            mode="date"
+            display="spinner"
+            locale="ko-KR"
+            onChange={(_e: any, d?: Date) => d && setSelectedDate(d)}
+          />
+          <TouchableOpacity style={styles.datePickerConfirmBtn} onPress={() => setShowDatePicker(false)}>
+            <Text style={styles.datePickerConfirmText}>선택 완료</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {isLoading ? (
           <ActivityIndicator size="large" color={main_navy} style={{ marginTop: 40 }} />
         ) : (
           <>
-            {/* 등록된 복약 일정 */}
-            {Object.keys(grouped).length > 0 ? (
-              Object.entries(grouped).map(([timeLabel, meds]) => (
+            {sortedGroupEntries.length > 0 ? (
+              sortedGroupEntries.map(([timeLabel, meds]) => (
                 <View key={timeLabel} style={styles.section}>
                   <Text style={styles.timeLabel}>{timeLabel}</Text>
                   {meds.map(med => (
@@ -211,20 +265,13 @@ export default function PillScheduleScreen() {
               ))
             ) : (
               <View style={styles.emptyBox}>
-                <Text style={styles.emptyText}>등록된 복약 일정이 없습니다</Text>
+                <Text style={styles.emptyText}>이 날의 복약 일정이 없습니다</Text>
                 <Text style={[styles.emptyText, { fontSize: 18, marginTop: 8, color: main_navy }]}>
                   등록할 약을 검색하러 갈까요?
                 </Text>
                 <TouchableOpacity
                   style={styles.goSearchBtn}
-                  onPress={() =>
-                    showAlert(
-                      '약 검색 이동',
-                      '약 검색 화면으로 이동하시겠습니까?',
-                      'confirm',
-                      () => router.push('/(tabs)/serchpill' as any)
-                    )
-                  }
+                  onPress={() => showAlert('약 검색 이동', '약 검색 화면으로 이동하시겠습니까?', 'confirm', () => router.push('/(tabs)/serchpill' as any))}
                 >
                   <Ionicons name="search" size={20} color="#FFF" />
                   <Text style={styles.goSearchBtnText}>약 검색하기</Text>
@@ -232,7 +279,6 @@ export default function PillScheduleScreen() {
               </View>
             )}
 
-            {/* 알림 미등록 약 */}
             {unregisteredPills.length > 0 && (
               <View style={styles.section}>
                 <View style={styles.unregisteredHeader}>
@@ -259,7 +305,7 @@ export default function PillScheduleScreen() {
         )}
       </ScrollView>
 
-      {/* ───── 1. 등록 모달 (가짜 모달 View 방식) ───── */}
+      {/* ───── 등록 모달 ───── */}
       {isModalVisible && (
         <View style={[StyleSheet.absoluteFill, styles.modalOverlay]}>
           <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
@@ -337,7 +383,7 @@ export default function PillScheduleScreen() {
         </View>
       )}
 
-      {/* ───── 2. 상세 모달 (가짜 모달 View 방식) ───── */}
+      {/* ───── 상세 모달 ───── */}
       {isDetailVisible && (
         <View style={[StyleSheet.absoluteFill, styles.modalOverlay]}>
           <TouchableWithoutFeedback onPress={() => setIsDetailVisible(false)}>
@@ -363,12 +409,7 @@ export default function PillScheduleScreen() {
 
                   <TouchableOpacity
                     style={styles.deleteBtn}
-                    onPress={() => showAlert(
-                      '복약 일정 삭제',
-                      '이 복약 일정을\n삭제하시겠습니까?',
-                      'confirm',
-                      () => handleDelete(selectedMed!.id)
-                    )}
+                    onPress={() => showAlert('복약 일정 삭제', '이 복약 일정을\n삭제하시겠습니까?', 'confirm', () => handleDelete(selectedMed!.id))}
                   >
                     <Text style={styles.deleteBtnText}>삭제하기</Text>
                   </TouchableOpacity>
@@ -379,7 +420,7 @@ export default function PillScheduleScreen() {
         </View>
       )}
 
-      {/* ───── 3. 🌟 완벽 이식된 커스텀 알림창 (가짜 모달) ───── */}
+      {/* ───── 커스텀 알림창 ───── */}
       {isAlertVisible && (
         <View style={[StyleSheet.absoluteFill, styles.customAlertOverlay]}>
           <View style={styles.customAlertBox}>
@@ -402,10 +443,7 @@ export default function PillScheduleScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.alertBtn, { backgroundColor: main_navy }]}
-                  onPress={() => {
-                    setIsAlertVisible(false);
-                    if (alertOnConfirm) alertOnConfirm();
-                  }}
+                  onPress={() => { setIsAlertVisible(false); if (alertOnConfirm) alertOnConfirm(); }}
                 >
                   <Text style={styles.alertBtnText}>확인</Text>
                 </TouchableOpacity>
@@ -439,14 +477,25 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   backBtn: { padding: 4 },
   headerTitle: { fontSize: 24, fontWeight: 'bold', color: main_navy },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
 
+  // ✅ 날짜 박스
+  dateBox: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 14, backgroundColor: light_navy, marginHorizontal: 20, borderRadius: 14, marginBottom: 8 },
+  dateText: { fontSize: 20, fontWeight: 'bold', color: main_navy, flex: 1 },
+  dateChangeBtn: { backgroundColor: main_navy, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8 },
+  dateChangeBtnText: { color: '#FFF', fontSize: 13, fontWeight: 'bold' },
+
+  // ✅ 달력 피커
+  datePickerBox: { backgroundColor: '#F5F5F5', marginHorizontal: 20, borderRadius: 14, marginBottom: 8, alignItems: 'center', padding: 10 },
+  datePickerConfirmBtn: { backgroundColor: main_navy, paddingVertical: 10, paddingHorizontal: 30, borderRadius: 10, marginTop: 8, marginBottom: 4 },
+  datePickerConfirmText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
   section: { marginBottom: 24 },
   timeLabel: { fontSize: 18, fontWeight: 'bold', color: main_navy, marginBottom: 10, marginTop: 16 },
 
   pillCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFF', borderWidth: 1, borderColor: '#EEE', borderRadius: 14, padding: 18, marginBottom: 10 },
-  pillCardLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 10 },  
-pillName: { fontSize: 18, fontWeight: '600', color: '#111', flex: 1, flexWrap: 'wrap' },
+  pillCardLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 10 },
+  pillName: { fontSize: 18, fontWeight: '600', color: '#111', flex: 1, flexWrap: 'wrap' },
 
   unregisteredHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginTop: 16 },
   unregisteredTitle: { fontSize: 18, fontWeight: 'bold', color: '#888' },
@@ -457,11 +506,10 @@ pillName: { fontSize: 18, fontWeight: '600', color: '#111', flex: 1, flexWrap: '
   emptyBox: { alignItems: 'center', paddingTop: 60 },
   emptyText: { fontSize: 20, color: '#888' },
 
-  // 🌟 가짜 모달을 위한 전체 화면 덮기 스타일 업그레이드
   modalOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000 },
   modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: main_navy },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: main_navy, flex: 1, marginRight: 8 },
 
   inputLabel: { fontSize: 15, fontWeight: 'bold', color: '#333', marginTop: 14, marginBottom: 6 },
   pillNameBox: { backgroundColor: light_navy, borderRadius: 12, padding: 14 },
@@ -499,13 +547,12 @@ pillName: { fontSize: 18, fontWeight: '600', color: '#111', flex: 1, flexWrap: '
   infoBtn: { backgroundColor: main_navy, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10 },
   infoBtnText: { color: '#FFF', fontSize: 14, fontWeight: 'bold' },
 
-  // 🌟 커스텀 알림 전용 고해상도 레이어 스타일 추가
   customAlertOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 99999, elevation: 99999 },
-customAlertBox: { backgroundColor: '#FFF', borderRadius: 24, padding: 28, width: '82%', alignItems: 'center', gap: 12, overflow: 'visible', paddingVertical: 40 },
+  customAlertBox: { backgroundColor: '#FFF', borderRadius: 24, paddingVertical: 40, paddingHorizontal: 28, width: '88%', alignItems: 'center', gap: 12 },
   alertIconBox: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
   customAlertTitle: { fontSize: 22, fontWeight: 'bold', color: '#111', textAlign: 'center' },
   customAlertMessage: { fontSize: 17, color: '#555', textAlign: 'center', lineHeight: 28 },
   alertBtnRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 4 },
-alertBtn: { flex: 1, backgroundColor: main_navy, paddingVertical: 14, borderRadius: 14, alignItems: 'center', justifyContent: 'center', minHeight: 49 },
-alertBtnText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  alertBtn: { flex: 1, backgroundColor: main_navy, paddingVertical: 16, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  alertBtnText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
 });
