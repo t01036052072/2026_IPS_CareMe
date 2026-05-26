@@ -94,9 +94,12 @@ def extract_disease_list(medical_history):
                 disease_name = item.get("name")
             else:
                 disease_name = str(item)
-            if disease_name and disease_name not in seen:
-                disease_list.append(disease_name)
-                seen.add(disease_name)
+            if disease_name and not disease_name.startswith("[가족력]"):
+        # 괄호 안 내용 제거 (예: 고혈압(진단) → 고혈압)
+                clean_name = re.sub(r"\([^)]*\)", "", disease_name).strip()
+                if clean_name and clean_name not in seen:
+                    disease_list.append(clean_name)
+                    seen.add(clean_name)
         return disease_list
     except Exception:
         return []
