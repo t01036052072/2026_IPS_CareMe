@@ -14,6 +14,7 @@ import {
   deleteAppointmentAPI,
   AppointmentDetail,
 } from '@/api/calender';
+import { scheduleAppointmentNotification } from '@/utils/localNotifications';
 
 interface Schedule {
   id: number;
@@ -191,6 +192,13 @@ export default function HospitalCalendarScreen() {
       } else {
         await createAppointmentAPI(payload);
       }
+      await scheduleAppointmentNotification({
+        hospitalName,
+        alarmDate: alarmDateStr,
+        alarmTime: alarmTimeStr,
+        appointmentDate: dateStr,
+        appointmentTime: timeStr,
+      });
 
       setIsModalVisible(false);
       setHospitalName('');
