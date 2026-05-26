@@ -1,3 +1,5 @@
+print("app_navigation 로드됨")
+
 APP_COMMANDS = {
 
     "마이페이지": {

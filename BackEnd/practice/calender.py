@@ -123,9 +123,21 @@ def get_appointments(month: Optional[str] = None, db: Session = Depends(get_db),
 # - 예약을 찾지 못하면 404를 반환합니다.
 # - 통합 서버에서는 /appointments/{appointment_id} 경로에 PUT으로 호출됩니다.
 @router.put("/{appointment_id}", response_model=AppointmentDetail, summary="병원 예약 수정")
-def update_appointment(appointment_id: int, payload: AppointmentCreate, db: Session = Depends(get_db), current_user: UserTable = Depends(get_current_user)):
+def update_appointment(
+    appointment_id: int,
+    payload: AppointmentCreate,
+    db: Session = Depends(get_db),
+    current_user: UserTable = Depends(get_current_user),
+):
     # MySQL에서 수정할 데이터를 찾습니다.
-    appt = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+    appt = (
+        db.query(Appointment)
+        .filter(
+            Appointment.id == appointment_id,
+            Appointment.user_id == str(current_user.id),
+        )
+        .first()
+    )
     if not appt:
         raise HTTPException(status_code=404, detail="해당 예약을 찾을 수 없습니다.")
 
@@ -149,9 +161,20 @@ def update_appointment(appointment_id: int, payload: AppointmentCreate, db: Sess
 # - 해당 id의 예약이 없으면 404를 반환합니다.
 # - 통합 서버에서는 /appointments/{appointment_id} 경로에 DELETE로 호출됩니다.
 @router.delete("/{appointment_id}", summary="병원 예약 삭제")
-def delete_appointment(appointment_id: int, db: Session = Depends(get_db)):
+def delete_appointment(
+    appointment_id: int,
+    db: Session = Depends(get_db),
+    current_user: UserTable = Depends(get_current_user),
+):
     # MySQL에서 삭제할 데이터를 찾습니다.
-    appt = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+    appt = (
+        db.query(Appointment)
+        .filter(
+            Appointment.id == appointment_id,
+            Appointment.user_id == str(current_user.id),
+        )
+        .first()
+    )
     if not appt:
         raise HTTPException(status_code=404, detail="해당 예약을 찾을 수 없습니다.")
 
