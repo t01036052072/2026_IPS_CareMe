@@ -46,7 +46,7 @@ export default function HealthcareScreen() {
     console.log('프로필 응답:', JSON.stringify(res.data));
   };
   checkProfile();
-}, []);
+
 
   // ───── 질환 목록 조회 ─────
 
@@ -86,7 +86,6 @@ export default function HealthcareScreen() {
     }
   }, []);
 
-  useEffect(() => {
     fetchDiseases();
     fetchHealthcareData();
   }, []);
@@ -212,9 +211,8 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 26, fontWeight: 'bold', color: main_navy },
 
   filterRow: { paddingHorizontal: 20, paddingBottom: 16, gap: 10 },
-  filterBtn: { paddingVertical: 10, paddingHorizontal: 22, borderRadius: 25, borderWidth: 1.5, borderColor: '#CCC', backgroundColor: '#FFF' },
-  filterBtnActive: { backgroundColor: main_navy, borderColor: main_navy },
-  filterBtnText: { fontSize: 18, fontWeight: '600', color: '#555' },
+filterBtn: { paddingVertical: 10, paddingHorizontal: 22, borderRadius: 25, borderWidth: 1.5, borderColor: '#CCC', backgroundColor: '#FFF', height: 50, justifyContent: 'center' },
+filterBtnText: { fontSize: 20, fontWeight: '600', color: '#555' },  filterBtnActive: { backgroundColor: main_navy, borderColor: main_navy },
   filterBtnTextActive: { color: '#FFF' },
 
   loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 20 },

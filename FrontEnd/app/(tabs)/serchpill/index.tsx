@@ -285,7 +285,9 @@ const handleRegisterMedication = async () => {
               <TouchableOpacity style={styles.resultItem} onPress={() => handleSelectMedicine(item)}>
                 <Ionicons name="ellipse-outline" size={28} color="#CCC" style={{ marginRight: 14 }} />
                 <Text style={styles.resultName}>{item.name}</Text>
-                <Ionicons name="chevron-forward" size={20} color="#CCC" />
+                <View style={styles.selectBtn}>
+    <Text style={styles.selectBtnText}>선택</Text>
+  </View>
               </TouchableOpacity>
             )}
             ListEmptyComponent={
@@ -293,6 +295,14 @@ const handleRegisterMedication = async () => {
                 <Text style={styles.emptyText}>검색 결과가 없습니다</Text>
               </View>
             }
+            ListFooterComponent={
+  searchResults.length > 0 ? (
+    <View style={styles.scrollHintBox}>
+      <Ionicons name="chevron-down" size={28} color={main_navy} />
+      <Text style={styles.scrollHint}>아래로 내리면 더 많은 결과가 있어요</Text>
+    </View>
+  ) : null
+}
           />
         </View>
       )}
@@ -474,4 +484,9 @@ const styles = StyleSheet.create({
 
   loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
   loadingText: { fontSize: 18, color: main_navy, fontWeight: 'bold' },
-});
+  selectBtn: { backgroundColor: main_navy, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 10 },
+selectBtnText: { color: '#FFF', fontSize: 15, fontWeight: 'bold' },
+
+scrollHintBox: { alignItems: 'center', paddingVertical: 20, gap: 6 },
+scrollHint: { textAlign: 'center', color: main_navy, fontSize: 18, fontWeight: '600', lineHeight: 28 },
+})
