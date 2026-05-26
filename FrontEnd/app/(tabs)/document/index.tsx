@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
   fileLabel: { fontSize: 18, fontWeight: 'bold', color: '#111' },
   // ✅ 파일 등록 버튼 형태로
   fileActionBtn: { backgroundColor: main_navy, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10 },
-  fileActionBtnDone: { backgroundColor: '#4CAF50' },
+  fileActionBtnDone: { backgroundColor: '#2c822f' },
   fileActionBtnText: { color: '#FFF', fontSize: 15, fontWeight: 'bold' },
 
   registerBtn: { backgroundColor: main_navy, paddingVertical: 18, borderRadius: 30, alignItems: 'center', marginTop: 24 },
