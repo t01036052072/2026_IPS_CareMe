@@ -13,7 +13,11 @@ import {
   deleteMedicationAPI,
   MedicationSummary,
 } from '@/api/pillschedule';
+<<<<<<< HEAD
 import Back from "../../../assets/images/LoginScreen/back.svg";
+=======
+import { scheduleMedicationNotifications } from '@/utils/localNotifications';
+>>>>>>> d6a9ec95d82c1afff44d03c46e5d9217d86f2a25
 
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
@@ -157,13 +161,22 @@ export default function PillScheduleScreen() {
     console.log('저장 데이터:', { count, durationDays });
     setIsSaving(true);
     try {
+      const startDate = toLocalDateStr(new Date());
+      const medicationTime = toTimeStr(scheduleTime);
       await createMedicationAPI({
         name: modalPillName,
         period,
-        time: toTimeStr(scheduleTime),
+        time: medicationTime,
         count,
         duration_days: durationDays,
-        start_date: toLocalDateStr(new Date()),
+        start_date: startDate,
+      });
+      await scheduleMedicationNotifications({
+        name: modalPillName,
+        startDate,
+        time: medicationTime,
+        durationDays,
+        count,
       });
       setUnregisteredPills(prev => prev.filter(p => p.name !== modalPillName));
       setIsModalVisible(false);
