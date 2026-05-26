@@ -10,6 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '@/api/api';
+import Back from "../../../assets/images/LoginScreen/back.svg";
 
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
@@ -202,7 +203,7 @@ export default function DocumentScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={32} color={main_navy} />
+          <Back width={24} height={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>문서 관리</Text>
         <View style={{ width: 28 }} />

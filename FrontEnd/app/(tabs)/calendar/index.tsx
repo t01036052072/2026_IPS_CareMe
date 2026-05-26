@@ -5,6 +5,7 @@ import {
   Keyboard, TouchableWithoutFeedback, ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import {
@@ -14,6 +15,8 @@ import {
   deleteAppointmentAPI,
   AppointmentDetail,
 } from '@/api/calender';
+import { scheduleAppointmentNotification } from '@/utils/localNotifications';
+import Back from '../../../assets/images/LoginScreen/back.svg';
 
 interface Schedule {
   id: number;
@@ -191,6 +194,13 @@ export default function HospitalCalendarScreen() {
       } else {
         await createAppointmentAPI(payload);
       }
+      await scheduleAppointmentNotification({
+        hospitalName,
+        alarmDate: alarmDateStr,
+        alarmTime: alarmTimeStr,
+        appointmentDate: dateStr,
+        appointmentTime: timeStr,
+      });
 
       setIsModalVisible(false);
       setHospitalName('');
@@ -228,7 +238,7 @@ export default function HospitalCalendarScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={32} color={main_navy} />
+            <Back width={24} height={24} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>병원 일정 관리</Text>
         </View>
@@ -452,7 +462,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF' },
   header: { paddingHorizontal: 20, paddingTop: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerLeft: { flexDirection: 'row', alignItems: 'center' },
-  backBtn: { marginRight: 8 },
+  backBtn: { marginRight: 15 },
   headerTitle: { fontSize: 24, fontWeight: 'bold', color: main_navy },
   viewToggle: { flexDirection: 'row', alignItems: 'center', backgroundColor: light_navy, padding: 8, borderRadius: 10 },
   viewToggleText: { marginLeft: 5, color: main_navy, fontWeight: 'bold', fontSize: 14 },

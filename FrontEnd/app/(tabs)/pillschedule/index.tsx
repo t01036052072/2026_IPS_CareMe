@@ -15,6 +15,8 @@ import {
 } from '@/api/pillschedule';
 import { useFocusEffect } from 'expo-router';
 
+import Back from "../../../assets/images/LoginScreen/back.svg";
+import { scheduleMedicationNotifications } from '@/utils/localNotifications';
 
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
@@ -162,13 +164,22 @@ export default function PillScheduleScreen() {
     console.log('저장 데이터:', { count, durationDays });
     setIsSaving(true);
     try {
+      const startDate = toLocalDateStr(new Date());
+      const medicationTime = toTimeStr(scheduleTime);
       await createMedicationAPI({
         name: modalPillName,
         period,
-        time: toTimeStr(scheduleTime),
+        time: medicationTime,
         count,
         duration_days: durationDays,
-        start_date: toLocalDateStr(new Date()),
+        start_date: startDate,
+      });
+      await scheduleMedicationNotifications({
+        name: modalPillName,
+        startDate,
+        time: medicationTime,
+        durationDays,
+        count,
       });
       setUnregisteredPills(prev => prev.filter(p => p.name !== modalPillName));
       setIsModalVisible(false);
@@ -212,9 +223,12 @@ export default function PillScheduleScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={32} color={main_navy} />
-        </TouchableOpacity>
+        <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backBtn}
+          >
+            <Back width={24} height={24} />
+          </TouchableOpacity>
         <Text style={styles.headerTitle}>복약 일정</Text>
         <View style={{ width: 32 }} />
       </View>
