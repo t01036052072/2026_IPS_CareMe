@@ -112,6 +112,7 @@ export default function PillScheduleScreen() {
     try {
       setIsLoading(true);
       const data = await getMedicationsAPI();
+      console.log('복약일정 데이터:', JSON.stringify(data)); 
       setMedications(data);
     } catch (error: any) {
       console.log('복약일정 조회 실패:', error.message);
