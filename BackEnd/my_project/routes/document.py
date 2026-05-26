@@ -209,6 +209,8 @@ def upload_document(
     file: UploadFile = File(...), 
     doc_type: str = Form(...), 
     upload_date: str = Form(...), 
+    hospital_name: Optional[str] = Form(None),
+
     db: Session = Depends(get_db),
     current_user: UserTable = Depends(get_current_user),
 ):
@@ -238,11 +240,19 @@ def upload_document(
 
     extracted_texts = []
     detected_hospital = UNKNOWN_HOSPITAL
+    final_hospital_name = UNKNOWN_HOSPITAL
     
     try:
         ocr_result = ocr_model.ocr(str(file_path))
         extracted_texts = extract_ocr_texts(ocr_result)
         detected_hospital = detect_hospital_name(extracted_texts)
+
+        final_hospital_name = (
+            hospital_name.strip()
+            if hospital_name and hospital_name.strip()
+            else detected_hospital
+        )
+
     except Exception as e:
         print(f"OCR 에러 상세: {e}")
         raise HTTPException(status_code=500, detail=f"OCR analysis failed: {e}") from e
@@ -258,7 +268,7 @@ def upload_document(
 
     new_doc = DocumentTable(
         doc_type=doc_type, 
-        hospital_name=detected_hospital,
+        hospital_name=final_hospital_name,
         upload_date=upload_date, 
         image_url=f"/static/uploads/{unique_filename}",
         user_id=current_user.id,
