@@ -148,7 +148,9 @@ export default function PillSearch() {
 
       const formData = new FormData();
       formData.append('file', { uri, type: mimeType, name: fileName } as any);
-      const analyzeRes = await apiClient.post('/pill-photo/analyze', formData);
+      const analyzeRes = await apiClient.post('/pill-photo/analyze', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       const prediction = analyzeRes.data.prediction;
       const candidates: PhotoCandidate[] = [
         { label: String(prediction.label), pill_name: prediction.pill_name },
