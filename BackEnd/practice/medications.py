@@ -116,7 +116,7 @@ def get_medications(show_detail: bool = False, db: Session = Depends(get_db), cu
     result = []
     for m in rows_sorted:
         # 가상 데이터 연동을 위한 임시 값 매핑 (Detail 양식 충족용)
-        detail = _model_to_detail(m, period="오전" if int(m.time.split(":")[0]) < 12 else "오후", duration_days=3, start_date=date.today())
+        detail = _model_to_detail(m, period="오전" if int(m.time.split(":")[0]) < 12 else "오후", duration_days=m.duration_days, start_date=m.start_date)
         
         result.append(MedicationSummary(
             id=m.id, 
