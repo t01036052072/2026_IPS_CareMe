@@ -13,7 +13,7 @@ import {
   deleteMedicationAPI,
   MedicationSummary,
 } from '@/api/pillschedule';
-import { scheduleMedicationNotifications } from '@/utils/localNotifications';
+import { scheduleMedicationNotifications, setupLocalNotifications } from '@/utils/localNotifications';
 
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
@@ -125,6 +125,12 @@ export default function PillScheduleScreen() {
   useEffect(() => {
     fetchMedications();
   }, [fetchMedications]);
+
+  useEffect(() => {
+    setupLocalNotifications().then(granted => {
+      console.log('local notification permission:', granted);
+    });
+  }, []);
 
   const toTimeStr = (date: Date) => {
     const h = date.getHours() % 12 || 12;
