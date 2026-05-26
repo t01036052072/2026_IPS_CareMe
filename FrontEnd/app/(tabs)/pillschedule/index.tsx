@@ -13,6 +13,8 @@ import {
   deleteMedicationAPI,
   MedicationSummary,
 } from '@/api/pillschedule';
+import { useFocusEffect } from 'expo-router';
+
 
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
@@ -121,14 +123,18 @@ export default function PillScheduleScreen() {
     }
   }, []);
 
-  useEffect(() => {
+  useFocusEffect(
+  useCallback(() => {
     fetchMedications();
-  }, [fetchMedications]);
+  }, [fetchMedications])
+);
+
 
   const toTimeStr = (date: Date) => {
-    const h = date.getHours() % 12 || 12;
-    const m = date.getMinutes().toString().padStart(2, '0');
-    return `${h.toString().padStart(2, '0')}:${m}`;
+    const h = String(date.getHours()).padStart(2, '0');
+  const m = String(date.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+  
   };
 
   const formatTime = (date: Date) => {
