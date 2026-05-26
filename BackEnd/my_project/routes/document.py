@@ -67,6 +67,78 @@ def get_upload_path_from_url(image_url: str) -> Path:
     relative_path = image_url.removeprefix("/static/").lstrip("/")
     return STATIC_DIR / relative_path
 
+
+UNKNOWN_HOSPITAL = "알 수 없는 병원"
+HOSPITAL_KEYWORDS = (
+    "병원",
+    "의원",
+    "내과",
+    "외과",
+    "소아과",
+    "이비인후과",
+    "정형외과",
+    "치과",
+    "보건소",
+    "medical",
+    "clinic",
+    "hospital",
+)
+HOSPITAL_EXCLUDE_KEYWORDS = ("병의원명", "기관명", "소재지")
+
+
+def extract_ocr_texts(ocr_result) -> list[str]:
+    texts: list[str] = []
+
+    def add_text(value) -> None:
+        if value is None:
+            return
+        text = str(value).strip()
+        if text:
+            texts.append(text)
+
+    def visit(node) -> None:
+        if node is None:
+            return
+        if isinstance(node, dict):
+            if "rec_texts" in node:
+                for text in node.get("rec_texts") or []:
+                    add_text(text)
+                return
+            if "text" in node:
+                add_text(node.get("text"))
+                return
+            for value in node.values():
+                visit(value)
+            return
+        if isinstance(node, str):
+            add_text(node)
+            return
+        if isinstance(node, (list, tuple)):
+            if len(node) >= 2 and isinstance(node[1], (list, tuple)) and node[1]:
+                add_text(node[1][0])
+                return
+            for item in node:
+                visit(item)
+
+    visit(ocr_result)
+    return texts
+
+
+def detect_hospital_name(extracted_texts: list[str], fallback: str = UNKNOWN_HOSPITAL) -> str:
+    for idx, text in enumerate(extracted_texts):
+        clean_text = text.replace(" ", "").lower()
+        if not any(keyword.lower() in clean_text for keyword in HOSPITAL_KEYWORDS):
+            continue
+        if any(keyword in clean_text for keyword in HOSPITAL_EXCLUDE_KEYWORDS) and len(clean_text) < 8:
+            continue
+
+        if idx > 0:
+            prev_text = extracted_texts[idx - 1].strip()
+            if prev_text and not any(keyword in prev_text for keyword in HOSPITAL_EXCLUDE_KEYWORDS) and len(prev_text) < 10:
+                return f"{prev_text} {text}"
+        return text
+    return fallback
+
 # OCR 결과에 포함된 어려운 의학 용어를 사용자에게 쉬운 표현으로 보여주기 위한 변환 함수입니다.
 # 현재는 하드코딩 치환 방식이며, 추후 의학 용어 사전 또는 AI 요약 결과로 확장할 수 있습니다.
 # --- [NLP] 어려운 의학 용어 순화 함수 ---
@@ -133,7 +205,7 @@ def simplify_medical_terms(raw_text: str) -> str:
 # - user_id는 고정값이 아니라 current_user.id로 저장하므로 사용자별 진단서 관리가 가능합니다.
 # - 통합 서버에서는 /friend/doc/documents/upload 경로로 호출됩니다.
 @router.post("/upload")
-async def upload_document(
+def upload_document(
     file: UploadFile = File(...), 
     doc_type: str = Form(...), 
     upload_date: str = Form(...), 
@@ -149,6 +221,7 @@ async def upload_document(
             use_doc_orientation_classify=False,
             use_doc_unwarping=False,
             use_textline_orientation=False,
+            text_det_limit_side_len=1600,
         )
 
     extension = file.filename.split(".")[-1].lower()
@@ -164,43 +237,21 @@ async def upload_document(
         shutil.copyfileobj(file.file, buffer)
 
     extracted_texts = []
-    detected_hospital = hospital_name.strip() if 'hospital_name' in locals() and hospital_name else "알 수 없는 병원"
+    detected_hospital = UNKNOWN_HOSPITAL
     
     try:
-        # [교정 3] OCR 실행 및 텍스트 추출 로직 개선
         ocr_result = ocr_model.ocr(str(file_path))
-        # ... ocr_result 처리 부분 ...
-        if ocr_result:
-            for res in ocr_result:
-                if res is None: continue
-                for i, line in enumerate(res):
-                    text = line[1][0].strip()
-                    if text: extracted_texts.append(text)
-
-            keywords = ["병원", "의원", "내과", "외과", "소아과", "이비인후과", "피부과", "정형외과", "의료원", "치과", "보건소"]
-            exclude_keywords = ["병의원명", "기관명", "소재지"]
-
-            for idx, text in enumerate(extracted_texts):
-                clean_text = text.replace(" ", "")
-                
-                if any(kw in clean_text for kw in keywords):
-                    if any(ex in clean_text for ex in exclude_keywords) and len(clean_text) < 8:
-                        continue
-                    
-                    if idx > 0:
-                        prev_text = extracted_texts[idx-1]
-                        if not any(ex in prev_text for ex in exclude_keywords) and len(prev_text) < 10:
-                            detected_hospital = f"{prev_text} {text}"
-                        else:
-                            detected_hospital = text
-                    else:
-                        detected_hospital = text
-                        
-                    print(f"✅ 병원 이름 결합 성공: {detected_hospital}")
-                    break
-                    
+        extracted_texts = extract_ocr_texts(ocr_result)
+        detected_hospital = detect_hospital_name(extracted_texts)
     except Exception as e:
         print(f"OCR 에러 상세: {e}")
+        raise HTTPException(status_code=500, detail=f"OCR analysis failed: {e}") from e
+
+    if not extracted_texts:
+        raise HTTPException(
+            status_code=422,
+            detail="진단서 이미지에서 텍스트를 인식하지 못했습니다. 더 밝고 선명한 이미지로 다시 업로드해주세요.",
+        )
 
     full_raw_text = "\n".join(extracted_texts)
     easy_description = simplify_medical_terms(full_raw_text)  # 🔄 LLM 순화 호출
@@ -290,7 +341,7 @@ def get_document_detail(document_id: int, db: Session = Depends(get_db)):
 # - 새 이미지에 대해 OCR을 다시 실행하고 병원명/원문 텍스트/쉬운 설명/ocr_count를 갱신합니다.
 # - 통합 서버에서는 /friend/doc/documents/{document_id} 경로에 PUT으로 호출됩니다.
 @router.put("/{document_id}")
-async def update_document_image(
+def update_document_image(
     document_id: int,
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
@@ -324,23 +375,21 @@ async def update_document_image(
                 use_doc_orientation_classify=False,
                 use_doc_unwarping=False,
                 use_textline_orientation=False,
+                text_det_limit_side_len=1600,
             )
             
         ocr_result = ocr_model.ocr(str(new_file_path))
-        if ocr_result:
-            for res in ocr_result:
-                if res is None: continue
-                for line in res:
-                    text = line[1][0].strip()
-                    if text: extracted_texts.append(text)
-            
-            keywords = ["병원", "의원", "내과", "외과", "소아과", "이비인후과", "피부과", "정형외과", "의료원", "치과", "보건소"]
-            for text in extracted_texts:
-                if any(kw in text.replace(" ", "") for kw in keywords):
-                    detected_hospital = text
-                    break
+        extracted_texts = extract_ocr_texts(ocr_result)
+        detected_hospital = detect_hospital_name(extracted_texts, fallback=document.hospital_name)
     except Exception as e:
         print(f"재분석 OCR 에러: {e}")
+        raise HTTPException(status_code=500, detail=f"OCR analysis failed: {e}") from e
+
+    if not extracted_texts:
+        raise HTTPException(
+            status_code=422,
+            detail="진단서 이미지에서 텍스트를 인식하지 못했습니다. 더 밝고 선명한 이미지로 다시 업로드해주세요.",
+        )
 
     document.image_url = f"/static/uploads/{unique_filename}"
     document.hospital_name = detected_hospital
