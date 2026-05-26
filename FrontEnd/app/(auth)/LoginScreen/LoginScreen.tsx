@@ -95,7 +95,7 @@ export default function LoginScreen() {
 
             <View style={styles.footer}>
               <Text style={styles.footerText}>아직 회원이 아니신가요? </Text>
-              <TouchableOpacity onPress={() => router.push('/(auth)/SignUpScreen/SignUpScreen1/SignUpScreen1' as any)}>
+              <TouchableOpacity onPress={() => router.push('/(auth)/SignUpScreen/SignUpScreen')}>
                 <Text style={styles.signupLink}>회원가입</Text>
               </TouchableOpacity>
             </View>
