@@ -369,6 +369,9 @@ def try_ocr_imprints(image: Image.Image) -> list[str] | None:
         import pytesseract
     except ImportError:
         return None
+    from ocr_config import configure_pytesseract
+
+    configure_pytesseract(pytesseract)
 
     configs = [
         "--psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
