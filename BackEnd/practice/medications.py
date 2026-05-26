@@ -85,7 +85,7 @@ def _model_to_detail(med: Medication, period: str, duration_days: int, start_dat
     time_label = f"{period} {display_h:02d}:{mi:02d}"
     
     # count 뒤의 '알' 텍스트를 숫자로 역변환 (예: '1알' -> 1)
-    count_int = int(med.dose.replace("알", "")) if med.dose else 1
+    count_int = med.count or (int(med.dose.replace("알", "")) if med.dose else 1)
     
     return MedicationDetail(
         id=med.id, 
@@ -116,7 +116,10 @@ def get_medications(show_detail: bool = False, db: Session = Depends(get_db), cu
     result = []
     for m in rows_sorted:
         # 가상 데이터 연동을 위한 임시 값 매핑 (Detail 양식 충족용)
-        detail = _model_to_detail(m, period="오전" if int(m.time.split(":")[0]) < 12 else "오후", duration_days=m.duration_days, start_date=m.start_date)
+        period = m.period or ("오전" if int(m.time.split(":")[0]) < 12 else "오후")
+        duration_days = m.duration_days or 7
+        start_date = m.start_date or date.today()
+        detail = _model_to_detail(m, period=period, duration_days=duration_days, start_date=start_date)
         
         result.append(MedicationSummary(
             id=m.id, 
@@ -147,7 +150,11 @@ def create_medication(
         user_id=str(current_user.id),
         medication_name=payload.name,  
         dose=f"{payload.count}알",      
-        time=time_24h                  
+        time=time_24h,
+        period=payload.period,
+        count=payload.count,
+        duration_days=payload.duration_days,
+        start_date=payload.start_date,
     )
 
     # 💡 핵심: AWS RDS MySQL 데이터베이스에 자동으로 반영시키는 구간
