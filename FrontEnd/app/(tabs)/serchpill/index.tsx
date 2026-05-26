@@ -548,12 +548,11 @@ const styles = StyleSheet.create({
   confirmNoBtnText: { fontSize: 18, fontWeight: 'bold', color: red_point },
 
   customAlertOverlay: { backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  customAlertBox: { backgroundColor: '#FFF', borderRadius: 24, padding: 28, width: '82%', alignItems: 'center', gap: 12 },
+customAlertBox: { backgroundColor: '#FFF', borderRadius: 24, padding: 28, width: '82%', alignItems: 'center', gap: 12, overflow: 'visible', paddingVertical: 40 },
   alertIconBox: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
   customAlertTitle: { fontSize: 22, fontWeight: 'bold', color: '#111', textAlign: 'center' },
   customAlertMessage: { fontSize: 17, color: '#555', textAlign: 'center', lineHeight: 28 },
-  alertBtnRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 4 },
-  alertBtn: { flex: 1, backgroundColor: main_navy, paddingVertical: 16, borderRadius: 14, alignItems: 'center' },
+  alertBtn: { flex: 1, backgroundColor: main_navy, paddingVertical: 14, borderRadius: 14, alignItems: 'center', justifyContent: 'center', minHeight: 49 },
   alertBtnText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
 
   loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
