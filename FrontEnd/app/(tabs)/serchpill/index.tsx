@@ -210,6 +210,8 @@ export default function PillSearch() {
 
   // 🌟 지연 시간(setTimeout) 다 없앴습니다. 가짜 모달이라 충돌이 안 납니다!
   const handleRegisterMedication = async () => {
+      console.log('등록 데이터:', { regPeriod, regCount, regDays, regTime });  // ← 추가
+
     if (!medicineDetail) return;
     setIsRegistering(true);
     
@@ -305,8 +307,8 @@ export default function PillSearch() {
             style={{ flex: 2 }}
             renderItem={({ item }) => (
               <TouchableOpacity style={styles.resultItem} onPress={() => handleSelectMedicine(item)}>
-                <Ionicons name="ellipse-outline" size={28} color="#CCC" style={{ marginRight: 14 }} />
-                <Text style={styles.resultName}>{item.name}</Text>
+              <Ionicons name="ellipse" size={20} color={main_navy} style={{ marginRight: 14 }} />                
+              <Text style={styles.resultName}>{item.name}</Text>
                 <View style={styles.selectBtn}>
                   <Text style={styles.selectBtnText}>선택</Text>
                 </View>
@@ -316,10 +318,22 @@ export default function PillSearch() {
               <View style={styles.emptyBox}>
                 <Text style={styles.emptyText}>검색 결과가 없습니다</Text>
               </View>
+
+              
             }
           />
+          
+          {resultCount > 8 && (
+            <View style={styles.scrollHintBox}>
+              <Ionicons name="chevron-down" size={28} color={main_navy} />
+              <Text style={styles.scrollHint}>아래로 내리면 더 많은 결과가 있어요</Text>
+            </View>
+          )}
+
         </View>
       )}
+
+      
 
       {/* ───── 1. 상세 화면 모달 (유일한 찐 Modal) ───── */}
       <Modal visible={isDetailVisible} transparent animationType="slide">
@@ -503,6 +517,10 @@ function InfoCard({ label, value }: { label: string; value: string }) {
   );
 }
 const styles = StyleSheet.create({
+
+  scrollHintBox: { alignItems: 'center', paddingVertical: 12, gap: 6 },
+  scrollHint: { textAlign: 'center', color: main_navy, fontSize: 18, fontWeight: '600', lineHeight: 28 },
+
   container: { flex: 1, backgroundColor: '#FFF' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: main_navy },
@@ -513,12 +531,12 @@ const styles = StyleSheet.create({
   photoSearchBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 20 },
   photoSearchText: { fontSize: 18, fontWeight: 'bold', color: main_navy },
 
-  resultContainer: { flex: 1 },
+  resultContainer: { flex: 1.8 },
   resultCount: { fontSize: 16, fontWeight: 'bold', color: main_navy, paddingHorizontal: 20, marginBottom: 8 },
-  resultItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
-  resultName: { flex: 1, fontSize: 18, color: '#111', marginRight: 10},
-  selectBtn: { backgroundColor: main_navy, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 10 },
-  selectBtnText: { color: '#FFF', fontSize: 15, fontWeight: 'bold' },
+  resultItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 20, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
+resultName: { flex: 1, fontSize: 20, color: '#111', marginRight: 10 },
+selectBtn: { backgroundColor: main_navy, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12 },
+selectBtnText: { color: '#FFF', fontSize: 17, fontWeight: 'bold' },
   emptyBox: { alignItems: 'center', paddingTop: 60 },
   emptyText: { fontSize: 16, color: '#888' },
 
