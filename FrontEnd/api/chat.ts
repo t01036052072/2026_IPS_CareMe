@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-const BASE_URL = "http://52.63.115.68:8000";
+const BASE_URL = "http://3.27.45.51:8000";
 
 export const sendChatMessage = async (message: string) => {
   const token = await AsyncStorage.getItem("access_token");
