@@ -11,7 +11,6 @@ import { apiClient } from '@/api/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
 const green = '#2ECC71';
@@ -61,7 +60,6 @@ export default function PillSearch() {
   const [isRegisterConfirmVisible, setIsRegisterConfirmVisible] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
 
-  // ✅ 커스텀 알림 모달
   const [isAlertVisible, setIsAlertVisible] = useState(false);
   const [alertTitle, setAlertTitle] = useState('');
   const [alertMessage, setAlertMessage] = useState('');
@@ -69,10 +67,10 @@ export default function PillSearch() {
   const [showPillscheduleBtn, setShowPillscheduleBtn] = useState(false);
 
   const [regPeriod, setRegPeriod] = useState<'오전' | '오후'>('오전');
-const [regTime, setRegTime] = useState<Date>(new Date());
-const [regCount, setRegCount] = useState(1);
-const [regDays, setRegDays] = useState(7);
-const [showRegTimePicker, setShowRegTimePicker] = useState(false);
+  const [regTime, setRegTime] = useState<Date>(new Date());
+  const [regCount, setRegCount] = useState(1);
+  const [regDays, setRegDays] = useState(7);
+  const [showRegTimePicker, setShowRegTimePicker] = useState(false);
 
   const showAlert = (title: string, message: string, type: 'success' | 'error' = 'success', showBtn = false) => {
     setAlertTitle(title);
@@ -121,8 +119,8 @@ const [showRegTimePicker, setShowRegTimePicker] = useState(false);
         interaction: data.interaction,
       });
     } catch (error) {
-      showAlert('오류', '상세 정보를 불러오지 못했습니다.', 'error');
       setIsDetailVisible(false);
+      showAlert('오류', '상세 정보를 불러오지 못했습니다.', 'error');
     } finally {
       setIsDetailLoading(false);
     }
@@ -165,7 +163,6 @@ const [showRegTimePicker, setShowRegTimePicker] = useState(false);
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions({ options: ['취소', '사진 촬영', '사진 선택'], cancelButtonIndex: 0 }, openPicker);
     } else {
-      // Android fallback
       openPicker(2);
     }
   };
@@ -173,6 +170,7 @@ const [showRegTimePicker, setShowRegTimePicker] = useState(false);
   const handleConfirmYes = async () => {
     if (!selectedMedicine) return;
     setIsConfirmVisible(false);
+    
     setIsDetailLoading(true);
     setIsDetailVisible(true);
     try {
@@ -189,31 +187,32 @@ const [showRegTimePicker, setShowRegTimePicker] = useState(false);
         interaction: data.interaction,
       });
     } catch (error) {
-      showAlert('오류', '상세 정보를 불러오지 못했습니다.', 'error');
       setIsDetailVisible(false);
+      showAlert('오류', '상세 정보를 불러오지 못했습니다.', 'error');
     } finally {
       setIsDetailLoading(false);
     }
   };
 
   const toTimeStr = (date: Date) => {
-  const h = date.getHours() % 12 || 12;
-  const m = date.getMinutes().toString().padStart(2, '0');
-  return `${h.toString().padStart(2, '0')}:${m}`;
-};
+    const h = date.getHours() % 12 || 12;
+    const m = date.getMinutes().toString().padStart(2, '0');
+    return `${h.toString().padStart(2, '0')}:${m}`;
+  };
 
-const formatTime = (date: Date) => {
-  const h = date.getHours();
-  const m = date.getMinutes().toString().padStart(2, '0');
-  const ampm = h >= 12 ? '오후' : '오전';
-  const hour = h % 12 || 12;
-  return `${ampm} ${hour}:${m}`;
-};
+  const formatTime = (date: Date) => {
+    const h = date.getHours();
+    const m = date.getMinutes().toString().padStart(2, '0');
+    const ampm = h >= 12 ? '오후' : '오전';
+    const hour = h % 12 || 12;
+    return `${ampm} ${hour}:${m}`;
+  };
 
-
+  // 🌟 지연 시간(setTimeout) 다 없앴습니다. 가짜 모달이라 충돌이 안 납니다!
   const handleRegisterMedication = async () => {
     if (!medicineDetail) return;
     setIsRegistering(true);
+    
     try {
       const token = await AsyncStorage.getItem('access_token');
       const now = new Date();
@@ -223,6 +222,7 @@ const formatTime = (date: Date) => {
         const day = String(d.getDate()).padStart(2, '0');
         return `${y}-${m}-${day}`;
       };
+
       await apiClient.post('/medications', {
         name: medicineDetail.name,
         period: regPeriod,
@@ -233,18 +233,21 @@ const formatTime = (date: Date) => {
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
+  
       setIsRegisterConfirmVisible(false);
       setIsDetailVisible(false);
-      // ✅ 커스텀 등록 완료 알림
-      showAlert('등록 완료!', `복약일정에 추가됐어요 😊`, 'success', true);
+      
+      // 즉각적으로 완료 팝업 띄우기
+      showAlert('등록 완료!', `추가된 약은 복약일정에서 확인 가능해요.`, 'success', true);
+      
     } catch (error: any) {
+      setIsRegisterConfirmVisible(false);
+      setIsDetailVisible(false);
       showAlert('오류', '등록에 실패했습니다.\n다시 시도해주세요.', 'error');
     } finally {
       setIsRegistering(false);
     }
   };
-
-  
 
   return (
     <SafeAreaView style={styles.container}>
@@ -315,16 +318,10 @@ const formatTime = (date: Date) => {
               </View>
             }
           />
-          {resultCount > 8 && (
-            <View style={styles.scrollHintBox}>
-              <Ionicons name="chevron-down" size={24} color={main_navy} />
-              <Text style={styles.scrollHint}>아래로 내리면 더 많은 결과가 있어요</Text>
-            </View>
-          )}
         </View>
       )}
 
-      {/* ───── 상세 모달 ───── */}
+      {/* ───── 1. 상세 화면 모달 (유일한 찐 Modal) ───── */}
       <Modal visible={isDetailVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <SafeAreaView style={styles.modalContainer}>
@@ -362,75 +359,67 @@ const formatTime = (date: Date) => {
               </ScrollView>
             )}
           </SafeAreaView>
-        </View>
 
+          {/* 🌟 2. 복약일정 등록 확인 (가짜 모달 - View로 교체) 🌟 */}
+          {isRegisterConfirmVisible && (
+            <View style={[StyleSheet.absoluteFill, styles.customAlertOverlay, { zIndex: 9999, elevation: 9999 }]}>
+              <View style={styles.customAlertBox}>
+                <View style={[styles.alertIconBox, { backgroundColor: '#EEF3FB' }]}>
+                  <Ionicons name="medical" size={48} color={main_navy} />
+                </View>
+                <Text style={styles.customAlertTitle}>복약일정에 추가하기</Text>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ fontWeight: 'bold', color: main_navy, textAlign: 'center' }}>{medicineDetail?.name}</Text>
+                  <Text style={{ color: '#555', textAlign: 'center' }}>복약일정에 추가하시겠습니까?{'\n'}</Text>
+                </View>
 
-
-        {/* 복약일정 등록 확인 모달 */}
-        <Modal visible={isRegisterConfirmVisible} transparent animationType="fade">
-          <View style={styles.customAlertOverlay}>
-            <View style={styles.customAlertBox}>
-              <View style={[styles.alertIconBox, { backgroundColor: '#EEF3FB' }]}>
-                <Ionicons name="medical" size={48} color={main_navy} />
-              </View>
-              <Text style={styles.customAlertTitle}>복약일정에 추가하기</Text>
-              <Text style={styles.customAlertMessage}>
-
-                <Text style={{ fontWeight: 'bold', color: main_navy }}>{medicineDetail?.name}{'\n'}</Text>
-                복약일정에 추가하시겠습니까?{'\n'}
-              </Text>
-
-  
-
-{/* 시간 */}
-<Text style={{ fontSize: 15, fontWeight: 'bold', color: '#333', alignSelf: 'flex-start' }}>복용 시간</Text>
-<TouchableOpacity style={styles.selectBox} onPress={() => setShowRegTimePicker(true)}>
-  <Text style={styles.selectText}>{formatTime(regTime)}</Text>
-  <Ionicons name="time-outline" size={22} color={main_navy} />
-</TouchableOpacity>
-{showRegTimePicker && Platform.OS === 'ios' && (
-  <View style={styles.pickerBox}>
-    <DateTimePicker value={regTime} mode="time" display="spinner" locale="ko-KR" onChange={(e, d) => d && setRegTime(d)} />
-    <TouchableOpacity style={styles.pickerConfirmBtn} onPress={() => setShowRegTimePicker(false)}>
-      <Text style={styles.pickerConfirmText}>선택 완료</Text>
-    </TouchableOpacity>
-  </View>
-)}
-
-{/* 개수 */}
-<Text style={{ fontSize: 15, fontWeight: 'bold', color: '#333', alignSelf: 'flex-start' }}>복용 개수 및 기간</Text>
-<View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
-    <TouchableOpacity style={styles.counterBtn} onPress={() => setRegCount(Math.max(1, regCount - 1))}>
-    <Ionicons name="remove" size={20} color={main_navy} />
-  </TouchableOpacity>
-  <Text style={styles.counterValue}>{regCount}정</Text>
-  <TouchableOpacity style={styles.counterBtn} onPress={() => setRegCount(regCount + 1)}>
-    <Ionicons name="add" size={20} color={main_navy} />
-  </TouchableOpacity>
-</View>
-
-{/* 기간 */}
-<View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
-  <TouchableOpacity style={styles.counterBtn} onPress={() => setRegDays(Math.max(1, regDays - 1))}>
-    <Ionicons name="remove" size={20} color={main_navy} />
-  </TouchableOpacity>
-  <Text style={styles.counterValue}>{regDays}일</Text>
-  <TouchableOpacity style={styles.counterBtn} onPress={() => setRegDays(regDays + 1)}>
-    <Ionicons name="add" size={20} color={main_navy} />
-  </TouchableOpacity>
-</View>
-
-              <View style={styles.alertBtnRow}>
-                <TouchableOpacity style={[styles.alertBtn, { backgroundColor: '#EEE' }]} onPress={() => setIsRegisterConfirmVisible(false)}>
-                  <Text style={[styles.alertBtnText, { color: '#555' }]}>취소</Text>
+                <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#333', alignSelf: 'flex-start' }}>복용 시간</Text>
+                <TouchableOpacity style={styles.selectBox} onPress={() => setShowRegTimePicker(true)}>
+                  <Text style={styles.selectText}>{formatTime(regTime)}</Text>
+                  <Ionicons name="time-outline" size={22} color={main_navy} />
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.alertBtn, { backgroundColor: main_navy }]} onPress={handleRegisterMedication} disabled={isRegistering}>
-                  {isRegistering ? <ActivityIndicator color="#FFF" /> : <Text style={styles.alertBtnText}>추가하기</Text>}
-                </TouchableOpacity>
+                {showRegTimePicker && Platform.OS === 'ios' && (
+                  <View style={styles.pickerBox}>
+                    <DateTimePicker value={regTime} mode="time" display="spinner" locale="ko-KR" onChange={(e, d) => d && setRegTime(d)} />
+                    <TouchableOpacity style={styles.pickerConfirmBtn} onPress={() => setShowRegTimePicker(false)}>
+                      <Text style={styles.pickerConfirmText}>선택 완료</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#333', alignSelf: 'flex-start' }}>복용 개수 및 기간</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
+                  <TouchableOpacity style={styles.counterBtn} onPress={() => setRegCount(Math.max(1, regCount - 1))}>
+                    <Ionicons name="remove" size={20} color={main_navy} />
+                  </TouchableOpacity>
+                  <Text style={styles.counterValue}>{regCount}정</Text>
+                  <TouchableOpacity style={styles.counterBtn} onPress={() => setRegCount(regCount + 1)}>
+                    <Ionicons name="add" size={20} color={main_navy} />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
+                  <TouchableOpacity style={styles.counterBtn} onPress={() => setRegDays(Math.max(1, regDays - 1))}>
+                    <Ionicons name="remove" size={20} color={main_navy} />
+                  </TouchableOpacity>
+                  <Text style={styles.counterValue}>{regDays}일</Text>
+                  <TouchableOpacity style={styles.counterBtn} onPress={() => setRegDays(regDays + 1)}>
+                    <Ionicons name="add" size={20} color={main_navy} />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.alertBtnRow}>
+                  <TouchableOpacity style={[styles.alertBtn, { backgroundColor: '#EEE' }]} onPress={() => setIsRegisterConfirmVisible(false)}>
+                    <Text style={[styles.alertBtnText, { color: '#555' }]}>취소</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.alertBtn, { backgroundColor: main_navy }]} onPress={handleRegisterMedication} disabled={isRegistering}>
+                    {isRegistering ? <ActivityIndicator color="#FFF" /> : <Text style={styles.alertBtnText}>추가하기</Text>}
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
-          </View>
-        </Modal>
+          )}
+        </View>
       </Modal>
 
       {/* ───── 사진 확인 모달 ───── */}
@@ -465,13 +454,13 @@ const formatTime = (date: Date) => {
         </View>
       </Modal>
 
-      {/* ───── 커스텀 알림 모달 ───── */}
-      <Modal visible={isAlertVisible} transparent animationType="fade">
-        <View style={styles.customAlertOverlay}>
+      {/* 🌟 3. 커스텀 완료/오류 알림 (가짜 모달 - View로 교체) 🌟
+          Modal 태그를 떼버리고, 화면 최상단에 덮어버리는 뷰(View)로 바꿔서
+          모달 충돌 버그를 완벽하게 회피합니다. 무조건 뜹니다! */}
+      {isAlertVisible && (
+        <View style={[StyleSheet.absoluteFill, styles.customAlertOverlay, { zIndex: 99999, elevation: 99999 }]}>
           <View style={styles.customAlertBox}>
-            <View style={[styles.alertIconBox, {
-              backgroundColor: alertType === 'success' ? '#E8F8EF' : '#FEE8E8'
-            }]}>
+            <View style={[styles.alertIconBox, { backgroundColor: alertType === 'success' ? '#E8F8EF' : '#FEE8E8' }]}>
               <Ionicons
                 name={alertType === 'success' ? 'checkmark-circle' : 'close-circle'}
                 size={48}
@@ -483,24 +472,24 @@ const formatTime = (date: Date) => {
 
             {showPillscheduleBtn ? (
               <View style={styles.alertBtnRow}>
-                <TouchableOpacity style={[styles.alertBtn, { backgroundColor: '#EEE' }]} onPress={() => setIsAlertVisible(false)}>
+                <TouchableOpacity style={[styles.alertBtn, { backgroundColor: '#EEE' }]} onPress={() => { setIsAlertVisible(false); setIsDetailVisible(false); }}>
                   <Text style={[styles.alertBtnText, { color: '#555' }]}>확인</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.alertBtn, { backgroundColor: main_navy }]}
-                  onPress={() => { setIsAlertVisible(false); router.push('/(tabs)/pillschedule' as any); }}
+                  onPress={() => { setIsAlertVisible(false); setIsDetailVisible(false); router.push('/(tabs)/pillschedule' as any); }}
                 >
                   <Text style={styles.alertBtnText}>복약일정 보기</Text>
                 </TouchableOpacity>
               </View>
             ) : (
-              <TouchableOpacity style={[styles.alertBtn, { width: '100%', backgroundColor: main_navy }]} onPress={() => setIsAlertVisible(false)}>
+              <TouchableOpacity style={[styles.alertBtn, { width: '100%', backgroundColor: main_navy }]} onPress={() => { setIsAlertVisible(false); setIsDetailVisible(false); }}>
                 <Text style={styles.alertBtnText}>확인</Text>
               </TouchableOpacity>
             )}
           </View>
         </View>
-      </Modal>
+      )}
     </SafeAreaView>
   );
 }
@@ -513,7 +502,6 @@ function InfoCard({ label, value }: { label: string; value: string }) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
@@ -531,8 +519,6 @@ const styles = StyleSheet.create({
   resultName: { flex: 1, fontSize: 18, color: '#111', marginRight: 10},
   selectBtn: { backgroundColor: main_navy, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 10 },
   selectBtnText: { color: '#FFF', fontSize: 15, fontWeight: 'bold' },
-  scrollHintBox: { alignItems: 'center', paddingVertical: 8, gap: 4 },
-  scrollHint: { textAlign: 'center', color: main_navy, fontSize: 16, fontWeight: '600' },
   emptyBox: { alignItems: 'center', paddingTop: 60 },
   emptyText: { fontSize: 16, color: '#888' },
 
@@ -561,8 +547,7 @@ const styles = StyleSheet.create({
   confirmNoBtn: { paddingHorizontal: 20, paddingVertical: 10, borderWidth: 1.5, borderColor: red_point, borderRadius: 10 },
   confirmNoBtnText: { fontSize: 18, fontWeight: 'bold', color: red_point },
 
-  // ✅ 커스텀 알림
-  customAlertOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  customAlertOverlay: { backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   customAlertBox: { backgroundColor: '#FFF', borderRadius: 24, padding: 28, width: '82%', alignItems: 'center', gap: 12 },
   alertIconBox: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
   customAlertTitle: { fontSize: 22, fontWeight: 'bold', color: '#111', textAlign: 'center' },
@@ -574,17 +559,11 @@ const styles = StyleSheet.create({
   loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
   loadingText: { fontSize: 18, color: main_navy, fontWeight: 'bold' },
 
-  periodBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, borderWidth: 1.5, borderColor: '#DDD', alignItems: 'center' },
-periodBtnActive: { backgroundColor: main_navy, borderColor: main_navy },
-periodBtnText: { fontSize: 16, fontWeight: 'bold', color: '#888' },
-periodBtnTextActive: { color: '#FFF' },
-selectBox: { backgroundColor: light_navy, borderRadius: 12, padding: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
-selectText: { fontSize: 16, color: '#111' },
-pickerBox: { backgroundColor: '#FFF', borderWidth: 1, borderColor: '#EEE', borderRadius: 12, marginTop: 8, alignItems: 'center', padding: 10, width: '100%', height: 200,  // ← 추가
-  overflow: 'hidden' },
-pickerConfirmBtn: { backgroundColor: main_navy, paddingVertical: 10, paddingHorizontal: 30, borderRadius: 10, marginTop: 8 },
-pickerConfirmText: { color: '#FFF', fontSize: 15, fontWeight: 'bold' },
-counterBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, borderColor: main_navy, alignItems: 'center', justifyContent: 'center' },
-counterValue: { fontSize: 18, fontWeight: 'bold', color: '#111', minWidth: 50, textAlign: 'center' },
-
+  selectBox: { backgroundColor: light_navy, borderRadius: 12, padding: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
+  selectText: { fontSize: 16, color: '#111' },
+  pickerBox: { backgroundColor: '#FFF', borderWidth: 1, borderColor: '#EEE', borderRadius: 12, marginTop: 8, alignItems: 'center', padding: 10, width: '100%', height: 200, overflow: 'hidden' },
+  pickerConfirmBtn: { backgroundColor: main_navy, paddingVertical: 10, paddingHorizontal: 30, borderRadius: 10, marginTop: 8 },
+  pickerConfirmText: { color: '#FFF', fontSize: 15, fontWeight: 'bold' },
+  counterBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, borderColor: main_navy, alignItems: 'center', justifyContent: 'center' },
+  counterValue: { fontSize: 18, fontWeight: 'bold', color: '#111', minWidth: 50, textAlign: 'center' },
 });
