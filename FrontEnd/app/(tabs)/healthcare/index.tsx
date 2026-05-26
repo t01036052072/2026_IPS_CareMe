@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, SafeAreaView,
-  ScrollView, ActivityIndicator, FlatList,
+  ScrollView, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -28,43 +28,26 @@ interface HealthcareItem {
 const getToken = async () => await AsyncStorage.getItem('access_token');
 
 export default function HealthcareScreen() {
-      console.log('=== HealthcareScreen 렌더링 ==='); // ← 맨 위에 추가
   const router = useRouter();
-
   const [diseases, setDiseases] = useState<DiseaseButton[]>([]);
   const [healthcareData, setHealthcareData] = useState<HealthcareItem[]>([]);
   const [selectedDisease, setSelectedDisease] = useState<string>('전체');
   const [isLoadingDiseases, setIsLoadingDiseases] = useState(true);
   const [isLoadingData, setIsLoadingData] = useState(true);
-
-  useEffect(() => {
-  const checkProfile = async () => {
-    const token = await getToken();
-    const res = await apiClient.get('/friend/mypage/profile', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    console.log('프로필 응답:', JSON.stringify(res.data));
-  };
-  checkProfile();
-
+  const scrollRef = useRef<ScrollView>(null);
+  // 각 섹션의 Y 위치 저장
+  const sectionYPositions = useRef<{ [key: string]: number }>({});
 
   // ───── 질환 목록 조회 ─────
-
-
   const fetchDiseases = useCallback(async () => {
     try {
       const token = await getToken();
       const res = await apiClient.get('/healthcare/diseases', {
         headers: { Authorization: `Bearer ${token}` },
-        
       });
-        console.log('건강관리 응답:', JSON.stringify(res.data)); // ← 추가
-
       setDiseases(res.data.diseases || []);
     } catch (error: any) {
       console.log('질환 목록 조회 실패:', error.message);
-      console.log('건강관리 실패:', error.message); // ← 추가
-    console.log('에러 상세:', error.response?.data); // ← 추가
     } finally {
       setIsLoadingDiseases(false);
     }
@@ -86,14 +69,25 @@ export default function HealthcareScreen() {
     }
   }, []);
 
+  useEffect(() => {
     fetchDiseases();
     fetchHealthcareData();
   }, []);
 
-  // 선택된 질환에 따라 필터링
-  const filteredData = selectedDisease === '전체'
-    ? healthcareData
-    : healthcareData.filter(item => item.disease_name === selectedDisease);
+  // 버튼 누르면 해당 섹션으로 스크롤
+  const handleDiseaseSelect = (diseaseName: string) => {
+    setSelectedDisease(diseaseName);
+    if (diseaseName === '전체') {
+      // 전체 누르면 맨 위로
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    } else {
+      // 해당 질환 섹션으로 이동
+      const y = sectionYPositions.current[diseaseName];
+      if (y !== undefined) {
+        scrollRef.current?.scrollTo({ y, animated: true });
+      }
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -119,7 +113,7 @@ export default function HealthcareScreen() {
             <TouchableOpacity
               key={d.disease_id}
               style={[styles.filterBtn, selectedDisease === d.disease_name && styles.filterBtnActive]}
-              onPress={() => setSelectedDisease(d.disease_name)}
+              onPress={() => handleDiseaseSelect(d.disease_name)}
             >
               <Text style={[styles.filterBtnText, selectedDisease === d.disease_name && styles.filterBtnTextActive]}>
                 {d.disease_name}
@@ -133,29 +127,49 @@ export default function HealthcareScreen() {
       {isLoadingData ? (
         <View style={styles.loadingBox}>
           <ActivityIndicator size="large" color={main_navy} />
-          <Text style={styles.loadingText}>AI가 건강관리 정보를 생성 중입니다...</Text>
+          <Text style={styles.loadingText}>AI가 건강관리 정보를{'\n'}생성 중입니다...</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {filteredData.length === 0 ? (
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.scrollContent}
+          // 스크롤 위치에 따라 현재 질환 버튼 활성화
+          onScroll={(e) => {
+            const scrollY = e.nativeEvent.contentOffset.y;
+            // 현재 보이는 섹션 찾기
+            let currentDisease = '전체';
+            for (const [name, y] of Object.entries(sectionYPositions.current)) {
+              if (scrollY >= y - 50) {
+                currentDisease = name;
+              }
+            }
+            setSelectedDisease(currentDisease);
+          }}
+          scrollEventThrottle={100}
+        >
+          {healthcareData.length === 0 ? (
             <View style={styles.emptyBox}>
               <Text style={styles.emptyText}>건강관리 정보가 없습니다</Text>
             </View>
           ) : (
-            filteredData.map((item, index) => (
-              <View key={index} style={styles.diseaseSection}>
-                {/* 질환명 */}
+            healthcareData.map((item, index) => (
+              <View
+                key={index}
+                style={styles.diseaseSection}
+                // 각 섹션의 Y 위치 저장
+                onLayout={(e) => {
+                  sectionYPositions.current[item.disease_name] = e.nativeEvent.layout.y;
+                }}
+              >
                 <Text style={styles.diseaseName}>{item.disease_name}</Text>
 
-                {/* 요약 */}
                 <View style={styles.summaryBox}>
                   <Text style={styles.summaryText}>{item.summary}</Text>
                 </View>
 
-                {/* 운동 */}
                 <View style={styles.categoryBox}>
                   <View style={styles.categoryHeader}>
-                    <Ionicons name="walk" size={24} color={main_navy} />
+                    <Ionicons name="walk" size={28} color={main_navy} />
                     <Text style={styles.categoryTitle}>운동</Text>
                   </View>
                   {item.exercise.map((ex, i) => (
@@ -166,10 +180,9 @@ export default function HealthcareScreen() {
                   ))}
                 </View>
 
-                {/* 식습관 */}
                 <View style={styles.categoryBox}>
                   <View style={styles.categoryHeader}>
-                    <Ionicons name="restaurant" size={24} color={main_navy} />
+                    <Ionicons name="restaurant" size={28} color={main_navy} />
                     <Text style={styles.categoryTitle}>식습관</Text>
                   </View>
                   {item.diet.map((d, i) => (
@@ -180,10 +193,9 @@ export default function HealthcareScreen() {
                   ))}
                 </View>
 
-                {/* 생활습관 */}
                 <View style={styles.categoryBox}>
                   <View style={styles.categoryHeader}>
-                    <Ionicons name="leaf" size={24} color={main_navy} />
+                    <Ionicons name="leaf" size={28} color={main_navy} />
                     <Text style={styles.categoryTitle}>생활습관</Text>
                   </View>
                   {item.lifestyle.map((l, i) => (
@@ -194,7 +206,7 @@ export default function HealthcareScreen() {
                   ))}
                 </View>
 
-                {index < filteredData.length - 1 && <View style={styles.divider} />}
+                {index < healthcareData.length - 1 && <View style={styles.divider} />}
               </View>
             ))
           )}
@@ -211,32 +223,32 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 26, fontWeight: 'bold', color: main_navy },
 
   filterRow: { paddingHorizontal: 20, paddingBottom: 16, gap: 10 },
-filterBtn: { paddingVertical: 10, paddingHorizontal: 22, borderRadius: 25, borderWidth: 1.5, borderColor: '#CCC', backgroundColor: '#FFF', height: 50, justifyContent: 'center' },
-filterBtnText: { fontSize: 20, fontWeight: '600', color: '#555' },  filterBtnActive: { backgroundColor: main_navy, borderColor: main_navy },
+  filterBtn: { paddingVertical: 2, paddingHorizontal: 15, borderRadius: 25, borderWidth: 1.5, borderColor: '#CCC', backgroundColor: '#FFF', height: 50, justifyContent: 'center' },
+  filterBtnActive: { backgroundColor: main_navy, borderColor: main_navy },
+  filterBtnText: { fontSize: 20, fontWeight: '600', color: '#555' },
   filterBtnTextActive: { color: '#FFF' },
 
-  loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 20 },
-  loadingText: { fontSize: 18, color: main_navy, fontWeight: '600', textAlign: 'center' },
+  loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 20, paddingTop: 300 },
+  loadingText: { fontSize: 18, color: main_navy, fontWeight: '600', textAlign: 'center', lineHeight: 30 },
 
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
-
   diseaseSection: { marginBottom: 10 },
+  diseaseName: { fontSize: 26, fontWeight: 'bold', color: main_navy, marginBottom: 12, marginTop: 10 },
 
-  diseaseName: { fontSize: 26, fontWeight: 'bold', color: main_navy, marginBottom: 14, marginTop: 10 },
+  summaryBox: { backgroundColor: light_navy, borderRadius: 16, padding: 20, marginBottom: 12 },
+  summaryText: { fontSize: 20, color: '#333', lineHeight: 32 },
 
-  summaryBox: { backgroundColor: light_navy, borderRadius: 16, padding: 20, marginBottom: 16 },
-  summaryText: { fontSize: 18, color: '#333', lineHeight: 30 },
-
+  // ✅ 카테고리 간격 줄임
   categoryBox: { backgroundColor: light_gray, borderRadius: 16, padding: 20, marginBottom: 14 },
   categoryHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   categoryTitle: { fontSize: 22, fontWeight: 'bold', color: main_navy },
 
-  itemRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
+  itemRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 8 },
   bullet: { width: 8, height: 8, borderRadius: 4, backgroundColor: main_navy, marginTop: 8 },
-  itemText: { fontSize: 18, color: '#333', lineHeight: 28, flex: 1 },
+  itemText: { fontSize: 18, color: '#333', lineHeight: 32, flex: 1 },
 
   divider: { height: 1, backgroundColor: '#E0E0E0', marginVertical: 24 },
 
-  emptyBox: { alignItems: 'center', paddingTop: 60 },
+  emptyBox: { alignItems: 'center', paddingTop: 300 },
   emptyText: { fontSize: 18, color: '#888' },
 });

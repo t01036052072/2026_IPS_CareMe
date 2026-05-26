@@ -140,7 +140,6 @@ def build_healthcare_prompt(user, disease_name, bmi):
 - 궐련형 전자담배: {user.used_heated_tobacco}
 - 액상형 전자담배: {user.used_vaping}
 - 음주 빈도: {user.drinking_frequency}
-- 가족력 여부: {user.has_family_history}
 - 현재 치료 여부: {user.is_under_treatment}
 - B형 간염 보유 여부: {user.is_b_hepatitis_carrier}
 
@@ -192,7 +191,7 @@ def get_healthcare_diseases(
 
     diseases = extract_disease_list(user.medical_history)
 
-    disease_buttons = [{"disease_id": 0, "disease_name": "전체"}]
+    disease_buttons = []
     disease_buttons.extend([
         {"disease_id": index + 1, "disease_name": disease}
         for index, disease in enumerate(diseases)
