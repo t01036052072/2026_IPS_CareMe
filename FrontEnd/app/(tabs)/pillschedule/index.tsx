@@ -5,7 +5,7 @@ import {
   Platform, TouchableWithoutFeedback,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {
   getMedicationsAPI,
@@ -230,7 +230,9 @@ export default function PillScheduleScreen() {
             onPress={() => router.back()}
             style={styles.backBtn}
           >
-            <Back width={24} height={24} />
+<TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+  <Ionicons name="chevron-back" size={32} color={main_navy} />
+</TouchableOpacity>
           </TouchableOpacity>
         <Text style={styles.headerTitle}>복약 일정</Text>
         <View style={{ width: 32 }} />
