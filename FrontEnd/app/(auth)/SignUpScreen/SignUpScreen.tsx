@@ -10,6 +10,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { signupAPI } from '@/api/auth';
 import { SignupRequest } from '@/types/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Back from "../../../assets/images/LoginScreen/back.svg";
+
 
 const main_navy = '#00246D';
 const light_gray = '#E0E0E0';
@@ -210,8 +212,9 @@ setIsFinishModalVisible(true);
   const renderHeader = (onBack: () => void) => (
     <View style={styles.header}>
       <TouchableOpacity onPress={onBack} style={styles.backButton}>
-        <Ionicons name="chevron-back" size={28} color={main_navy} />
-      </TouchableOpacity>
+  <Back width={32} height={32} />
+</TouchableOpacity>
+          
     </View>
   );
 
@@ -226,7 +229,7 @@ setIsFinishModalVisible(true);
             <TouchableOpacity style={[styles.cancelBtn, { backgroundColor: main_navy }]} onPress={() => setIsSkipModalVisible(false)}>
               <Text style={styles.footerText}>다시 작성</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.confirmBtn} onPress={handleSkipToHome}>
+            <TouchableOpacity style={styles.SkipBtn} onPress={handleSkipToHome}>
               <Text style={styles.footerText}>건너뛰기</Text>
             </TouchableOpacity>
           </View>
@@ -745,8 +748,9 @@ const styles = StyleSheet.create({
   popupTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   popupFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
   cancelBtn: { width: '35%', padding: 15, borderRadius: 30, backgroundColor: red, alignItems: 'center' },
-  confirmBtn: { width: '60%', padding: 15, borderRadius: 30, backgroundColor: red, alignItems: 'center' },
+  confirmBtn: { width: '60%', padding: 15, borderRadius: 30, backgroundColor: main_navy, alignItems: 'center' },
   footerText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  SkipBtn: { width: '60%', padding: 15, borderRadius: 30, backgroundColor: red, alignItems: 'center' },
 
   diseaseRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#EEE' },
   diseaseName: { fontSize: 16, fontWeight: '600', width: '35%' },
