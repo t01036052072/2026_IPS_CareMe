@@ -5,7 +5,7 @@ import {
   Platform, TouchableWithoutFeedback,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {
   getMedicationsAPI,
@@ -14,8 +14,7 @@ import {
   MedicationSummary,
 } from '@/api/pillschedule';
 import { scheduleMedicationNotifications, setupLocalNotifications } from '@/utils/localNotifications';
-import Back from "../../../assets/images/LoginScreen/back.svg";
-
+import Back from '@/assets/icons/back.svg';
 
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
@@ -35,8 +34,10 @@ const getDateDisplayStr = (date: Date) => {
   const day = date.getDate();
   const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
   const weekday = weekdays[date.getDay()];
-  
-  return `${year}년 ${month}월 ${day}일 (${weekday})`;
+  const today = toLocalDateStr(new Date());
+  const selected = toLocalDateStr(date);
+  const suffix = today === selected ? ' (오늘)' : '';
+  return `${year}년 ${month}월 ${day}일 (${weekday})${suffix}`;
 };
 
 const timeToMinutes = (timeLabel: string) => {
@@ -123,8 +124,7 @@ export default function PillScheduleScreen() {
   }, []);
 
   useFocusEffect(
-  useCallback(() => {
-    setSelectedDate(new Date()); 
+    useCallback(() => {
     fetchMedications();
   }, [fetchMedications])
 );
@@ -237,19 +237,14 @@ export default function PillScheduleScreen() {
         <View style={{ width: 32 }} />
       </View>
 
+      {/* ✅ 날짜 선택 */}
       <TouchableOpacity style={styles.dateBox} onPress={() => setShowDatePicker(true)}>
-  <Ionicons name="calendar-outline" size={24} color={main_navy} />
-  <Text style={styles.dateText}>{getDateDisplayStr(selectedDate)}</Text>
-  {/* ✅ 오늘 뱃지 */}
-  {toLocalDateStr(selectedDate) === toLocalDateStr(new Date()) && (
-    <View style={styles.todayBadge}>
-      <Text style={styles.todayBadgeText}>오늘</Text>
-    </View>
-  )}
-  <View style={styles.dateChangeBtn}>
-    <Text style={styles.dateChangeBtnText}>날짜 변경</Text>
-  </View>
-</TouchableOpacity>
+        <Ionicons name="calendar-outline" size={24} color={main_navy} />
+        <Text style={styles.dateText}>{getDateDisplayStr(selectedDate)}</Text>
+        <View style={styles.dateChangeBtn}>
+          <Text style={styles.dateChangeBtnText}>날짜 변경</Text>
+        </View>
+      </TouchableOpacity>
 
       {/* ✅ 달력 피커 */}
       {showDatePicker && Platform.OS === 'ios' && (
@@ -510,7 +505,7 @@ const styles = StyleSheet.create({
 
   // ✅ 날짜 박스
   dateBox: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 14, backgroundColor: light_navy, marginHorizontal: 20, borderRadius: 14, marginBottom: 8 },
-  dateText: { fontSize: 17, fontWeight: 'bold', color: main_navy, flex: 1 },
+  dateText: { fontSize: 20, fontWeight: 'bold', color: main_navy, flex: 1 },
   dateChangeBtn: { backgroundColor: main_navy, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8 },
   dateChangeBtnText: { color: '#FFF', fontSize: 13, fontWeight: 'bold' },
 
@@ -576,8 +571,6 @@ const styles = StyleSheet.create({
   goSearchBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
   infoBtn: { backgroundColor: main_navy, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10 },
   infoBtnText: { color: '#FFF', fontSize: 14, fontWeight: 'bold' },
-todayBadge: { backgroundColor: red_point, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 20 },
-todayBadgeText: { color: '#FFF', fontSize: 13, fontWeight: 'bold' },
 
   customAlertOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 99999, elevation: 99999 },
   customAlertBox: { backgroundColor: '#FFF', borderRadius: 24, paddingVertical: 40, paddingHorizontal: 28, width: '88%', alignItems: 'center', gap: 12 },
