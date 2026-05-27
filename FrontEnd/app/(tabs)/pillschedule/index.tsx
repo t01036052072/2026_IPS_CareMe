@@ -5,6 +5,7 @@ import {
   Platform, TouchableWithoutFeedback,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {
@@ -14,7 +15,7 @@ import {
   MedicationSummary,
 } from '@/api/pillschedule';
 import { scheduleMedicationNotifications, setupLocalNotifications } from '@/utils/localNotifications';
-import Back from '@/assets/icons/back.svg';
+import Back from '../../../assets/images/LoginScreen/back.svg';
 
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
@@ -125,8 +126,8 @@ export default function PillScheduleScreen() {
 
   useFocusEffect(
     useCallback(() => {
-    fetchMedications();
-  }, [fetchMedications])
+      fetchMedications();
+    }, [fetchMedications])
 );
 
 
