@@ -5,9 +5,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'react-native';
-import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '@/api/api';
+import { useRouter, useFocusEffect } from 'expo-router';
+
 
 import Back from "../../../assets/images/LoginScreen/back.svg";
 
@@ -37,6 +38,8 @@ export default function HealthcareScreen() {
   const [selectedDisease, setSelectedDisease] = useState<string>('');
   const [isLoadingData, setIsLoadingData] = useState(true);
   const scrollRef = useRef<ScrollView>(null);
+  const hasFetched = useRef(false);
+
   // 각 섹션의 Y 위치 저장
   const sectionYPositions = useRef<{ [key: string]: number }>({});
 
@@ -69,13 +72,14 @@ export default function HealthcareScreen() {
   }
 }, []);
 
-  const hasFetched = useRef(false);
 
-useEffect(() => {
-  if (hasFetched.current) return;
-  hasFetched.current = true;
-  fetchHealthcareData();
-}, []);
+useFocusEffect(
+  useCallback(() => {
+    hasFetched.current = false;  // ← 초기화
+    fetchHealthcareData();
+  }, [fetchHealthcareData])
+);
+
 
 
   // 버튼 누르면 해당 섹션으로 스크롤
