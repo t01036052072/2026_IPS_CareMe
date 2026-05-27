@@ -5,12 +5,13 @@ import {
   ActivityIndicator, ScrollView, Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { apiClient } from '@/api/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Back from "../../../assets/images/LoginScreen/back.svg";
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
@@ -87,6 +88,15 @@ export default function PillSearch() {
     setShowPillscheduleBtn(showBtn);
     setIsAlertVisible(true);
   };
+
+  useFocusEffect(
+  useCallback(() => {
+    setSearchText('');
+    setSearchResults([]);
+    setResultCount(0);
+    setHasSearched(false);
+  }, [])
+);
 
   const handleTextSearch = async () => {
     if (!searchText.trim()) return;
