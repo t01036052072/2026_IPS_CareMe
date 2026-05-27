@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '@/api/api';
 import { KeyboardAvoidingView, Platform } from 'react-native'; // ← import에 추가
+import Back from "../../../assets/images/LoginScreen/back.svg";
 
 
 const main_navy = '#00246D';
@@ -247,8 +248,8 @@ export default function MyPage() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color={main_navy} />
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Back width={24} height={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>마이페이지</Text>
         <View style={{ width: 28 }} />
@@ -541,6 +542,9 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  backBtn: {
+    padding: 4,
+  },
   container: { flex: 1, backgroundColor: '#FFF' },
   loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },

@@ -5,12 +5,13 @@ import {
   ActivityIndicator, ScrollView, Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { apiClient } from '@/api/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Back from "../../../assets/images/LoginScreen/back.svg";
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
@@ -87,6 +88,15 @@ export default function PillSearch() {
     setShowPillscheduleBtn(showBtn);
     setIsAlertVisible(true);
   };
+
+  useFocusEffect(
+  useCallback(() => {
+    setSearchText('');
+    setSearchResults([]);
+    setResultCount(0);
+    setHasSearched(false);
+  }, [])
+);
 
   const handleTextSearch = async () => {
     if (!searchText.trim()) return;
@@ -333,15 +343,16 @@ export default function PillSearch() {
 
       {!hasSearched && (
         <TouchableOpacity style={styles.photoSearchBtn} onPress={handlePhotoSearch} disabled={isPhotoLoading}>
-          {isPhotoLoading ? (
-            <ActivityIndicator size="small" color={main_navy} />
-          ) : (
-            <>
-              <Ionicons name="camera" size={24} color={main_navy} />
-              <Text style={styles.photoSearchText}>사진으로 검색</Text>
-            </>
-          )}
-        </TouchableOpacity>
+  {isPhotoLoading ? (
+    <ActivityIndicator size="small" color="#FFF" />
+  ) : (
+    <>
+      <Ionicons name="camera" size={24} color="#FFF" />
+      <Text style={styles.photoSearchText}>사진으로 검색하기</Text>
+    </>
+  )}
+</TouchableOpacity>
+
       )}
 
       {hasSearched && (
@@ -577,10 +588,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: main_navy },
-  searchBox: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: '#DDD', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, marginHorizontal: 20, marginBottom: 20 },
-  searchInput: { flex: 1, fontSize: 16, color: '#000' },
-  photoSearchBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 20 },
-  photoSearchText: { fontSize: 18, fontWeight: 'bold', color: main_navy },
+searchBox: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: '#000', borderRadius: 14, paddingHorizontal: 20, paddingVertical: 16, marginHorizontal: 20, marginBottom: 20, marginTop: 40 },
+searchInput: { flex: 1, fontSize: 20, color: '#000' },
+  photoSearchBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 16, backgroundColor: main_navy, borderRadius: 14, marginHorizontal: 20, marginTop: 45 },
+
+photoSearchText: { fontSize: 18, fontWeight: 'bold', color: '#FFF' },
+
   resultContainer: { flex: 1.8 },
   resultCount: { fontSize: 16, fontWeight: 'bold', color: main_navy, paddingHorizontal: 20, marginBottom: 8 },
   resultItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 20, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
