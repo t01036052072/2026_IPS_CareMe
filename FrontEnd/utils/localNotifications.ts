@@ -19,13 +19,21 @@ export const setupLocalNotifications = async () => {
       name: 'CareMe reminders',
       importance: Notifications.AndroidImportance.HIGH,
       sound: 'default',
+      vibrationPattern: [0, 250, 250, 250],
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     });
   }
 
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) return true;
 
-  const requested = await Notifications.requestPermissionsAsync();
+  const requested = await Notifications.requestPermissionsAsync({
+    ios: {
+      allowAlert: true,
+      allowBadge: true,
+      allowSound: true,
+    },
+  });
   return requested.granted;
 };
 
@@ -36,7 +44,15 @@ export const scheduleOneTimeNotification = async (
   data?: Record<string, unknown>,
 ) => {
   const granted = await setupLocalNotifications();
-  if (!granted || date.getTime() <= Date.now()) return null;
+  if (!granted) {
+    console.log('[notifications] permission denied');
+    return null;
+  }
+
+  if (date.getTime() <= Date.now()) {
+    console.log('[notifications] skipped past notification:', date.toISOString());
+    return null;
+  }
 
   return Notifications.scheduleNotificationAsync({
     content: {
@@ -77,12 +93,13 @@ export const scheduleMedicationNotifications = async ({
     const id = await scheduleOneTimeNotification(
       date,
       '복약 알림',
-      `${name} ${count}알 복용 시간입니다.`,
+      `${name} ${count}정 복용 시간입니다.`,
       { type: 'medication', name },
     );
     if (id) ids.push(id);
   }
 
+  console.log('[notifications] scheduled medication notifications:', ids.length);
   return ids;
 };
 
