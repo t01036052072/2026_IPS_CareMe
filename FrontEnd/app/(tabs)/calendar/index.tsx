@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
   listArea: { flex: 1 },
   listTitle: { fontSize: 22, fontWeight: 'bold', color: main_navy, marginBottom: 15 },
   scheduleCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#FFF', padding: 20, borderRadius: 15, marginBottom: 12, borderWidth: 1, borderColor: '#EEE' },
-  cardTitle: { fontSize: 20, fontWeight: 'bold' },
+  cardTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 8 },
   cardInfo: { fontSize: 16, color: main_navy },
   addBtn: { backgroundColor: main_navy, flexDirection: 'row', padding: 20, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
   addBtnText: { color: '#FFF', fontSize: 18, fontWeight: 'bold', marginLeft: 8 },
