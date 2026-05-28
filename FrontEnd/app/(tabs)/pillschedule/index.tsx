@@ -144,12 +144,31 @@ export default function PillScheduleScreen() {
   
   };
 
+  const to12HourTimeStr = (date: Date) => {
+    const h = date.getHours() % 12 || 12;
+    const m = String(date.getMinutes()).padStart(2, '0');
+    return `${String(h).padStart(2, '0')}:${m}`;
+  };
+
   const formatTime = (date: Date) => {
     const h = date.getHours();
     const m = date.getMinutes().toString().padStart(2, '0');
     const ampm = h >= 12 ? '오후' : '오전';
     const hour = h % 12 || 12;
     return `${ampm} ${hour}:${m}`;
+  };
+
+  const handleDateChange = (_event: any, date?: Date) => {
+    if (Platform.OS === 'android') setShowDatePicker(false);
+    if (date) setSelectedDate(date);
+  };
+
+  const handleTimeChange = (_event: any, date?: Date) => {
+    if (Platform.OS === 'android') setShowTimePicker(false);
+    if (date) {
+      setScheduleTime(date);
+      setPeriod(date.getHours() >= 12 ? '오후' : '오전');
+    }
   };
 
   const openRegisterModal = (pillName: string = '') => {
@@ -171,10 +190,11 @@ export default function PillScheduleScreen() {
     try {
       const startDate = toLocalDateStr(new Date());
       const medicationTime = toTimeStr(scheduleTime);
+      const medicationPeriod = scheduleTime.getHours() >= 12 ? '오후' : '오전';
       await createMedicationAPI({
         name: modalPillName,
-        period,
-        time: medicationTime,
+        period: medicationPeriod,
+        time: to12HourTimeStr(scheduleTime),
         count,
         duration_days: durationDays,
         start_date: startDate,
@@ -255,12 +275,22 @@ export default function PillScheduleScreen() {
             mode="date"
             display="spinner"
             locale="ko-KR"
-            onChange={(_e: any, d?: Date) => d && setSelectedDate(d)}
+            onChange={handleDateChange}
           />
           <TouchableOpacity style={styles.datePickerConfirmBtn} onPress={() => setShowDatePicker(false)}>
             <Text style={styles.datePickerConfirmText}>선택 완료</Text>
           </TouchableOpacity>
         </View>
+      )}
+
+      {showDatePicker && Platform.OS === 'android' && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display="default"
+          locale="ko-KR"
+          onChange={handleDateChange}
+        />
       )}
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -370,11 +400,20 @@ export default function PillScheduleScreen() {
                   </TouchableOpacity>
                   {showTimePicker && Platform.OS === 'ios' && (
                     <View style={styles.pickerBox}>
-                      <DateTimePicker value={scheduleTime} mode="time" display="spinner" locale="ko-KR" onChange={(e, d) => d && setScheduleTime(d)} />
+                      <DateTimePicker value={scheduleTime} mode="time" display="spinner" locale="ko-KR" onChange={handleTimeChange} />
                       <TouchableOpacity style={styles.pickerConfirmBtn} onPress={() => setShowTimePicker(false)}>
                         <Text style={styles.pickerConfirmText}>선택 완료</Text>
                       </TouchableOpacity>
                     </View>
+                  )}
+                  {showTimePicker && Platform.OS === 'android' && (
+                    <DateTimePicker
+                      value={scheduleTime}
+                      mode="time"
+                      display="default"
+                      locale="ko-KR"
+                      onChange={handleTimeChange}
+                    />
                   )}
 
                   <Text style={styles.inputLabel}>복용 개수</Text>
