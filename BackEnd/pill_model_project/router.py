@@ -143,6 +143,7 @@ async def analyze_pill_photo(file: UploadFile = File(...)):
             "score": round(prediction.score, 6),
             "low_confidence": prediction.low_confidence,
             "crop": prediction.crop,
+            "image_url": detail.get("image_url"),
             "detail": detail,
             "top_candidates": [
                 serialize_prediction_candidate(candidate)
