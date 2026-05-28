@@ -105,13 +105,38 @@ export default function MyPage() {
 
   // 질환력 모달 열기
   const openDiseaseModal = () => {
-    setEditIsUnderTreatment(userInfo?.is_under_treatment || false);
-    setEditHasFamilyHistory(userInfo?.has_family_history || false);
-    setEditIsHepatitis(userInfo?.is_b_hepatitis_carrier || false);
-    setDiseaseData({});
-    setFamilyData([]);
-    setIsDiseaseModalVisible(true);
-  };
+  setEditIsUnderTreatment(userInfo?.is_under_treatment || false);
+  setEditHasFamilyHistory(userInfo?.has_family_history || false);
+  setEditIsHepatitis(userInfo?.is_b_hepatitis_carrier || false);
+
+  // ✅ 기존 질환 데이터 파싱
+  const parsedDisease: {[key: string]: {diagnosed: boolean, treated: boolean}} = {};
+  const parsedFamily: string[] = [];
+
+  if (userInfo?.medical_history) {
+    const items = userInfo.medical_history.split(', ');
+    items.forEach(item => {
+      if (item.startsWith('[가족력]')) {
+        parsedFamily.push(item.replace('[가족력]', ''));
+      } else {
+        const match = item.match(/^(.+?)\((.+?)\)$/);
+        if (match) {
+          const name = match[1];
+          const parts = match[2].split('+');
+          parsedDisease[name] = {
+            diagnosed: parts.includes('진단'),
+            treated: parts.includes('약물치료'),
+          };
+        }
+      }
+    });
+  }
+
+  setDiseaseData(parsedDisease);
+  setFamilyData(parsedFamily);
+  setIsDiseaseModalVisible(true);
+};
+
 
   const toggleDisease = (name: string, type: 'diagnosed' | 'treated') => {
     setDiseaseData(prev => {
