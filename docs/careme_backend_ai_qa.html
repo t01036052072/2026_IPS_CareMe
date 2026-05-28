@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>CareMe 담당 업무 및 예상 질문</title>
+  <style>
+    @page { size: A4; margin: 18mm; }
+    body {
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
+      color: #1f2937;
+      line-height: 1.55;
+      font-size: 12.5px;
+    }
+    h1 {
+      font-size: 24px;
+      color: #00246D;
+      margin: 0 0 8px;
+    }
+    h2 {
+      font-size: 17px;
+      color: #00246D;
+      border-bottom: 2px solid #D8E1F2;
+      padding-bottom: 4px;
+      margin: 22px 0 10px;
+    }
+    h3 {
+      font-size: 14px;
+      margin: 14px 0 6px;
+      color: #111827;
+    }
+    .subtitle {
+      color: #4b5563;
+      margin-bottom: 18px;
+    }
+    .box {
+      background: #F6F8FC;
+      border: 1px solid #DCE4F2;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin: 12px 0;
+    }
+    ul {
+      margin: 6px 0 10px 20px;
+      padding: 0;
+    }
+    li { margin: 4px 0; }
+    .qa {
+      break-inside: avoid;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #E5E7EB;
+    }
+    .q {
+      font-weight: 700;
+      color: #00246D;
+      margin-bottom: 4px;
+    }
+    .a {
+      margin-left: 10px;
+    }
+    .tag {
+      display: inline-block;
+      font-size: 11px;
+      color: #00246D;
+      background: #EAF0FA;
+      border: 1px solid #D8E1F2;
+      border-radius: 999px;
+      padding: 1px 8px;
+      margin-right: 5px;
+    }
+    code {
+      background: #F3F4F6;
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: #9F1239;
+    }
+  </style>
+</head>
+<body>
+  <h1>CareMe 담당 업무 및 예상 질문</h1>
+  <div class="subtitle">백엔드 서버, 클라우드 인프라, DB, 알약 사진 검색 AI, 알림 기능 중심 발표 대비 자료</div>
+
+  <h2>1. 담당 업무 요약</h2>
+  <div class="box">
+    <strong>담당 범위:</strong> FastAPI 백엔드 서버 개발 및 운영, AWS 클라우드 서버 배포, RDS MySQL 관리,
+    PyTorch 기반 알약 사진 검색 AI, 복약/병원 일정 API, 토큰 검증, Expo 로컬 알림 기능을 담당했습니다.
+  </div>
+
+  <h3>백엔드 서버 관리</h3>
+  <ul>
+    <li>FastAPI 기반 통합 API 서버를 구성하고 기능별 라우터를 연결했습니다.</li>
+    <li>복약 일정, 병원 예약, 캘린더 조회, 알약 검색, 진단서 업로드 등 주요 기능 API를 관리했습니다.</li>
+    <li>요청 검증 오류, 이미지 업로드 오류, AI 추론 오류 등을 서버 로그로 추적하고 디버깅했습니다.</li>
+  </ul>
+
+  <h3>클라우드 서버 배포 및 운영</h3>
+  <ul>
+    <li>AWS Ubuntu 서버에서 FastAPI 서버를 <code>uvicorn</code>으로 운영했습니다.</li>
+    <li>SSH 접속, Conda 가상환경 관리, 서버 재시작, 로그 모니터링, 포트 충돌 해결을 담당했습니다.</li>
+    <li>서버 실행 로그는 <code>/tmp/careme_backend.log</code>로 관리하고, <code>tail -f</code>로 실시간 확인했습니다.</li>
+  </ul>
+
+  <h3>클라우드 DB 관리</h3>
+  <ul>
+    <li>AWS RDS MySQL과 SQLAlchemy 모델을 연동했습니다.</li>
+    <li>사용자, 복약 일정, 병원 예약, 진단서, 약품 정보 테이블을 관리했습니다.</li>
+    <li>누락 컬럼이 있을 경우 서버 시작 시 자동으로 추가하는 스키마 보정 로직을 구현했습니다.</li>
+  </ul>
+
+  <h3>알약 사진 검색 AI</h3>
+  <ul>
+    <li>직접 학습한 PyTorch 기반 CNN 이미지 분류 모델을 FastAPI 서버에 연동했습니다.</li>
+    <li>AI Hub 의약품 이미지와 라벨 JSON을 활용해 메타데이터와 학습용 cropped dataset을 구축했습니다.</li>
+    <li>모델 예측 확률에 색상 유사도, 각인 OCR, 이미지 시각적 유사도 점수를 결합해 최종 후보를 산출했습니다.</li>
+    <li>Top-K 후보 구조를 적용해 사용자가 “예/아니오”로 다음 후보를 확인할 수 있게 했습니다.</li>
+  </ul>
+
+  <h3>푸시/로컬 알림 기능</h3>
+  <ul>
+    <li>Expo 환경에서 <code>expo-notifications</code>를 사용해 로컬 알림 기능을 구현했습니다.</li>
+    <li>복약 일정 등록 시 기간과 복용 시간에 맞춰 로컬 알림을 예약합니다.</li>
+    <li>병원 예약 등록 시 사용자가 설정한 알림 날짜와 시간에 맞춰 로컬 알림을 예약합니다.</li>
+  </ul>
+
+  <h3>복약 일정 및 병원 예약 API</h3>
+  <ul>
+    <li>복약 일정 등록 API에서 약 이름, 복용 시간, 복용 개수, 기간, 시작일을 저장하도록 구현했습니다.</li>
+    <li>병원 예약 관리 API에서 병원명, 예약 날짜/시간, 알림 날짜/시간을 저장하고 조회하도록 구현했습니다.</li>
+    <li>캘린더 화면에서 월/주 단위 일정 조회가 가능하도록 날짜 기반 조회 구조를 구성했습니다.</li>
+  </ul>
+
+  <h3>토큰 검증 함수</h3>
+  <ul>
+    <li>JWT 기반 인증 토큰을 검증해 로그인 사용자만 보호 API에 접근할 수 있도록 했습니다.</li>
+    <li>프론트엔드는 <code>Authorization: Bearer &lt;token&gt;</code> 형태로 요청하고, 백엔드는 현재 사용자를 조회합니다.</li>
+  </ul>
+
+  <h2>2. 알약 사진 검색 AI 설명 문구</h2>
+  <p>
+    사용자가 알약을 촬영하면, 직접 학습한 PyTorch 기반 CNN 이미지 분류 모델이 알약의 형태적 특징을 분석해
+    의약품 후보를 예측합니다. 단순히 모델 예측 확률만 사용하는 것이 아니라, 알약의 색상 유사도, 각인 OCR 결과,
+    학습 데이터 이미지와의 시각적 유사도 점수를 함께 반영해 최종 후보 점수를 산출하도록 설계했습니다.
+    또한 원본 이미지뿐 아니라 자동 crop, 중심 crop, 좌우 분할 crop 등 여러 전처리 후보 이미지를 생성해 각각 추론하고,
+    가장 높은 종합 점수를 가진 결과를 선택했습니다. 최종 선택된 약품은 공공데이터 기반 의약품 정보 DB와 연동되어
+    약명, 효능, 복용법, 주의사항을 제공하며, 사용자가 복용 시간과 기간을 설정하면 복약 일정으로 자동 등록됩니다.
+  </p>
+
+  <h2>3. 예상 질문 및 답변</h2>
+
+  <div class="qa">
+    <div class="q">Q1. 알약 사진 검색 AI는 Open API를 사용한 건가요?</div>
+    <div class="a">아닙니다. 사진을 보고 약품 후보를 예측하는 부분은 직접 학습한 PyTorch 기반 CNN 이미지 분류 모델입니다. 다만 예측된 약품의 효능, 복용법, 주의사항 같은 상세 정보는 공공데이터 기반 DB와 연결해 제공합니다.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q2. 알약 사진 검색에서 어떤 기술을 사용했나요?</div>
+    <div class="a">PyTorch CNN 이미지 분류 모델을 중심으로, 이미지 전처리, RGB/HSV 기반 색상 분석, Tesseract OCR, 문자열 유사도 비교, 코사인 유사도, Top-K 후보 랭킹을 사용했습니다.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q3. 흰색 알약처럼 비슷하게 생긴 약은 어떻게 구분하나요?</div>
+    <div class="a">CNN 예측 확률만 사용하지 않고 색상, 각인 OCR, 학습 이미지와의 시각적 유사도를 함께 점수화했습니다. 특히 흰색 알약은 색상만으로 구분이 어렵기 때문에 각인 패턴과 이미지 유사도 점수를 보조적으로 반영했습니다.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q4. 이미지 학습 전에 어떤 전처리를 했나요?</div>
+    <div class="a">AI Hub 라벨 JSON의 bounding box 정보를 활용해 알약 영역 중심으로 crop하고, 정사각형 형태로 확장한 학습용 이미지셋을 만들었습니다. 이를 통해 배경 노이즈를 줄이고 알약의 형태, 색상, 각인 특징에 모델이 집중하도록 했습니다.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q5. 메타데이터는 왜 만들었나요?</div>
+    <div class="a">모델은 라벨 코드 중심으로 예측하기 때문에, 라벨 코드를 실제 약품명, 제조사, 각인 정보, 대표 이미지, 상세 정보와 연결해야 합니다. 이를 위해 JSON 라벨과 이미지 정보를 연결한 메타데이터를 생성했습니다.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q6. 오인식이 발생하면 어떻게 처리하나요?</div>
+    <div class="a">단일 결과만 보여주지 않고 Top-K 후보를 제공합니다. 사용자가 첫 번째 후보가 아니라고 선택하면 같은 사진 분석 결과 안에서 다음 후보를 보여주도록 구현했습니다.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q7. 클라우드 서버에서는 어떤 역할을 했나요?</div>
+    <div class="a">AWS Ubuntu 서버에서 FastAPI 서버를 배포하고 운영했습니다. SSH 접속, Conda 가상환경 활성화, 서버 실행/재시작, 로그 확인, 포트 충돌 해결, IPv4 변경 대응 등을 담당했습니다.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q8. DB는 어떻게 관리했나요?</div>
+    <div class="a">AWS RDS MySQL을 사용했고 SQLAlchemy 모델과 연동했습니다. 복약 일정 기능에 필요한 <code>period</code>, <code>count</code>, <code>duration_days</code>, <code>start_date</code> 컬럼을 추가하고, 서버 시작 시 누락 컬럼을 자동 보정하도록 했습니다.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q9. 토큰 검증은 왜 필요한가요?</div>
+    <div class="a">사용자별 복약 일정, 병원 예약, 진단서 데이터는 개인 정보이므로 로그인한 사용자만 접근해야 합니다. JWT 토큰을 검증해 현재 사용자를 식별하고, 해당 사용자 데이터만 조회하거나 저장하도록 했습니다.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q10. 푸시 알림은 서버 푸시인가요, 로컬 알림인가요?</div>
+    <div class="a">현재 구현은 Expo 기반 로컬 알림입니다. 사용자가 복약 일정이나 병원 예약을 등록하면 앱이 기기 OS에 알림을 예약하고, 설정한 시간이 되면 폰에서 알림이 뜨는 방식입니다.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q11. 왜 원격 푸시 대신 로컬 알림을 선택했나요?</div>
+    <div class="a">복약 시간과 병원 예약 시간은 사용자가 앱에서 직접 등록하는 일정이므로, 서버가 매번 깨워서 보내는 원격 푸시보다 기기에 직접 예약하는 로컬 알림이 구현과 시연 측면에서 안정적입니다. 추후 여러 기기 동기화가 필요하면 원격 푸시로 확장할 수 있습니다.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q12. 서버 로그는 어떻게 확인했나요?</div>
+    <div class="a">서버 실행 로그를 <code>/tmp/careme_backend.log</code>에 저장하고, <code>tail -f /tmp/careme_backend.log</code>로 실시간 확인했습니다. 이를 통해 401 인증 오류, 422 요청 검증 오류, 500 서버 오류, AI 추론 오류를 추적했습니다.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q13. 이미지 업로드 오류는 어떻게 해결했나요?</div>
+    <div class="a">프론트에서 이미지를 <code>multipart/form-data</code>로 전송하고, 백엔드에서 <code>UploadFile</code>로 받도록 했습니다. iPhone의 HEIC/HEIF 이미지는 PIL에서 읽지 못할 수 있어 JPG/PNG만 처리하도록 방어 로직을 추가했습니다.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q14. AI 모델이 낮은 확신도를 보이면 어떻게 하나요?</div>
+    <div class="a">모델 결과에 <code>low_confidence</code> 값을 포함하고, Top-K 후보를 함께 제공해 사용자가 직접 확인할 수 있도록 했습니다. 또한 색상, 각인, 이미지 유사도 기반 보정 점수를 함께 사용해 단순 확률 기반 판단의 한계를 줄였습니다.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q15. 향후 개선할 점은 무엇인가요?</div>
+    <div class="a">더 많은 실제 사용자 촬영 데이터를 추가해 재학습하고, HEIC 자동 변환, 원격 푸시 알림, 알약 다중 객체 인식, 인증 에러 공통 처리 UX를 개선할 수 있습니다.</div>
+  </div>
+
+  <h2>4. 발표용 한 줄 요약</h2>
+  <div class="box">
+    FastAPI 백엔드 서버와 AWS 클라우드 인프라를 운영하고, RDS MySQL 기반 데이터 관리, JWT 인증,
+    PyTorch 기반 알약 사진 검색 AI, 복약/병원 일정 API, Expo 로컬 알림 기능을 구현했습니다.
+  </div>
+
+</body>
+</html>
