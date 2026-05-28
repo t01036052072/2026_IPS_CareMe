@@ -54,7 +54,7 @@ export const scheduleOneTimeNotification = async (
     return null;
   }
 
-  return Notifications.scheduleNotificationAsync({
+  const id = await Notifications.scheduleNotificationAsync({
     content: {
       title,
       body,
@@ -67,6 +67,15 @@ export const scheduleOneTimeNotification = async (
       channelId: Platform.OS === 'android' ? CHANNEL_ID : undefined,
     },
   });
+
+  console.log('[notifications] scheduled:', {
+    id,
+    title,
+    triggerAt: date.toString(),
+    timestamp: date.getTime(),
+  });
+
+  return id;
 };
 
 export const scheduleMedicationNotifications = async ({
@@ -99,8 +108,25 @@ export const scheduleMedicationNotifications = async ({
     if (id) ids.push(id);
   }
 
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   console.log('[notifications] scheduled medication notifications:', ids.length);
+  console.log(
+    '[notifications] pending medication notifications:',
+    scheduled.filter(item => item.content.data?.type === 'medication').length,
+  );
   return ids;
+};
+
+export const cancelScheduledNotificationsByType = async (type: string) => {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const targets = scheduled.filter(item => item.content.data?.type === type);
+
+  await Promise.all(
+    targets.map(item => Notifications.cancelScheduledNotificationAsync(item.identifier)),
+  );
+
+  console.log(`[notifications] cancelled ${type} notifications:`, targets.length);
+  return targets.length;
 };
 
 export const scheduleAppointmentNotification = async ({
