@@ -256,14 +256,15 @@ def try_ocr_imprints(image: Image.Image) -> list[str] | None:
 
     gray = ImageOps.grayscale(ImageOps.exif_transpose(image.convert("RGB")))
     gray = ImageOps.autocontrast(gray)
-    scale = 3 if max(gray.size) < 700 else 2
-    gray = gray.resize((gray.width * scale, gray.height * scale))
+    if max(gray.size) > 900:
+        gray.thumbnail((900, 900))
+    else:
+        scale = 2 if max(gray.size) < 700 else 1
+        gray = gray.resize((gray.width * scale, gray.height * scale))
     sharp = gray.filter(ImageFilter.SHARPEN).filter(ImageFilter.SHARPEN)
-    variants = [gray, sharp, ImageOps.invert(sharp)]
+    variants = [sharp, ImageOps.invert(sharp)]
     configs = [
         "--psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-        "--psm 8 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-        "--psm 13 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
     ]
 
     results: list[str] = []
@@ -271,8 +272,8 @@ def try_ocr_imprints(image: Image.Image) -> list[str] | None:
     for variant in variants:
         for config in configs:
             try:
-                normalized = normalize_imprint(pytesseract.image_to_string(variant, config=config))
-            except pytesseract.TesseractError:
+                normalized = normalize_imprint(pytesseract.image_to_string(variant, config=config, timeout=0.8))
+            except (pytesseract.TesseractError, RuntimeError):
                 continue
             if len(normalized) >= 2 and normalized not in seen:
                 seen.add(normalized)

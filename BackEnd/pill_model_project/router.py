@@ -125,7 +125,8 @@ async def analyze_pill_photo(file: UploadFile = File(...)):
             image_path=file_path,
             model_path=PILL_MODEL_PATH,
             data_dir=PILL_MODEL_DATA_DIR,
-            top_k=5,
+            top_k=3,
+            use_ocr=True,
         )
     except FileNotFoundError as exc:
         raise HTTPException(
