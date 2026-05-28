@@ -14,7 +14,11 @@ import {
   deleteMedicationAPI,
   MedicationSummary,
 } from '@/api/pillschedule';
-import { scheduleMedicationNotifications, setupLocalNotifications } from '@/utils/localNotifications';
+import {
+  cancelScheduledNotificationsByType,
+  scheduleMedicationNotifications,
+  setupLocalNotifications,
+} from '@/utils/localNotifications';
 import Back from '../../../assets/images/LoginScreen/back.svg';
 
 const main_navy = '#00246D';
@@ -117,6 +121,18 @@ export default function PillScheduleScreen() {
       const data = await getMedicationsAPI();
       console.log('복약일정 데이터:', JSON.stringify(data)); 
       setMedications(data);
+
+      await cancelScheduledNotificationsByType('medication');
+      for (const med of data) {
+        if (!med.detail) continue;
+        await scheduleMedicationNotifications({
+          name: med.name,
+          startDate: med.detail.start_date,
+          time: med.detail.time,
+          durationDays: med.detail.duration_days,
+          count: med.detail.count,
+        });
+      }
     } catch (error: any) {
       console.log('복약일정 조회 실패:', error.message);
     } finally {
