@@ -22,6 +22,12 @@ UNSUPPORTED_IMAGE_EXTENSIONS = {"heic", "heif"}
 PILL_MODEL_DIR = Path(__file__).resolve().parent
 PILL_MODEL_PATH = PILL_MODEL_DIR / "checkpoints" / "final_model.pth"
 PILL_MODEL_DATA_DIR = Path(os.getenv("PILL_MODEL_DATA_DIR", str(PILL_MODEL_DIR)))
+REFERENCE_IMAGE_DATA_DIRS = [
+    PILL_MODEL_DIR / "reference_images",
+    PILL_MODEL_DATA_DIR,
+    Path(r"H:\내 드라이브\pill_project\data_100_per_pill_matched"),
+    Path(r"H:\내 드라이브\pill_project\data_100_per_pill_cropped"),
+]
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -31,8 +37,21 @@ def reference_image_url(label: str) -> str | None:
 
 
 def reference_image_path(label: str) -> Path | None:
-    images = find_example_images(PILL_MODEL_DATA_DIR, label, limit=1)
-    return images[0] if images else None
+    seen: set[Path] = set()
+    for data_dir in REFERENCE_IMAGE_DATA_DIRS:
+        if data_dir in seen:
+            continue
+        seen.add(data_dir)
+
+        for ext in ("jpg", "jpeg", "png"):
+            flat_path = data_dir / f"{label}.{ext}"
+            if flat_path.exists():
+                return flat_path
+
+        images = find_example_images(data_dir, label, limit=1)
+        if images:
+            return images[0]
+    return None
 
 
 def serialize_detail(label: str) -> dict:
