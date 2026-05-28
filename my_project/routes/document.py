@@ -4,8 +4,8 @@ import shutil
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from paddleocr import PaddleOCR
-from database import get_db
-from models import DocumentTable
+from my_project.database import get_db
+from my_project.models import DocumentTable
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
