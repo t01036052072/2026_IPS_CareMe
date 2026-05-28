@@ -43,6 +43,7 @@ __pycache__/
 serviceAccountKey.json
 
 Data/raw_medical_data_v2.csv
-BackEnd/pill_model_project/checkpoints/checkpoint.pth
-BackEnd/pill_model_project/checkpoints/final_model_before_*.pth
-BackEnd/pill_model_project/checkpoints/final_model_success_*.pth
+pill_model_project/checkpoints/checkpoint.pth #학습용 체크포인트
+pill_model_project/checkpoints/final_model_before_*.pth #백업한 모델
+pill_model_project/checkpoints/final_model_success_*.pth # 성공 백업 모델
+#최종 모델만 깃에 올려둠
