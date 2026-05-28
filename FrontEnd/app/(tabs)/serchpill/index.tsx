@@ -465,13 +465,13 @@ export default function PillSearch() {
         <View style={styles.modalOverlay}>
           <SafeAreaView style={styles.modalContainer}>
             <View style={styles.modalHeader}>
-               <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backBtn}
-          >
-            <Back width={24} height={24} />
-          </TouchableOpacity>
-          
+              <TouchableOpacity
+  onPress={() => setIsDetailVisible(false)}
+  style={styles.backBtn}
+>
+  <Back width={24} height={24} />
+</TouchableOpacity>
+
               <Text style={styles.modalTitle}>의약품 정보</Text>
               <View style={{ width: 28 }} />
             </View>
