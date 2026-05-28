@@ -54,6 +54,17 @@ const toAbsoluteImageUrl = (url?: string | null) => {
   return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
+const fetchPillSearchImageUrl = async (pillName: string) => {
+  try {
+    const res = await apiClient.get('/pills/search', { params: { name: pillName } });
+    const first = res.data?.results?.[0];
+    return toAbsoluteImageUrl(first?.master_image_url || first?.image_url);
+  } catch (error) {
+    console.log('후보 대표 이미지 조회 실패:', pillName);
+    return undefined;
+  }
+};
+
 export default function PillSearch() {
   const router = useRouter();
 
@@ -171,7 +182,7 @@ export default function PillSearch() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       const prediction = analyzeRes.data.prediction;
-      const candidates: PhotoCandidate[] = [
+      const candidatesWithoutImages: PhotoCandidate[] = [
         {
           label: String(prediction.label),
           pill_name: prediction.pill_name,
@@ -185,6 +196,13 @@ export default function PillSearch() {
             image_url: toAbsoluteImageUrl(candidate.image_url),
           })),
       ];
+
+      const candidates = await Promise.all(
+        candidatesWithoutImages.map(async candidate => ({
+          ...candidate,
+          image_url: candidate.image_url || await fetchPillSearchImageUrl(candidate.pill_name),
+        })),
+      );
       setPhotoCandidates(candidates);
       setPhotoCandidateIndex(0);
       setSelectedMedicine({ id: candidates[0].label, name: candidates[0].pill_name });
@@ -568,11 +586,16 @@ export default function PillSearch() {
               <Text style={styles.modalTitle}>사진 분석 결과</Text>
               <View style={{ width: 28 }} />
             </View>
-            {currentPhotoCandidate?.image_url && (
-              <View style={styles.imageBox}>
+            <View style={styles.imageBox}>
+              {currentPhotoCandidate?.image_url ? (
                 <Image source={{ uri: currentPhotoCandidate.image_url }} style={styles.pillImage} resizeMode="contain" />
-              </View>
-            )}
+              ) : (
+                <View style={styles.imagePlaceholder}>
+                  <Ionicons name="image-outline" size={40} color="#AAA" />
+                  <Text style={styles.imagePlaceholderText}>대표 이미지를 불러오지 못했습니다</Text>
+                </View>
+              )}
+            </View>
             <Text style={styles.medicineName}>{selectedMedicine?.name}</Text>
             <View style={styles.photoConfirmQuestion}>
               <Text style={styles.confirmQuestionText}>이 약이 맞습니까?</Text>
@@ -665,6 +688,8 @@ const styles = StyleSheet.create({
   medicineName: { fontSize: 22, fontWeight: 'bold', color: '#111', marginBottom: 16, textAlign: 'center' },
   imageBox: { width: '100%', aspectRatio: 1.4, borderWidth: 1, borderColor: '#EEE', borderRadius: 16, overflow: 'hidden', marginBottom: 20, justifyContent: 'center', alignItems: 'center' },
   pillImage: { width: '100%', height: '100%' },
+  imagePlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 16 },
+  imagePlaceholderText: { color: '#888', fontSize: 14, textAlign: 'center' },
   infoCard: { backgroundColor: light_navy, borderRadius: 14, padding: 18, marginBottom: 12 },
   infoLabel: { fontSize: 14, fontWeight: 'bold', color: main_navy, marginBottom: 6 },
   infoValue: { fontSize: 16, color: '#333', lineHeight: 24 },
