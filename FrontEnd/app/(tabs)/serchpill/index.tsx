@@ -12,6 +12,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import Back from "../../../assets/images/LoginScreen/back.svg";
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
+import { scheduleMedicationNotifications } from '@/utils/localNotifications';
 
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
@@ -250,6 +251,12 @@ export default function PillSearch() {
     return `${h.toString().padStart(2, '0')}:${m}`;
   };
 
+  const to24HourTimeStr = (date: Date) => {
+    const h = String(date.getHours()).padStart(2, '0');
+    const m = String(date.getMinutes()).padStart(2, '0');
+    return `${h}:${m}`;
+  };
+
   // 💡 화면 표시용 12시간제 포맷팅 함수
   const formatTime = (date: Date) => {
     const h = date.getHours();
@@ -257,6 +264,11 @@ export default function PillSearch() {
     const ampm = h >= 12 ? '오후' : '오전';
     const hour = h % 12 || 12;
     return `${ampm} ${hour}:${m}`;
+  };
+
+  const handleRegTimeChange = (_event: any, date?: Date) => {
+    if (Platform.OS === 'android') setShowRegTimePicker(false);
+    if (date) setRegTime(date);
   };
 
   const handleRegisterMedication = async () => {
@@ -294,7 +306,15 @@ export default function PillSearch() {
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
-  
+
+      await scheduleMedicationNotifications({
+        name: medicineDetail.name,
+        startDate: toLocalDate(now),
+        time: to24HourTimeStr(regTime),
+        durationDays: regDays,
+        count: regCount,
+      });
+   
       setIsRegisterConfirmVisible(false);
       setIsDetailVisible(false);
       showAlert('등록 완료!', `추가된 약은 복약일정에서 확인 가능해요.`, 'success', true);
@@ -473,12 +493,21 @@ export default function PillSearch() {
                       mode="time" 
                       display="spinner" 
                       locale="ko-KR" 
-                      onChange={(e, d) => d && setRegTime(d)} 
+                      onChange={handleRegTimeChange} 
                     />
                     <TouchableOpacity style={styles.pickerConfirmBtn} onPress={() => setShowRegTimePicker(false)}>
                       <Text style={styles.pickerConfirmText}>선택 완료</Text>
                     </TouchableOpacity>
                   </View>
+                )}
+                {showRegTimePicker && Platform.OS === 'android' && (
+                  <DateTimePicker
+                    value={regTime}
+                    mode="time"
+                    display="default"
+                    locale="ko-KR"
+                    onChange={handleRegTimeChange}
+                  />
                 )}
 
                 <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#333', alignSelf: 'flex-start' }}>복용 개수 및 기간</Text>
