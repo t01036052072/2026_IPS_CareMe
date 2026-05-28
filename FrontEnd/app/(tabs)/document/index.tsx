@@ -7,6 +7,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '@/api/api';
@@ -14,6 +15,8 @@ import Back from "../../../assets/images/LoginScreen/back.svg";
 
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
+const DOCUMENT_MAX_SIDE = 1600;
+const DOCUMENT_JPEG_QUALITY = 0.7;
 
 const PERIOD_OPTIONS = ['3개월', '6개월', '1년', '전체'];
 const SORT_OPTIONS = ['최신순으로 정렬', '오래된순으로 정렬'];
@@ -78,6 +81,29 @@ export default function DocumentScreen() {
   const todayStr = (date: Date) =>
     `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
 
+  const compressDocumentImage = async (asset: ImagePicker.ImagePickerAsset) => {
+    const { uri, width = 0, height = 0 } = asset;
+    const maxSide = Math.max(width, height);
+    const actions: ImageManipulator.Action[] = [];
+
+    if (maxSide > DOCUMENT_MAX_SIDE) {
+      const ratio = DOCUMENT_MAX_SIDE / maxSide;
+      actions.push({
+        resize: {
+          width: Math.round(width * ratio),
+          height: Math.round(height * ratio),
+        },
+      });
+    }
+
+    const result = await ImageManipulator.manipulateAsync(uri, actions, {
+      compress: DOCUMENT_JPEG_QUALITY,
+      format: ImageManipulator.SaveFormat.JPEG,
+    });
+
+    return result.uri;
+  };
+
   const fetchDocuments = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -126,13 +152,14 @@ export default function DocumentScreen() {
           if (buttonIndex === 1) {
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
             if (status !== 'granted') { setAlertMsg('카메라 권한을 허용해주세요.'); setIsAlertVisible(true); return; }
-            result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+            result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.75 });
           } else {
-            result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+            result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.75 });
           }
           if (!result.canceled && result.assets[0].uri) {
-            if (type === 'diagnosis') setDiagnosisFile(result.assets[0].uri);
-            else setPrescriptionFile(result.assets[0].uri);
+            const compressedUri = await compressDocumentImage(result.assets[0]);
+            if (type === 'diagnosis') setDiagnosisFile(compressedUri);
+            else setPrescriptionFile(compressedUri);
           }
         }
       );
