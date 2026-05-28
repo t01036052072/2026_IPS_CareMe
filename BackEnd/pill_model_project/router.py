@@ -7,10 +7,11 @@ from datetime import datetime
 from pathlib import Path
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from PIL import UnidentifiedImageError
 
 from .doctor_now_details import get_doctor_now_detail
-from .inference import predict_pill_image
+from .inference import find_example_images, predict_pill_image
 
 
 router = APIRouter(prefix="/pill-photo", tags=["pill photo search"])
@@ -25,6 +26,15 @@ PILL_MODEL_DATA_DIR = Path(os.getenv("PILL_MODEL_DATA_DIR", str(PILL_MODEL_DIR))
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
+def reference_image_url(label: str) -> str | None:
+    return f"/pill-photo/reference-image/{label}" if reference_image_path(label) else None
+
+
+def reference_image_path(label: str) -> Path | None:
+    images = find_example_images(PILL_MODEL_DATA_DIR, label, limit=1)
+    return images[0] if images else None
+
+
 def serialize_detail(label: str) -> dict:
     detail = get_doctor_now_detail(label)
     if not detail:
@@ -35,6 +45,7 @@ def serialize_detail(label: str) -> dict:
             "use_method": None,
             "warning": None,
             "side_effect": None,
+            "image_url": reference_image_url(label),
         }
     return {
         "ai_label": label,
@@ -43,6 +54,7 @@ def serialize_detail(label: str) -> dict:
         "use_method": detail.get("use_method"),
         "warning": detail.get("warning"),
         "side_effect": detail.get("side_effect"),
+        "image_url": reference_image_url(label),
     }
 
 
@@ -61,6 +73,7 @@ def serialize_prediction_candidate(candidate) -> dict:
             if candidate.visual_similarity is not None
             else None
         ),
+        "image_url": reference_image_url(candidate.label),
     }
 
 
@@ -154,3 +167,14 @@ async def get_ai_pill_detail(ai_label: str):
         "flow": "photo_search",
         "data": serialize_detail(ai_label),
     }
+
+
+@router.get("/reference-image/{ai_label}")
+async def get_reference_pill_image(ai_label: str):
+    image_path = reference_image_path(ai_label)
+    if not image_path:
+        raise HTTPException(
+            status_code=404,
+            detail="Reference pill image was not found.",
+        )
+    return FileResponse(image_path)

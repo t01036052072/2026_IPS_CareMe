@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { apiClient } from '@/api/api';
+import { BASE_URL, apiClient } from '@/api/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Back from "../../../assets/images/LoginScreen/back.svg";
@@ -38,6 +38,7 @@ interface MedicineDetail {
 interface PhotoCandidate {
   label: string;
   pill_name: string;
+  image_url?: string;
 }
 
 const sortMedicines = (medicines: Medicine[], query: string) => {
@@ -45,6 +46,12 @@ const sortMedicines = (medicines: Medicine[], query: string) => {
   const startsWith = medicines.filter(m => m.name.toLowerCase().startsWith(q)).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
   const includes = medicines.filter(m => !m.name.toLowerCase().startsWith(q) && m.name.toLowerCase().includes(q)).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
   return [...startsWith, ...includes];
+};
+
+const toAbsoluteImageUrl = (url?: string | null) => {
+  if (!url) return undefined;
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
 export default function PillSearch() {
@@ -62,7 +69,6 @@ export default function PillSearch() {
 
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
-  const [capturedImageUri, setCapturedImageUri] = useState<string | null>(null);
   const [isPhotoLoading, setIsPhotoLoading] = useState(false);
   const [photoCandidates, setPhotoCandidates] = useState<PhotoCandidate[]>([]);
   const [photoCandidateIndex, setPhotoCandidateIndex] = useState(0);
@@ -81,6 +87,7 @@ export default function PillSearch() {
   const [regCount, setRegCount] = useState(1);
   const [regDays, setRegDays] = useState(7);
   const [showRegTimePicker, setShowRegTimePicker] = useState(false);
+  const currentPhotoCandidate = photoCandidates[photoCandidateIndex];
 
   const showAlert = (title: string, message: string, type: 'success' | 'error' = 'success', showBtn = false) => {
     setAlertTitle(title);
@@ -165,18 +172,22 @@ export default function PillSearch() {
       });
       const prediction = analyzeRes.data.prediction;
       const candidates: PhotoCandidate[] = [
-        { label: String(prediction.label), pill_name: prediction.pill_name },
+        {
+          label: String(prediction.label),
+          pill_name: prediction.pill_name,
+          image_url: toAbsoluteImageUrl(prediction.image_url || prediction.detail?.image_url),
+        },
         ...((prediction.top_candidates || []) as any[])
           .filter(candidate => String(candidate.label) !== String(prediction.label))
           .map(candidate => ({
             label: String(candidate.label),
             pill_name: candidate.pill_name,
+            image_url: toAbsoluteImageUrl(candidate.image_url),
           })),
       ];
       setPhotoCandidates(candidates);
       setPhotoCandidateIndex(0);
       setSelectedMedicine({ id: candidates[0].label, name: candidates[0].pill_name });
-      setCapturedImageUri(uri);
       setIsConfirmVisible(true);
     } catch (error) {
       showAlert('분석 실패', '사진 분석에 실패했습니다.\n다시 시도해주세요.', 'error');
@@ -221,6 +232,7 @@ export default function PillSearch() {
         side_effect: data.side_effect,
         use_method: data.use_method,
         warning: data.warning,
+        image_url: toAbsoluteImageUrl(data.image_url),
       });
     } catch (error) {
       setIsDetailVisible(false);
@@ -556,9 +568,9 @@ export default function PillSearch() {
               <Text style={styles.modalTitle}>사진 분석 결과</Text>
               <View style={{ width: 28 }} />
             </View>
-            {capturedImageUri && (
+            {currentPhotoCandidate?.image_url && (
               <View style={styles.imageBox}>
-                <Image source={{ uri: capturedImageUri }} style={styles.pillImage} resizeMode="contain" />
+                <Image source={{ uri: currentPhotoCandidate.image_url }} style={styles.pillImage} resizeMode="contain" />
               </View>
             )}
             <Text style={styles.medicineName}>{selectedMedicine?.name}</Text>
