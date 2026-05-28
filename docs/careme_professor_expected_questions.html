@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>CareMe 교수님 예상 질문 및 답변</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 16mm;
+    }
+
+    body {
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
+      color: #172033;
+      line-height: 1.62;
+      margin: 0;
+      background: #fff;
+      font-size: 13.5px;
+    }
+
+    h1 {
+      color: #00246d;
+      font-size: 26px;
+      margin: 0 0 6px;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      color: #00246d;
+      font-size: 18px;
+      margin: 28px 0 10px;
+      border-bottom: 2px solid #d9e3f5;
+      padding-bottom: 6px;
+      page-break-after: avoid;
+    }
+
+    h3 {
+      font-size: 15px;
+      margin: 18px 0 6px;
+      color: #111827;
+      page-break-after: avoid;
+    }
+
+    p {
+      margin: 4px 0 8px;
+    }
+
+    .meta {
+      color: #5b6475;
+      margin-bottom: 18px;
+      font-size: 12.5px;
+    }
+
+    .summary {
+      background: #f1f4f9;
+      border: 1px solid #d9e3f5;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin: 16px 0 20px;
+    }
+
+    .qa {
+      page-break-inside: avoid;
+      border-left: 4px solid #00246d;
+      padding: 2px 0 2px 12px;
+      margin: 12px 0 16px;
+    }
+
+    .q {
+      font-weight: 700;
+      color: #00246d;
+      margin-bottom: 3px;
+    }
+
+    .a {
+      margin-left: 0;
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 11px;
+      color: #fff;
+      background: #00246d;
+      border-radius: 4px;
+      padding: 1px 6px;
+      margin-right: 6px;
+      vertical-align: 1px;
+    }
+
+    ul {
+      margin: 6px 0 10px 20px;
+      padding: 0;
+    }
+
+    li {
+      margin: 2px 0;
+    }
+
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      background: #eef2f7;
+      padding: 1px 4px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .note {
+      color: #4b5563;
+      font-size: 12.5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>CareMe 교수님 예상 질문 및 답변</h1>
+  <div class="meta">범위: 서버 운영, 진단서 OCR 속도 개선, 사진 AI 검색, 클라우드 서버 관리</div>
+
+  <div class="summary">
+    <strong>핵심 방어 포인트</strong>
+    <ul>
+      <li>현재 구조는 <code>React Native Expo + FastAPI + MySQL/RDS + AWS EC2</code> 기반입니다.</li>
+      <li>진단서 OCR은 <code>PaddleOCR</code>를 사용하며, 촬영 이미지는 업로드 전 프론트에서 리사이즈/압축합니다.</li>
+      <li>알약 사진 검색은 <code>EfficientNet-B0</code> 이미지 분류 모델을 1차로 사용하고, crop/색상/시각 유사도/제한 시간 기반 각인 OCR을 보조로 사용합니다.</li>
+      <li>현재 EC2 단일 서버 환경에서는 속도와 안정성을 위해 무거운 OCR은 제한 시간 기반으로 처리합니다.</li>
+    </ul>
+  </div>
+
+  <h2>1. 서버 운영 관련</h2>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q1</span>백엔드 구조가 어떻게 되어 있나요?</div>
+    <p class="a">FastAPI 서버가 앱의 API 요청을 받고, MySQL/RDS에 사용자, 문서, 복약 일정 데이터를 저장합니다. AI 기능은 같은 백엔드 안에서 PaddleOCR, OpenAI API, PyTorch 알약 이미지 분류 모델을 호출하는 구조입니다. 서버는 AWS EC2에서 실행합니다.</p>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q2</span>왜 FastAPI를 사용했나요?</div>
+    <p class="a">Python 기반 AI/OCR 라이브러리와 연동하기 쉽고, 비동기 API 서버를 빠르게 구성할 수 있기 때문입니다. PaddleOCR, PyTorch 모델, OpenAI API를 같은 Python 백엔드에서 관리할 수 있어 구현 복잡도를 줄였습니다.</p>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q3</span>AWS S3를 사용하지 않은 이유는 무엇인가요?</div>
+    <p class="a">현재 프로젝트는 MVP 및 시연 단계라 단일 EC2 서버에서 빠르게 기능을 검증하는 것이 우선이었습니다. 그래서 업로드 이미지는 EC2 내부 <code>static/uploads</code> 디렉터리에 저장하고, DB에는 파일 자체가 아니라 URL 경로만 저장했습니다. 실제 운영 단계에서는 서버 교체와 백업, 확장성을 위해 S3로 이전하는 것이 더 적합합니다.</p>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q4</span>DB에는 이미지를 직접 저장하나요?</div>
+    <p class="a">아니요. DB에는 이미지 파일 자체가 아니라 이미지 접근 경로만 저장합니다. 이 방식은 나중에 로컬 저장소에서 S3 URL로 바꾸기 쉽다는 장점이 있습니다.</p>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q5</span>서버가 느려질 때 병목은 어디에서 발생하나요?</div>
+    <p class="a">일반 API 요청보다 이미지 업로드, OCR, AI 모델 추론이 병목이 됩니다. 특히 OCR은 CPU 사용량이 높고, 큰 원본 이미지를 그대로 처리하면 업로드 시간과 분석 시간이 모두 증가합니다.</p>
+  </div>
+
+  <h2>2. 진단서 속도 개선</h2>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q6</span>진단서 분석이 느린 이유는 무엇인가요?</div>
+    <p class="a">진단서 분석은 단순 업로드가 아니라 이미지에서 텍스트를 검출하고 인식하는 OCR 과정이 포함됩니다. 촬영 원본은 해상도와 용량이 크기 때문에 업로드 시간이 길어지고, 서버에서도 큰 이미지를 처리하느라 OCR 시간이 늘어납니다.</p>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q7</span>진단서 속도 개선은 어떻게 했나요?</div>
+    <p class="a">프론트엔드에서 사진을 등록하기 전에 자동 압축을 적용했습니다. 긴 변을 최대 1600px로 리사이즈하고 JPEG 품질을 70%로 낮춰 서버로 전송합니다. 이러면 OCR에 필요한 글자 정보는 유지하면서 업로드 용량을 줄일 수 있습니다.</p>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q8</span>압축하면 OCR 정확도가 떨어지지 않나요?</div>
+    <p class="a">너무 강한 압축은 정확도에 영향을 줄 수 있습니다. 그래서 1600px, JPEG 70% 정도로 설정해 글자 인식에 필요한 해상도는 유지하면서 용량만 줄였습니다. 실제 운영에서는 문서 종류별로 최적 해상도와 품질 값을 실험해 조정할 수 있습니다.</p>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q9</span>첫 요청이 특히 느린 이유는 무엇인가요?</div>
+    <p class="a">서버 재시작 후 첫 OCR 요청에서는 PaddleOCR 모델을 메모리에 올리는 초기 로딩 시간이 발생합니다. 이후에는 모델이 캐시된 상태라 같은 서버 프로세스 안에서는 다음 요청이 더 빠르게 처리됩니다.</p>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q10</span>추가로 개선한다면 어떻게 할 건가요?</div>
+    <p class="a">OCR 작업을 백그라운드 큐로 분리하고, 업로드 직후에는 접수 완료를 먼저 반환한 뒤 분석 결과를 나중에 갱신하는 방식이 좋습니다. 또한 S3와 CloudFront를 사용해 파일 저장과 전송을 분리하고, OCR 전용 워커 서버를 따로 두면 안정성이 좋아집니다.</p>
+  </div>
+
+  <h2>3. 사진 AI 검색</h2>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q11</span>알약 사진 검색은 어떤 모델을 사용했나요?</div>
+    <p class="a">PyTorch 기반 EfficientNet-B0 모델을 사용했습니다. ImageNet 사전학습 모델을 가져와 마지막 분류 레이어를 알약 클래스 수에 맞게 교체한 전이학습 방식입니다.</p>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q12</span>알약 분석은 어떤 기준으로 추론하나요?</div>
+    <p class="a">업로드 이미지에서 여러 crop 후보를 만들고, 각 crop을 이미지 분류 모델에 넣어 Top 후보를 뽑습니다. 이후 색상, 중심부 crop 보정, 흰색/회색 알약의 시각 유사도, 제한 시간 기반 각인 OCR 결과를 보조 점수로 사용합니다.</p>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q13</span>OCR도 들어갔는데 왜 빠르게 분석되나요?</div>
+    <p class="a">알약 검색에서는 OCR을 모든 요청에 깊게 수행하지 않습니다. 먼저 이미지 분류 모델로 빠르게 후보를 반환하고, 각인 OCR은 제한 시간 안에서만 짧게 시도합니다. OCR이 성공하면 점수 보정에 반영하고, 제한 시간 안에 인식되지 않으면 이미지 분류와 시각 유사도 기반 결과를 우선 반환합니다.</p>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q14</span>각인 OCR을 제한하면 정확도가 떨어지지 않나요?</div>
+    <p class="a">흰색 원형 알약처럼 특징이 적은 경우에는 각인 OCR이 정확도 향상에 도움이 됩니다. 다만 제한 없는 OCR은 서버 리소스를 많이 사용해 응답 시간이 크게 늘어납니다. 그래서 현재는 시연 안정성을 위해 제한 시간 기반 보조 기능으로 두었고, 실제 운영에서는 정밀 분석 옵션이나 비동기 추가 검증으로 분리할 계획입니다.</p>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q15</span>알약 모델 정확도는 어느 정도인가요?</div>
+    <p class="a">내부 검증셋에서는 높은 정확도를 확인했지만, 실제 촬영 환경에서는 조명, 흔들림, 배경, 각도에 따라 달라집니다. 색상과 형태가 뚜렷한 알약은 비교적 잘 맞고, 흰색 원형처럼 비슷한 알약은 정확도가 낮아질 수 있어 사용자 확인 절차를 둡니다.</p>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q16</span>사용자가 틀렸다고 하면 어떻게 개선할 수 있나요?</div>
+    <p class="a">오답 이미지를 피드백 데이터로 저장해 추후 재학습 데이터에 포함할 수 있습니다. 실제 운영에서는 사용자가 정답을 선택한 기록을 수집해 주기적으로 모델을 업데이트하는 방식이 적합합니다.</p>
+  </div>
+
+  <h2>4. 클라우드 서버 관리 문제</h2>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q17</span>EC2 인스턴스를 바꾸면 왜 퍼블릭 IP가 바뀔 수 있나요?</div>
+    <p class="a">Elastic IP를 연결하지 않은 일반 퍼블릭 IPv4는 인스턴스를 중지하고 다시 시작할 때 바뀔 수 있습니다. 그래서 프론트엔드의 API base URL도 새 IP로 수정해야 합니다. 운영 단계에서는 Elastic IP 또는 도메인을 사용해 주소 변경 문제를 줄이는 것이 좋습니다.</p>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q18</span>학교 와이파이를 쓰면 느려질 수 있나요?</div>
+    <p class="a">네. 서버 내부 분석 속도와 별개로 사진 업로드는 네트워크 영향을 받습니다. 학교 와이파이가 느리거나 불안정하면 이미지 업로드와 결과 이미지 로딩이 느려질 수 있습니다. 이를 줄이기 위해 프론트에서 이미지 압축을 적용했고, 시연 시에는 핫스팟 같은 백업 네트워크를 준비하는 것이 안전합니다.</p>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q19</span>서버가 단일 EC2면 위험하지 않나요?</div>
+    <p class="a">맞습니다. 현재는 시연 및 MVP 단계라 단일 EC2로 구성했지만, 실제 서비스에서는 장애 대응을 위해 파일 저장소는 S3로 분리하고, DB는 RDS, API 서버는 Auto Scaling 또는 컨테이너 기반 배포로 확장하는 것이 좋습니다.</p>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q20</span>성능을 가장 크게 개선하려면 무엇을 해야 하나요?</div>
+    <p class="a">가장 큰 개선은 이미지 업로드 용량 감소, OCR 비동기 처리, AI 추론 워커 분리입니다. 서버 스펙 측면에서는 CPU 코어와 메모리를 늘리거나 GPU 인스턴스를 사용하면 알약 모델 추론 속도를 더 높일 수 있습니다.</p>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q21</span>보안 측면에서 의료정보는 어떻게 관리해야 하나요?</div>
+    <p class="a">현재 프로젝트에서는 인증 토큰 기반으로 사용자별 데이터를 분리합니다. 실제 운영 단계에서는 HTTPS, 저장 파일 접근 권한 제한, S3 private bucket과 presigned URL, 민감정보 암호화, 로그 마스킹, 접근 제어 정책이 필요합니다.</p>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span class="tag">Q22</span>운영 단계에서 우선 개선할 것은 무엇인가요?</div>
+    <p class="a">첫 번째는 파일 저장소를 S3로 분리하는 것, 두 번째는 OCR/AI 분석을 백그라운드 작업으로 분리하는 것, 세 번째는 Elastic IP 또는 도메인을 사용해 서버 주소를 안정화하는 것입니다. 그 다음 모니터링과 로그 분석을 붙여 병목을 계속 추적해야 합니다.</p>
+  </div>
+
+  <h2>마무리 답변 템플릿</h2>
+  <p>“현재는 시연 가능한 MVP를 목표로 단일 EC2에서 FastAPI, MySQL 연동, OCR, AI 모델 추론을 통합했습니다. 성능 병목은 이미지 업로드와 OCR/추론 단계에서 발생하기 때문에, 프론트 이미지 압축, 모델 예열, 제한 시간 기반 OCR, 후보 수 축소 같은 방식으로 응답성을 개선했습니다. 실제 운영 단계에서는 S3, 비동기 워커, 모니터링, 도메인/Elastic IP, 보안 정책을 적용해 확장성과 안정성을 높일 계획입니다.”</p>
+</body>
+</html>
