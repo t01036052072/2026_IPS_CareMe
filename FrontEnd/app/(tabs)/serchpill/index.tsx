@@ -13,6 +13,7 @@ import Back from "../../../assets/images/LoginScreen/back.svg";
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { scheduleMedicationNotifications } from '@/utils/localNotifications';
+import { pillReferenceImages } from '@/constants/pillReferenceImages';
 
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
@@ -99,6 +100,10 @@ export default function PillSearch() {
   const [regDays, setRegDays] = useState(7);
   const [showRegTimePicker, setShowRegTimePicker] = useState(false);
   const currentPhotoCandidate = photoCandidates[photoCandidateIndex];
+  const currentReferenceImageSource = currentPhotoCandidate
+    ? pillReferenceImages[currentPhotoCandidate.label]
+      || (currentPhotoCandidate.image_url ? { uri: currentPhotoCandidate.image_url } : undefined)
+    : undefined;
 
   const showAlert = (title: string, message: string, type: 'success' | 'error' = 'success', showBtn = false) => {
     setAlertTitle(title);
@@ -587,8 +592,8 @@ export default function PillSearch() {
               <View style={{ width: 28 }} />
             </View>
             <View style={styles.imageBox}>
-              {currentPhotoCandidate?.image_url ? (
-                <Image source={{ uri: currentPhotoCandidate.image_url }} style={styles.pillImage} resizeMode="contain" />
+              {currentReferenceImageSource ? (
+                <Image source={currentReferenceImageSource} style={styles.pillImage} resizeMode="contain" />
               ) : (
                 <View style={styles.imagePlaceholder}>
                   <Ionicons name="image-outline" size={40} color="#AAA" />
