@@ -364,9 +364,9 @@ export default function DocumentScreen() {
         <View style={styles.detailOverlay}>
           <SafeAreaView style={styles.detailContainer}>
             <View style={styles.detailHeader}>
-              <TouchableOpacity onPress={() => setIsDetailVisible(false)}>
-                <Ionicons name="chevron-back" size={28} color={main_navy} />
-              </TouchableOpacity>
+                  <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Back width={24} height={24} />
+        </TouchableOpacity>
               <Text style={styles.detailTitle}>{detailItem?.hospital_name || '문서 상세'}</Text>
               <TouchableOpacity style={styles.deleteIconBtn} onPress={() => {
                 setAlertMsg('이 문서를 삭제하시겠습니까?');
