@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, SafeAreaView,
   FlatList, Modal, TextInput, ActionSheetIOS, Platform, ScrollView,
-  ActivityIndicator, Image
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -15,6 +15,8 @@ import Back from "../../../assets/images/LoginScreen/back.svg";
 
 const main_navy = '#00246D';
 const light_navy = '#F1F4F9';
+const green = '#2ECC71';
+const red = '#C0392B';
 const DOCUMENT_MAX_SIDE = 1600;
 const DOCUMENT_JPEG_QUALITY = 0.7;
 
@@ -73,8 +75,20 @@ export default function DocumentScreen() {
   const [detailItem, setDetailItem] = useState<Document | null>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
 
+  // ✅ 통합 커스텀 알림 모달
   const [isAlertVisible, setIsAlertVisible] = useState(false);
   const [alertMsg, setAlertMsg] = useState('');
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertType, setAlertType] = useState<'success' | 'error' | 'confirm'>('success');
+  const [alertOnConfirm, setAlertOnConfirm] = useState<(() => void) | null>(null);
+
+  const showAlert = (title: string, msg: string, type: 'success' | 'error' | 'confirm' = 'success', onConfirm?: () => void) => {
+    setAlertTitle(title);
+    setAlertMsg(msg);
+    setAlertType(type);
+    setAlertOnConfirm(onConfirm ? () => onConfirm : null);
+    setIsAlertVisible(true);
+  };
 
   const getToken = async () => await AsyncStorage.getItem('access_token');
 
@@ -85,22 +99,14 @@ export default function DocumentScreen() {
     const { uri, width = 0, height = 0 } = asset;
     const maxSide = Math.max(width, height);
     const actions: ImageManipulator.Action[] = [];
-
     if (maxSide > DOCUMENT_MAX_SIDE) {
       const ratio = DOCUMENT_MAX_SIDE / maxSide;
-      actions.push({
-        resize: {
-          width: Math.round(width * ratio),
-          height: Math.round(height * ratio),
-        },
-      });
+      actions.push({ resize: { width: Math.round(width * ratio), height: Math.round(height * ratio) } });
     }
-
     const result = await ImageManipulator.manipulateAsync(uri, actions, {
       compress: DOCUMENT_JPEG_QUALITY,
       format: ImageManipulator.SaveFormat.JPEG,
     });
-
     return result.uri;
   };
 
@@ -151,7 +157,7 @@ export default function DocumentScreen() {
           let result;
           if (buttonIndex === 1) {
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
-            if (status !== 'granted') { setAlertMsg('카메라 권한을 허용해주세요.'); setIsAlertVisible(true); return; }
+            if (status !== 'granted') { showAlert('권한 필요', '카메라 권한을 허용해주세요.', 'error'); return; }
             result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.75 });
           } else {
             result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.75 });
@@ -168,8 +174,7 @@ export default function DocumentScreen() {
 
   const handleRegister = async () => {
     if (!diagnosisFile && !prescriptionFile) {
-      setAlertMsg('진단서 또는 처방전을\n등록해주세요.');
-      setIsAlertVisible(true);
+      showAlert('입력 필요', '진단서 또는 처방전을\n등록해주세요.', 'error');
       return;
     }
     setIsUploading(true);
@@ -193,10 +198,11 @@ export default function DocumentScreen() {
       setPrescriptionFile(null);
       setSelectedDate(new Date());
       fetchDocuments();
+      // ✅ 성공 팝업
+      showAlert('업로드 완료!', '문서 업로드가 완료되었습니다!', 'success');
     } catch (error: any) {
       console.log('업로드 실패:', error.message);
-      setAlertMsg('업로드에 실패했습니다.\n다시 시도해주세요.');
-      setIsAlertVisible(true);
+      showAlert('오류', '업로드에 실패했습니다.\n다시 시도해주세요.', 'error');
     } finally {
       setIsUploading(false);
     }
@@ -210,10 +216,10 @@ export default function DocumentScreen() {
       });
       setIsDetailVisible(false);
       fetchDocuments();
+      showAlert('삭제 완료', '문서가 삭제되었습니다.', 'success');
     } catch (error: any) {
       console.log('삭제 실패:', error.message);
-      setAlertMsg('삭제에 실패했습니다.');
-      setIsAlertVisible(true);
+      showAlert('오류', '삭제에 실패했습니다.', 'error');
     }
   };
 
@@ -280,7 +286,6 @@ export default function DocumentScreen() {
           contentContainerStyle={styles.listContent}
           onScrollBeginDrag={closeDropdowns}
           renderItem={({ item }) => (
-            // ✅ 카드 전체 + 바로가기 버튼 명확하게
             <View style={styles.card}>
               <View style={styles.cardInfo}>
                 <Text style={styles.cardDate}>{item.upload_date || item.date}</Text>
@@ -295,7 +300,6 @@ export default function DocumentScreen() {
                   </View>
                 )}
               </View>
-              {/* ✅ 명확한 버튼 형태로 변경 */}
               <TouchableOpacity style={styles.goBtn} onPress={() => handleOpenDetail(item)}>
                 <Text style={styles.goBtnText}>바로가기</Text>
               </TouchableOpacity>
@@ -312,7 +316,6 @@ export default function DocumentScreen() {
           ListFooterComponent={
             filteredDocs.length > 0 ? (
               <View style={{ marginTop: 16 }}>
-                {/* ✅ 스크롤 힌트 추가 */}
                 <Text style={styles.hint}>문서를 선택하면{'\n'}자세한 내용을 확인할 수 있어요 ↑</Text>
                 <TouchableOpacity style={styles.addBtn} onPress={() => setIsModalVisible(true)}>
                   <Text style={styles.addBtnText}>새로운 문서 등록하기</Text>
@@ -337,7 +340,6 @@ export default function DocumentScreen() {
             <TouchableOpacity style={styles.dateRow} onPress={() => setShowDatePicker(true)}>
               <Ionicons name="calendar-outline" size={22} color={main_navy} />
               <Text style={styles.dateText}>{todayStr(selectedDate)}</Text>
-              {/* ✅ 라이팅 변경: 질문형 → 행동형 */}
               <View style={styles.dateChangeBtn}>
                 <Text style={styles.dateChangeBtnText}>날짜 변경</Text>
               </View>
@@ -353,7 +355,6 @@ export default function DocumentScreen() {
 
             <TextInput style={styles.inputBox} placeholder="병원 이름을 입력해주세요" placeholderTextColor="#AAA" value={hospitalName} onChangeText={setHospitalName} />
 
-            {/* ✅ 파일 등록 버튼 명확한 버튼 형태로 변경 */}
             <TouchableOpacity style={styles.fileRow} onPress={() => handlePickImage('diagnosis')}>
               <Text style={styles.fileLabel}>진단서</Text>
               <View style={[styles.fileActionBtn, diagnosisFile ? styles.fileActionBtnDone : {}]}>
@@ -373,17 +374,6 @@ export default function DocumentScreen() {
             </TouchableOpacity>
           </View>
         </View>
-
-        <Modal visible={isAlertVisible} transparent animationType="fade">
-          <View style={styles.alertOverlay}>
-            <View style={styles.alertBox}>
-              <Text style={styles.alertText}>{alertMsg}</Text>
-              <TouchableOpacity style={styles.alertBtn} onPress={() => setIsAlertVisible(false)}>
-                <Text style={styles.alertBtnText}>확인</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
       </Modal>
 
       {/* ───── 상세 모달 ───── */}
@@ -391,17 +381,14 @@ export default function DocumentScreen() {
         <View style={styles.detailOverlay}>
           <SafeAreaView style={styles.detailContainer}>
             <View style={styles.detailHeader}>
-                          <TouchableOpacity
-  onPress={() => setIsDetailVisible(false)}
-  style={styles.backBtn}
->
-  <Back width={24} height={24} />
-</TouchableOpacity>
-
+              <TouchableOpacity onPress={() => setIsDetailVisible(false)} style={styles.backBtn}>
+                <Back width={24} height={24} />
+              </TouchableOpacity>
               <Text style={styles.detailTitle}>{detailItem?.hospital_name || '문서 상세'}</Text>
               <TouchableOpacity style={styles.deleteIconBtn} onPress={() => {
-                setAlertMsg('이 문서를 삭제하시겠습니까?');
-                setIsAlertVisible(true);
+                showAlert('문서 삭제', '이 문서를 삭제하시겠습니까?', 'confirm', () => {
+                  if (detailItem) handleDelete(detailItem.id);
+                });
               }}>
                 <Ionicons name="trash-outline" size={24} color={red} />
               </TouchableOpacity>
@@ -419,12 +406,10 @@ export default function DocumentScreen() {
                     <Text style={styles.originalBtnText}>원본 이미지 보기</Text>
                   </TouchableOpacity>
                 )}
-
                 <View style={styles.detailDateRow}>
                   <Ionicons name="calendar-outline" size={22} color={main_navy} />
                   <Text style={styles.detailDate}>{detailItem?.upload_date}</Text>
                 </View>
-
                 {detailItem?.simplified_text && (
                   <>
                     <View style={styles.tagBox}><Text style={styles.tagText}>진단서 내용</Text></View>
@@ -433,7 +418,6 @@ export default function DocumentScreen() {
                     </View>
                   </>
                 )}
-
                 {detailItem?.medication_info && (
                   <>
                     <View style={styles.tagBox}><Text style={styles.tagText}>처방약 정보</Text></View>
@@ -442,7 +426,6 @@ export default function DocumentScreen() {
                     </View>
                   </>
                 )}
-
                 {detailItem?.analysis_result && (
                   <>
                     <View style={styles.tagBox}><Text style={styles.tagText}>분석 결과</Text></View>
@@ -451,7 +434,6 @@ export default function DocumentScreen() {
                     </View>
                   </>
                 )}
-
                 {!detailItem?.simplified_text && !detailItem?.medication_info && !detailItem?.analysis_result && (
                   <View style={styles.emptyBox}>
                     <Text style={styles.emptyText}>등록된 진단서 또는 처방전이 없습니다.</Text>
@@ -465,28 +447,44 @@ export default function DocumentScreen() {
             )}
           </SafeAreaView>
         </View>
+      </Modal>
 
-        <Modal visible={isAlertVisible} transparent animationType="fade">
-          <View style={styles.alertOverlay}>
-            <View style={styles.alertBox}>
-              <Text style={styles.alertText}>{alertMsg}</Text>
-              <View style={{ flexDirection: 'row', gap: 12 }}>
-                <TouchableOpacity style={[styles.alertBtn, { backgroundColor: '#888' }]} onPress={() => setIsAlertVisible(false)}>
-                  <Text style={styles.alertBtnText}>취소</Text>
+      {/* ✅ 통합 커스텀 알림 모달 - SafeAreaView 바로 안에 */}
+      {isAlertVisible && (
+        <View style={[StyleSheet.absoluteFill, styles.customAlertOverlay]}>
+          <View style={styles.customAlertBox}>
+            <View style={[styles.alertIconBox, {
+              backgroundColor: alertType === 'success' ? '#E8F8EF' : alertType === 'error' ? '#FEE8E8' : '#EEF3FB'
+            }]}>
+              <Ionicons
+                name={alertType === 'success' ? 'checkmark-circle' : alertType === 'error' ? 'close-circle' : 'help-circle'}
+                size={48}
+                color={alertType === 'success' ? green : alertType === 'error' ? red : main_navy}
+              />
+            </View>
+            <Text style={styles.customAlertTitle}>{alertTitle}</Text>
+            <Text style={styles.customAlertMessage}>{alertMsg}</Text>
+
+            {alertType === 'confirm' ? (
+              <View style={styles.alertBtnRow}>
+                <TouchableOpacity style={[styles.alertBtn, { backgroundColor: '#EEE' }]} onPress={() => setIsAlertVisible(false)}>
+                  <Text style={[styles.alertBtnText, { color: '#555' }]}>취소</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.alertBtn} onPress={() => { setIsAlertVisible(false); if (detailItem) handleDelete(detailItem.id); }}>
+                <TouchableOpacity style={[styles.alertBtn, { backgroundColor: red }]} onPress={() => { setIsAlertVisible(false); alertOnConfirm?.(); }}>
                   <Text style={styles.alertBtnText}>삭제</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            ) : (
+              <TouchableOpacity style={[styles.alertBtn, { width: '100%', backgroundColor: main_navy }]} onPress={() => setIsAlertVisible(false)}>
+                <Text style={styles.alertBtnText}>확인</Text>
+              </TouchableOpacity>
+            )}
           </View>
-        </Modal>
-      </Modal>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
-
-const red = '#C0392B';
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF' },
@@ -505,16 +503,12 @@ const styles = StyleSheet.create({
   dropdownItemActive: { color: main_navy, fontWeight: 'bold' },
 
   listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 },
-
-  // ✅ 카드: 가로 레이아웃으로 변경
   card: { backgroundColor: light_navy, borderRadius: 16, padding: 20, marginBottom: 14, borderWidth: 1, borderColor: '#DDE6F5', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardInfo: { flex: 1, marginRight: 12 },
   cardDate: { fontSize: 14, color: main_navy, marginBottom: 6, fontWeight: '600' },
   cardTitle: { fontSize: 20, fontWeight: 'bold', color: '#111', marginBottom: 6 },
   docTypeBadge: { backgroundColor: main_navy, borderRadius: 8, paddingVertical: 4, paddingHorizontal: 10, alignSelf: 'flex-start' },
   docTypeText: { color: '#FFF', fontSize: 13, fontWeight: 'bold' },
-
-  // ✅ 바로가기 버튼
   goBtn: { backgroundColor: main_navy, paddingVertical: 12, paddingHorizontal: 18, borderRadius: 12 },
   goBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
 
@@ -529,31 +523,20 @@ const styles = StyleSheet.create({
 
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
   dateText: { fontSize: 18, color: '#333', fontWeight: '500', flex: 1 },
-  // ✅ 날짜 변경 버튼 형태로
   dateChangeBtn: { backgroundColor: light_navy, paddingVertical: 6, paddingHorizontal: 14, borderRadius: 10, borderWidth: 1, borderColor: main_navy },
   dateChangeBtnText: { color: main_navy, fontSize: 14, fontWeight: 'bold' },
-
   datePickerBox: { backgroundColor: '#F5F5F5', borderRadius: 12, marginBottom: 12, alignItems: 'center', padding: 10 },
   datePickerConfirmBtn: { backgroundColor: main_navy, paddingVertical: 10, paddingHorizontal: 30, borderRadius: 10, marginTop: 8 },
   datePickerConfirmText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
 
   inputBox: { borderWidth: 1.5, borderColor: main_navy, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 16, fontSize: 18, color: '#000', marginBottom: 20 },
-
   fileRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#EEE' },
   fileLabel: { fontSize: 18, fontWeight: 'bold', color: '#111' },
-  // ✅ 파일 등록 버튼 형태로
   fileActionBtn: { backgroundColor: main_navy, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10 },
   fileActionBtnDone: { backgroundColor: '#2c822f' },
   fileActionBtnText: { color: '#FFF', fontSize: 15, fontWeight: 'bold' },
-
   registerBtn: { backgroundColor: main_navy, paddingVertical: 18, borderRadius: 30, alignItems: 'center', marginTop: 24 },
   registerBtnText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
-
-  alertOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
-  alertBox: { backgroundColor: '#FFF', borderRadius: 20, padding: 28, width: '75%', alignItems: 'center', gap: 12 },
-  alertText: { fontSize: 18, fontWeight: 'bold', textAlign: 'center', color: '#111', lineHeight: 28 },
-  alertBtn: { backgroundColor: main_navy, paddingVertical: 14, paddingHorizontal: 30, borderRadius: 15 },
-  alertBtnText: { color: '#FFF', fontSize: 17, fontWeight: 'bold' },
 
   detailOverlay: { flex: 1, backgroundColor: '#FFF' },
   detailContainer: { flex: 1 },
@@ -561,21 +544,27 @@ const styles = StyleSheet.create({
   detailTitle: { fontSize: 20, fontWeight: 'bold', color: main_navy },
   deleteIconBtn: { padding: 4 },
   detailContent: { padding: 20 },
-
   originalBtn: { backgroundColor: '#7B9FE0', borderRadius: 12, paddingVertical: 18, alignItems: 'center', marginBottom: 20 },
   originalBtnText: { color: '#FFF', fontSize: 20, fontWeight: 'bold' },
-
   detailDateRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 20 },
   detailDate: { fontSize: 22, fontWeight: 'bold', color: '#111' },
-
   tagBox: { backgroundColor: main_navy, paddingVertical: 10, paddingHorizontal: 18, borderRadius: 8, alignSelf: 'flex-start', marginBottom: 10 },
   tagText: { color: '#FFF', fontSize: 17, fontWeight: 'bold' },
   contentBox: { backgroundColor: light_navy, borderRadius: 12, padding: 18, marginBottom: 20 },
   contentText: { fontSize: 18, color: '#111', lineHeight: 30 },
-
   emptyBox: { alignItems: 'center', paddingTop: 30 },
   emptyText: { fontSize: 18, color: '#888', marginBottom: 20 },
   addMoreBtn: { backgroundColor: main_navy, paddingVertical: 16, paddingHorizontal: 30, borderRadius: 15, marginBottom: 12 },
   addMoreBtnText: { color: '#FFF', fontSize: 17, fontWeight: 'bold' },
   addMoreHint: { fontSize: 15, color: '#666', textAlign: 'center', lineHeight: 24 },
+
+  // ✅ 커스텀 알림
+  customAlertOverlay: { backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 99999, elevation: 99999 },
+  customAlertBox: { backgroundColor: '#FFF', borderRadius: 24, paddingVertical: 50, paddingHorizontal: 28, width: '88%', alignItems: 'center', gap: 12 },
+  alertIconBox: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
+  customAlertTitle: { fontSize: 22, fontWeight: 'bold', color: '#111', textAlign: 'center' },
+  customAlertMessage: { fontSize: 17, color: '#555', textAlign: 'center', lineHeight: 28 },
+  alertBtnRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 4 },
+alertBtn: { flex: 1, backgroundColor: main_navy, paddingVertical: 18, borderRadius: 14, alignItems: 'center', justifyContent: 'center', minHeight: 60 }, 
+ alertBtnText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
 });
