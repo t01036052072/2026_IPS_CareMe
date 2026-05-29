@@ -376,21 +376,21 @@ export default function DocumentScreen() {
         </View>
       </Modal>
 
-      {/* ───── 상세 모달 ───── */}
-      <Modal visible={isDetailVisible} transparent animationType="slide">
-        <View style={styles.detailOverlay}>
+      {/* ───── 상세 모달 (가짜 모달) ───── */}
+      {isDetailVisible && (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: '#FFF', zIndex: 1000 }]}>
           <SafeAreaView style={styles.detailContainer}>
             <View style={styles.detailHeader}>
               <TouchableOpacity onPress={() => setIsDetailVisible(false)} style={styles.backBtn}>
                 <Back width={24} height={24} />
               </TouchableOpacity>
               <Text style={styles.detailTitle}>{detailItem?.hospital_name || '문서 상세'}</Text>
-              <TouchableOpacity style={styles.deleteIconBtn} onPress={() => {
-                showAlert('문서 삭제', '이 문서를 삭제하시겠습니까?', 'confirm', () => {
+              <TouchableOpacity style={styles.deleteBtn} onPress={() => {
+                showAlert('문서 삭제', '이 문서를\n삭제하시겠습니까?', 'confirm', () => {
                   if (detailItem) handleDelete(detailItem.id);
                 });
               }}>
-                <Ionicons name="trash-outline" size={24} color={red} />
+                <Text style={styles.deleteBtnText}>삭제</Text>
               </TouchableOpacity>
             </View>
 
@@ -447,7 +447,7 @@ export default function DocumentScreen() {
             )}
           </SafeAreaView>
         </View>
-      </Modal>
+      )}
 
       {/* ✅ 통합 커스텀 알림 모달 - SafeAreaView 바로 안에 */}
       {isAlertVisible && (
@@ -543,6 +543,8 @@ const styles = StyleSheet.create({
   detailHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#EEE' },
   detailTitle: { fontSize: 20, fontWeight: 'bold', color: main_navy },
   deleteIconBtn: { padding: 4 },
+  deleteBtn: { backgroundColor: '#C0392B', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 10 },
+  deleteBtnText: { color: '#FFF', fontSize: 15, fontWeight: 'bold' },
   detailContent: { padding: 20 },
   originalBtn: { backgroundColor: '#7B9FE0', borderRadius: 12, paddingVertical: 18, alignItems: 'center', marginBottom: 20 },
   originalBtnText: { color: '#FFF', fontSize: 20, fontWeight: 'bold' },
@@ -560,11 +562,11 @@ const styles = StyleSheet.create({
 
   // ✅ 커스텀 알림
   customAlertOverlay: { backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 99999, elevation: 99999 },
-  customAlertBox: { backgroundColor: '#FFF', borderRadius: 24, paddingVertical: 50, paddingHorizontal: 28, width: '88%', alignItems: 'center', gap: 12 },
+  customAlertBox: { backgroundColor: '#FFF', borderRadius: 24, paddingVertical: 40, paddingHorizontal: 28, width: '88%', alignItems: 'center', gap: 12 },
   alertIconBox: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
   customAlertTitle: { fontSize: 22, fontWeight: 'bold', color: '#111', textAlign: 'center' },
   customAlertMessage: { fontSize: 17, color: '#555', textAlign: 'center', lineHeight: 28 },
   alertBtnRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 4 },
-alertBtn: { flex: 1, backgroundColor: main_navy, paddingVertical: 18, borderRadius: 14, alignItems: 'center', justifyContent: 'center', minHeight: 60 }, 
- alertBtnText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+alertBtn: { flex: 1, backgroundColor: main_navy, paddingVertical: 18, borderRadius: 14, alignItems: 'center', justifyContent: 'center', minHeight: 60 },
+  alertBtnText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
 });
