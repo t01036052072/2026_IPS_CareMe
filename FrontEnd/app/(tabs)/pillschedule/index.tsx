@@ -640,6 +640,6 @@ todayBadgeText: { color: '#FFF', fontSize: 13, fontWeight: 'bold' },
   customAlertTitle: { fontSize: 22, fontWeight: 'bold', color: '#111', textAlign: 'center' },
   customAlertMessage: { fontSize: 17, color: '#555', textAlign: 'center', lineHeight: 28 },
   alertBtnRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 4 },
-  alertBtn: { flex: 1, backgroundColor: main_navy, paddingVertical: 16, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+alertBtn: { flex: 1, backgroundColor: main_navy, paddingVertical: 18, borderRadius: 14, alignItems: 'center', justifyContent: 'center', minHeight: 60 }, 
   alertBtnText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
 });
