@@ -159,6 +159,23 @@ feature/* → develop → main
 
 기능 작업은 `develop`에서 새 `feature/*` 브랜치를 만든 뒤 Pull Request를 통해 `develop`에 병합합니다. 검증이 끝난 변경사항만 `main`으로 반영합니다.
 
+### 기능별 브랜치
+
+| 브랜치 | 담당 기능 |
+| --- | --- |
+| `feature/frontend-navigation` | 홈 화면과 공통 탐색 |
+| `feature/authentication` | 회원가입과 로그인 |
+| `feature/document-analysis` | 진단서·처방전 OCR 및 분석 |
+| `feature/pill-analysis` | 의약품 검색과 알약 사진 분석 |
+| `feature/pill-search-route` | 알약 검색 화면 라우팅 |
+| `feature/medication-schedule` | 복약 일정과 알림 |
+| `feature/hospital-appointments` | 병원 예약 일정 |
+| `feature/healthcare` | 맞춤 건강관리 |
+| `feature/medical-chatbot` | 의료 AI 챗봇 |
+| `feature/mypage` | 프로필과 계정 관리 |
+
+각 기능의 화면, API 및 백엔드 담당 경로는 [`docs/features`](docs/features)에서 확인할 수 있습니다.
+
 ## 의료정보 이용 안내
 
 CARE ME가 제공하는 문서 분석, 알약 이미지 분류 및 챗봇 답변은 건강관리를 돕기 위한 참고 정보입니다. 의료진의 진단이나 처방을 대신하지 않으며, 실제 복약과 치료에 관한 결정은 반드시 의사 또는 약사와 상담해야 합니다. 알약 사진 분석 결과는 촬영 환경과 모델 정확도에 따라 달라질 수 있습니다.
