@@ -42,6 +42,15 @@ node_modules/
 __pycache__/
 serviceAccountKey.json
 
+# Runtime uploads and generated files
+BackEnd/uploads/
+BackEnd/app/uploads/
+BackEnd/core/static/uploads/
+*.log
+
+# Local browser profiles and caches
+docs/chrome-*-profile-*/
+
 Data/raw_medical_data_v2.csv
 pill_model_project/checkpoints/checkpoint.pth #학습용 체크포인트
 pill_model_project/checkpoints/final_model_before_*.pth #백업한 모델
