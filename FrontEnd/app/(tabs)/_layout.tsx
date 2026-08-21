@@ -22,7 +22,7 @@ import CustomTabBar from '../../components/CustomTabBar';
 export default function TabLayout() {
   const segments = useSegments();
 
-  const hideTabBar = segments[1] === "chatbot";
+  const hideTabBar = segments.some((segment) => segment === 'chatbot');
 
   return (
     <Tabs
