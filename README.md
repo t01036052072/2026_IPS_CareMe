@@ -48,7 +48,7 @@ CARE ME는 사용자의 진단서와 처방전, 알약 사진을 분석하고 �
 ├── FrontEnd/                   # Expo 기반 모바일 애플리케이션
 │   ├── app/                    # 화면 및 파일 기반 라우팅
 │   ├── components/             # 공통 UI 컴포넌트
-│   └── services/               # API 연동 로직
+│   └── api/                    # 백엔드 API 연동 설정
 ├── BackEnd/
 │   ├── practice/               # 통합 FastAPI 서버 및 일정·의약품 API
 │   ├── my_project/             # 회원, 문서, 마이페이지 API
