@@ -6,9 +6,9 @@ from chatbot.schemas.chat import ChatRequest
 from chatbot.services.openai_service import get_ai_response
 from chatbot.services.app_navigation import find_app_command
 
-from my_project.database import get_db
-from my_project.models import Chat, UserTable
-from my_project.routes.user import get_current_user
+from core.database import get_db
+from core.models import Chat, UserTable
+from core.routes.user import get_current_user
 
 router = APIRouter()
 
