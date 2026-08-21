@@ -50,11 +50,10 @@ CARE ME는 사용자의 진단서와 처방전, 알약 사진을 분석하고 �
 │   ├── components/             # 공통 UI 컴포넌트
 │   └── api/                    # 백엔드 API 연동 설정
 ├── BackEnd/
-│   ├── practice/               # 통합 FastAPI 서버 및 일정·의약품 API
-│   ├── my_project/             # 회원, 문서, 마이페이지 API
+│   ├── app/                    # 통합 FastAPI 서버 및 건강관리 API
+│   ├── core/                   # 회원, 문서, 마이페이지 및 DB 모델
 │   ├── chatbot/                # 의료 AI 챗봇
 │   └── pill_model_project/     # 알약 이미지 모델 학습·추론
-├── AI/                         # AI 관련 실험 및 자료
 ├── Data/                       # 데이터 관련 파일
 ├── docs/                       # 프로젝트 문서
 ├── requirements.txt            # Python 통합 의존성
@@ -104,7 +103,7 @@ PILL_MODEL_DATA_DIR=BackEnd/pill_model_project
 
 ```powershell
 Set-Location BackEnd
-python -m uvicorn practice.mainjeong:app --host 0.0.0.0 --port 8000 --reload
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 서버 실행 후 다음 주소에서 API 명세를 확인할 수 있습니다.

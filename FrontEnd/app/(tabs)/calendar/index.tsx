@@ -14,7 +14,7 @@ import {
   updateAppointmentAPI,
   deleteAppointmentAPI,
   AppointmentDetail,
-} from '@/api/calender';
+} from '@/api/calendar';
 import { scheduleAppointmentNotification, setupLocalNotifications } from '@/utils/localNotifications';
 import Back from '../../../assets/images/LoginScreen/back.svg';
 
