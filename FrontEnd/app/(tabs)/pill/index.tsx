@@ -52,7 +52,7 @@ export default function PillScreen() {
         {/* 의약품 검색 */}
         <TouchableOpacity
           style={styles.card}
-          onPress={() => router.navigate('/(tabs)/serchpill' as any)}
+          onPress={() => router.navigate('/(tabs)/pill-search' as any)}
           activeOpacity={0.85}
         >
           <View style={styles.iconBox}>

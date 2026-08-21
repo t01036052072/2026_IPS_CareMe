@@ -345,7 +345,7 @@ export default function PillScheduleScreen() {
                 </Text>
                 <TouchableOpacity
                   style={styles.goSearchBtn}
-                  onPress={() => showAlert('약 검색 이동', '약 검색 화면으로 이동하시겠습니까?', 'confirm', () => router.push('/(tabs)/serchpill' as any))}
+                  onPress={() => showAlert('약 검색 이동', '약 검색 화면으로 이동하시겠습니까?', 'confirm', () => router.push('/(tabs)/pill-search' as any))}
                 >
                   <Ionicons name="search" size={20} color="#FFF" />
                   <Text style={styles.goSearchBtnText}>약 검색하기</Text>
