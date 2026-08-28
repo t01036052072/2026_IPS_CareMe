@@ -113,7 +113,7 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 Firebase 푸시 알림을 사용하려면 별도의 `serviceAccountKey.json` 인증 파일이 필요합니다. 인증 파일과 `.env`는 저장소에 커밋하지 마세요.
 
-### 3. 프런트엔드 실행
+### 3. 프론트엔드 실행
 
 새 터미널에서 다음 명령을 실행합니다.
 
